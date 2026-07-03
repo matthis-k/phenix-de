@@ -1,4 +1,19 @@
-{ inputs, ... }: {
+{ inputs, ... }:
+let
+  nixosModules = {
+    hyprland-base = import ./nixos/hyprland-base.nix;
+    nix-cache = import ./nixos/nix-cache.nix;
+  };
+
+  homeModules = {
+    hyprland = import ./home/hyprland.nix;
+  };
+in
+{
+  flake = {
+    inherit nixosModules homeModules;
+  };
+
   perSystem =
     { pkgs, system, ... }:
     let
