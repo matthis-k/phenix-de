@@ -1,6 +1,13 @@
 {
   description = "Phenix desktop environment";
 
+  nixConfig = {
+    extra-substituters = [ "https://hyprland.cachix.org" ];
+    extra-trusted-public-keys = [
+      "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+    ];
+  };
+
   inputs = {
     flake-parts.url = "github:hercules-ci/flake-parts";
     phenix-pins.url = "github:matthis-k/phenix-pins";
@@ -8,7 +15,6 @@
     nixpkgs.follows = "phenix-pins/nixpkgs";
     hyprland = {
       url = "github:hyprwm/Hyprland";
-      inputs.nixpkgs.follows = "phenix-pins/nixpkgs";
     };
   };
 

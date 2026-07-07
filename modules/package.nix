@@ -20,6 +20,14 @@ in
       phenix-shell = pkgs.writeShellScriptBin "phenix-shell" ''
         exec ${pkgs.quickshell}/bin/quickshell --config ${toString ../configs/phenix-shell}/shell.qml "$@"
       '';
+      waylandApps = {
+        wl-copy = "${pkgs.wl-clipboard}/bin/wl-copy";
+        wl-paste = "${pkgs.wl-clipboard}/bin/wl-paste";
+        grim = "${pkgs.grim}/bin/grim";
+        slurp = "${pkgs.slurp}/bin/slurp";
+        swappy = "${pkgs.swappy}/bin/swappy";
+        tesseract = "${pkgs.tesseract}/bin/tesseract";
+      };
     in
     {
       packages = {
@@ -44,6 +52,11 @@ in
 
         inherit (pkgs) starship;
       };
+
+      apps = pkgs.lib.mapAttrs (_name: program: {
+        type = "app";
+        inherit program;
+      }) waylandApps;
 
       devShells.default = pkgs.mkShell {
         name = "phenix-de-dev";
