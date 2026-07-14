@@ -2,7 +2,7 @@
 # Test suite for Evaluation-based debug IPC endpoints
 set -euo pipefail
 
-LAUNCHER_IPC=(newshell ipc call query)
+LAUNCHER_IPC=(phenix-shell ipc call query)
 VERBOSE=false
 
 while [[ $# -gt 0 ]]; do
@@ -83,37 +83,37 @@ echo ""
 echo "--- debugOverview ---"
 
 # 1.1 Overview returns envelope with version, mode, query
-assert_jq "overview-envelope" "debugOverview" '{"query":"newxos"}' \
-  '.version == 1 and .mode == "overview" and .query == "newxos"' \
+assert_jq "overview-envelope" "debugOverview" '{"query":"phenix"}' \
+  '.version == 1 and .mode == "overview" and .query == "phenix"' \
   "Response envelope should have version=1, mode=overview"
 
 # 1.2 Overview returns backendSummary
-assert_jq "overview-backends" "debugOverview" '{"query":"newxos"}' \
+assert_jq "overview-backends" "debugOverview" '{"query":"phenix"}' \
   '.result.backendSummary | length > 0' \
   "Overview should include backendSummary"
 
 # 1.3 Overview returns visible array
-assert_jq "overview-visible" "debugOverview" '{"query":"newxos"}' \
+assert_jq "overview-visible" "debugOverview" '{"query":"phenix"}' \
   '.result.visible | length > 0' \
   "Overview should include visible rows"
 
 # 1.4 Overview nodes have required fields
-assert_jq "overview-node-fields" "debugOverview" '{"query":"newxos"}' \
+assert_jq "overview-node-fields" "debugOverview" '{"query":"phenix"}' \
   '.result.visible[0].id != "" and .result.visible[0].title != ""' \
   "Visible nodes should have id and title"
 
 # 1.5 Overview node has placement
-assert_jq "overview-placement" "debugOverview" '{"query":"newxos"}' \
+assert_jq "overview-placement" "debugOverview" '{"query":"phenix"}' \
   '.result.visible[0].placement != ""' \
   "Visible nodes should have placement"
 
 # 1.6 Overview includes selection
-assert_jq "overview-selection" "debugOverview" '{"query":"newxos"}' \
+assert_jq "overview-selection" "debugOverview" '{"query":"phenix"}' \
   '.result.selection != null' \
   "Overview should include selection"
 
 # 1.7 Overview includes stats
-assert_jq "overview-stats" "debugOverview" '{"query":"newxos"}' \
+assert_jq "overview-stats" "debugOverview" '{"query":"phenix"}' \
   '.result.stats.visibleNodeCount > 0' \
   "Overview should include stats with visibleNodeCount"
 
@@ -133,39 +133,39 @@ assert_jq "overview-vpn" "debugOverview" '{"query":"vpn "}' \
 echo "--- debugInspect ---"
 
 # 2.1 Inspect returns error for missing nodeId
-assert_jq "inspect-no-nodeid" "debugInspect" '{"query":"newxos"}' \
+assert_jq "inspect-no-nodeid" "debugInspect" '{"query":"phenix"}' \
   '.result.error.code == "no_node_id"' \
   "Inspect without nodeId should return error"
 
 # 2.2 Inspect returns node info for valid nodeId
 # Use debugOverview to find a node id first, then test inspect
-INSPECT_NODE_ID=$(call_debug "debugOverview" '{"query":"newxos"}' | jq -r '.result.visible[0].id // "actions:newxos"')
-assert_jq "inspect-node" "debugInspect" "{\"query\":\"newxos\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
+INSPECT_NODE_ID=$(call_debug "debugOverview" '{"query":"phenix"}' | jq -r '.result.visible[0].id // "actions:phenix"')
+assert_jq "inspect-node" "debugInspect" "{\"query\":\"phenix\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
   '.result.node.id != "" and .result.node.title != ""' \
   "Inspect should return node id and title for valid nodeId"
 
 # 2.3 Inspect includes searchable fields
-assert_jq "inspect-fields" "debugInspect" "{\"query\":\"newxos\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
+assert_jq "inspect-fields" "debugInspect" "{\"query\":\"phenix\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
   '.result.searchable != null' \
   "Inspect should include searchable fields"
 
 # 2.4 Inspect includes matching info
-assert_jq "inspect-matching" "debugInspect" "{\"query\":\"newxos\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
+assert_jq "inspect-matching" "debugInspect" "{\"query\":\"phenix\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
   '.result.matching != null' \
   "Inspect should include matching info"
 
 # 2.5 Inspect includes scoring
-assert_jq "inspect-scoring" "debugInspect" "{\"query\":\"newxos\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
+assert_jq "inspect-scoring" "debugInspect" "{\"query\":\"phenix\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
   '.result.scoring != null' \
   "Inspect should include scoring"
 
 # 2.6 Inspect includes decisions
-assert_jq "inspect-decisions" "debugInspect" "{\"query\":\"newxos\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
+assert_jq "inspect-decisions" "debugInspect" "{\"query\":\"phenix\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
   '.result.decisions != null' \
   "Inspect should include decisions"
 
 # 2.7 Inspect includes childrenSummary
-assert_jq "inspect-children" "debugInspect" "{\"query\":\"newxos\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
+assert_jq "inspect-children" "debugInspect" "{\"query\":\"phenix\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
   '.result.childrenSummary != null' \
   "Inspect should include childrenSummary"
 
@@ -175,17 +175,17 @@ assert_jq "inspect-children" "debugInspect" "{\"query\":\"newxos\",\"nodeId\":\"
 echo "--- debugPolicies ---"
 
 # 3.1 Policies returns scope
-assert_jq "policies-scope" "debugPolicies" '{"query":"newxos"}' \
+assert_jq "policies-scope" "debugPolicies" '{"query":"phenix"}' \
   '.result.scope == "query"' \
   "Policies without nodeId should return query scope"
 
 # 3.2 Policies with nodeId returns node scope
-assert_jq "policies-node-scope" "debugPolicies" "{\"query\":\"newxos\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
+assert_jq "policies-node-scope" "debugPolicies" "{\"query\":\"phenix\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
   '.result.scope == "node"' \
   "Policies with nodeId should return node scope"
 
 # 3.3 Policies node scope includes node info
-assert_jq "policies-node-info" "debugPolicies" "{\"query\":\"newxos\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
+assert_jq "policies-node-info" "debugPolicies" "{\"query\":\"phenix\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
   '.result.node.id != ""' \
   "Policy node scope should include node info"
 
@@ -195,27 +195,27 @@ assert_jq "policies-node-info" "debugPolicies" "{\"query\":\"newxos\",\"nodeId\"
 echo "--- debugFind ---"
 
 # 4.1 Find returns error for missing search
-assert_jq "find-no-search" "debugFind" '{"query":"newxos"}' \
+assert_jq "find-no-search" "debugFind" '{"query":"phenix"}' \
   '.result.error.code == "no_search"' \
   "Find without search should return error"
 
 # 4.2 Find returns matches
-assert_jq "find-matches" "debugFind" '{"query":"newxos","search":"newxos"}' \
+assert_jq "find-matches" "debugFind" '{"query":"phenix","search":"phenix"}' \
   '.result.matches | length > 0' \
   "Find should return matches"
 
 # 4.3 Find matches have required fields
-assert_jq "find-match-fields" "debugFind" '{"query":"newxos","search":"newxos"}' \
+assert_jq "find-match-fields" "debugFind" '{"query":"phenix","search":"phenix"}' \
   '.result.matches[0].id != "" and .result.matches[0].title != ""' \
   "Find matches should have id and title"
 
 # 4.4 Find shows visibility info
-assert_jq "find-visibility" "debugFind" '{"query":"newxos","search":"newxos"}' \
+assert_jq "find-visibility" "debugFind" '{"query":"phenix","search":"phenix"}' \
   '.result.matches[0].reasons.visibility | length > 0' \
   "Find matches should include visibility reasons"
 
 # 4.5 Find matches are inspectable
-assert_jq "find-inspectable" "debugFind" '{"query":"newxos","search":"newxos"}' \
+assert_jq "find-inspectable" "debugFind" '{"query":"phenix","search":"phenix"}' \
   '.result.matches[0].inspectable == true' \
   "Find matches should be inspectable"
 
@@ -225,22 +225,22 @@ assert_jq "find-inspectable" "debugFind" '{"query":"newxos","search":"newxos"}' 
 echo "--- debugAction ---"
 
 # 5.1 Action returns error for missing nodeId
-assert_jq "action-no-nodeid" "debugAction" '{"query":"newxos"}' \
+assert_jq "action-no-nodeid" "debugAction" '{"query":"phenix"}' \
   '.result.error.code == "no_node_id"' \
   "Action without nodeId should return error"
 
 # 5.2 Action returns node info
-assert_jq "action-node" "debugAction" "{\"query\":\"newxos\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
+assert_jq "action-node" "debugAction" "{\"query\":\"phenix\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
   '.result.node.id != "" and .result.node.title != ""' \
   "Action should return node id and title"
 
 # 5.3 Action returns input
-assert_jq "action-input" "debugAction" "{\"query\":\"newxos\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
+assert_jq "action-input" "debugAction" "{\"query\":\"phenix\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
   '.result.input == "enter"' \
   "Action should default to enter input"
 
 # 5.4 Action returns resolvedAction
-assert_jq "action-resolved" "debugAction" "{\"query\":\"newxos\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
+assert_jq "action-resolved" "debugAction" "{\"query\":\"phenix\",\"nodeId\":\"$INSPECT_NODE_ID\"}" \
   '.result.resolvedAction != null' \
   "Action should include resolvedAction"
 
@@ -271,12 +271,12 @@ echo "--- JSON safety ---"
 
 # 7.1 All responses are valid JSON
 for endpoint in debugOverview debugInspect debugPolicies debugFind debugAction debugStats; do
-  assert_json_safe "$endpoint-json-safe" "$endpoint" '{"query":"newxos"}'
+  assert_json_safe "$endpoint-json-safe" "$endpoint" '{"query":"phenix"}'
 done
 
 # 7.2 Response only uses JSON-native types
 for endpoint in debugOverview debugInspect debugPolicies debugFind debugAction debugStats; do
-  data=$(call_debug "$endpoint" '{"query":"newxos"}')
+  data=$(call_debug "$endpoint" '{"query":"phenix"}')
   if echo "$data" | jq '[.. | select(type == "object" and (. | has("__qobject__") or has("__qml__")))] | length == 0' | grep -q true; then
     pass "$endpoint-no-qml"
   else
@@ -286,7 +286,7 @@ done
 
 # 7.3 Response round-trips through JSON
 for endpoint in debugOverview debugInspect debugPolicies debugFind debugAction debugStats; do
-  data=$(call_debug "$endpoint" '{"query":"newxos"}')
+  data=$(call_debug "$endpoint" '{"query":"phenix"}')
   if echo "$data" | jq '.' | jq '.' >/dev/null 2>&1; then
     pass "$endpoint-roundtrip"
   else

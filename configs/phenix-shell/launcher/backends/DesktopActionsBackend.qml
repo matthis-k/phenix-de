@@ -25,7 +25,7 @@ TreeBackendBase {
         { priority: 0, combine: "shared", afterEmpty: "stop" }
     ]
 
-    property QtObject newxosActions: Actions.NewxosActions {}
+    property QtObject phenixActions: Actions.PhenixActions {}
     property QtObject sessionActions: Actions.SessionActions {}
     property QtObject screenshotActions: Actions.ScreenshotActions {}
     property QtObject dashboardActions: Actions.DashboardActions { shellScreenState: root.shellScreenState }
@@ -135,7 +135,7 @@ TreeBackendBase {
         }
 
         var result = [];
-        var groupOrder = ["Newxos", "Session", "Networking", "Audio", "Power", "Notifications"];
+        var groupOrder = ["Phenix", "Session", "Networking", "Audio", "Power", "Notifications"];
         var sorted = Object.keys(groups).sort(function(a, b) {
             var ai = groupOrder.indexOf(a);
             var bi = groupOrder.indexOf(b);
@@ -190,7 +190,7 @@ TreeBackendBase {
             return root.fixtureTree;
 
         return [].concat(
-            newxosActions.roots({}),
+            phenixActions.roots({}),
             sessionActions.roots({}),
             screenshotActions.roots({}),
             dashboardActions.roots({ shellScreenState: root.shellScreenState }),
@@ -230,7 +230,7 @@ TreeBackendBase {
             else
                 launchTerminal(payload.command || "");
         } else if (payload.op === "devmode") {
-            var enabled = payload.enabled === null || payload.enabled === undefined ? !(Quickshell.env("NEWXOS_DEV") === "1" || Quickshell.env("DEVMODE") === "1") : !!payload.enabled;
+            var enabled = payload.enabled === null || payload.enabled === undefined ? !(Quickshell.env("PHENIX_DEV") === "1" || Quickshell.env("DEVMODE") === "1") : !!payload.enabled;
             if (enabled)
                 launchTerminalPaused(qsTr("Enable dev mode"), "if [ -x /run/current-system/specialisation/dev/bin/switch-to-configuration ]; then sudo /run/current-system/specialisation/dev/bin/switch-to-configuration test; else printf '%s\\n' 'dev specialization is not available'; exit 1; fi");
             else

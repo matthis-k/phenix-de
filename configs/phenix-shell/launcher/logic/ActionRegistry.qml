@@ -17,7 +17,7 @@ Singleton {
     }
 
     function isTestMode() {
-        return Quickshell.env("NEWSHELL_TEST_MODE") === "1";
+        return Quickshell.env("PHENIX_SHELL_TEST_MODE") === "1";
     }
 
     function isDestructiveStep(step) {
@@ -45,7 +45,7 @@ Singleton {
         if (isTestMode() && isDestructiveStep(step)) {
             if (debugEnabled)
                 console.log("[ActionRegistry] dry-run in test mode for step: " + name);
-            return { close: false, success: true, dryRun: true, step: name, reason: "NEWSHELL_TEST_MODE" };
+            return { close: false, success: true, dryRun: true, step: name, reason: "PHENIX_SHELL_TEST_MODE" };
         }
 
         try {

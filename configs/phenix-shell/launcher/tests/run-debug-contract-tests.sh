@@ -6,7 +6,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/../../../.."
 
-LAUNCHER_IPC=(newshell ipc call query)
+LAUNCHER_IPC=(phenix-shell ipc call query)
 VERBOSE=false
 
 while [[ $# -gt 0 ]]; do
@@ -79,7 +79,7 @@ echo ""
 # ============================================================
 echo "--- Decision Contract ---"
 
-for query in "newxos" "wifi" "zen" "net" "vpn" ":"; do
+for query in "phenix" "wifi" "zen" "net" "vpn" ":"; do
   DATA=$(call_debug "debugOverview" "{\"query\":\"$query\"}")
 
   # Every visible node has non-null decisions
@@ -129,16 +129,16 @@ done
 echo "--- Policy Trace Contract ---"
 
 # Get a node with policy traces
-POLICY_DATA=$(call_debug "debugPolicies" '{"query":"newxos"}')
+POLICY_DATA=$(call_debug "debugPolicies" '{"query":"phenix"}')
 SOME_NODE=$(echo "$POLICY_DATA" | jq -r '.result.queryWide.visibleNodeCount' 2>/dev/null || echo "0")
 if [[ "$SOME_NODE" -gt 0 ]]; then
-  pass "policies-have-data: newxos"
+  pass "policies-have-data: phenix"
 fi
 
 # Check per-node policy traces have evaluated entries with required fields
-INSPECT_NODE=$(extract "debugOverview" '{"query":"newxos"}' '.result.visible[0].id // ""')
+INSPECT_NODE=$(extract "debugOverview" '{"query":"phenix"}' '.result.visible[0].id // ""')
 if [[ -n "$INSPECT_NODE" ]]; then
-  POLDATA=$(call_debug "debugPolicies" "{\"query\":\"newxos\",\"nodeId\":\"$INSPECT_NODE\"}")
+  POLDATA=$(call_debug "debugPolicies" "{\"query\":\"phenix\",\"nodeId\":\"$INSPECT_NODE\"}")
 
   # Policy kinds exist
   HAS_KINDS=$(echo "$POLDATA" | jq '.result.policyKinds | length > 0' 2>/dev/null || echo "false")
@@ -331,13 +331,13 @@ assert_jq "query-vpn-" "debugOverview" '{"query":"vpn "}' \
   '.result.visible | length > 0' \
   "vpn with trailing space should return visible results"
 
-assert_jq "query-newxos" "debugOverview" '{"query":"newxos"}' \
+assert_jq "query-phenix" "debugOverview" '{"query":"phenix"}' \
   '.result.visible | length > 0' \
-  "newxos should return visible results"
+  "phenix should return visible results"
 
-assert_jq "query-newxos-" "debugOverview" '{"query":"newxos "}' \
+assert_jq "query-phenix-" "debugOverview" '{"query":"phenix "}' \
   '.result.visible | length > 0' \
-  "newxos with trailing space should return visible results"
+  "phenix with trailing space should return visible results"
 
 assert_jq "query-colon" "debugOverview" '{"query":":"}' \
   '.result.visible | length > 0' \
@@ -350,7 +350,7 @@ echo "--- JSON Safety Contract ---"
 
 # All endpoints must return valid JSON with proper envelope
 for endpoint in debugOverview debugInspect debugPolicies debugFind debugAction debugStats; do
-  DATA=$(call_debug "$endpoint" '{"query":"newxos"}')
+  DATA=$(call_debug "$endpoint" '{"query":"phenix"}')
 
   # Must be parseable JSON
   if echo "$DATA" | jq '.' >/dev/null 2>&1; then
@@ -413,7 +413,7 @@ echo "--- Row Visibility Contract ---"
 
 # For each query, verify: every candidate marked visible in the evaluated tree
 # actually appears in the final flat visible rows.
-for query in "newxos" "newxos ai" "newxos " "wifi" "wifi on" "wifi " "net" "network" "zen" "zen priv" "zen " "vpn" "vpn " ":"; do
+for query in "phenix" "phenix ai" "phenix " "wifi" "wifi on" "wifi " "net" "network" "zen" "zen priv" "zen " "vpn" "vpn " ":"; do
   # Get stats with validation
   STATS_DATA=$(call_debug "debugStats" "{\"query\":\"$query\",\"includeValidation\":true}")
   # Check that validation passes (no candidate-visible-not-in-rows warning)
@@ -441,10 +441,10 @@ for query in "newxos" "newxos ai" "newxos " "wifi" "wifi on" "wifi " "net" "netw
   fi
 done
 
-# Specific regression: "newxos ai" used to return visible=[]
-assert_jq "regression-newxos-ai-visible" "debugOverview" '{"query":"newxos ai"}' \
+# Specific regression: "phenix ai" used to return visible=[]
+assert_jq "regression-phenix-ai-visible" "debugOverview" '{"query":"phenix ai"}' \
   '.result.visible | length > 0' \
-  "newxos ai should return visible results (regression: flattened children were dropped)"
+  "phenix ai should return visible results (regression: flattened children were dropped)"
 
 # Specific regression: "zen priv" used to drop the private window child
 assert_jq "regression-zen-priv-visible" "debugOverview" '{"query":"zen priv"}' \

@@ -203,7 +203,7 @@ Singleton {
     }
 
     function isTestMode() {
-        return Quickshell.env("NEWSHELL_TEST_MODE") === "1";
+        return Quickshell.env("PHENIX_SHELL_TEST_MODE") === "1";
     }
 
     function activeScreenStates() {

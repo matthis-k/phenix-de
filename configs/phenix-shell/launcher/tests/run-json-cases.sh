@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CASES_DIR="${CASES_DIR:-"$SCRIPT_DIR/cases"}"
-NEWSHELL="${NEWSHELL_BIN:-newshell}"
+PHENIX_SHELL="${PHENIX_SHELL_BIN:-phenix-shell}"
 VERBOSE=false
 
 while [[ $# -gt 0 ]]; do
@@ -23,7 +23,7 @@ run_case() {
   local description="$3"
 
   local data
-  data=$($NEWSHELL ipc call query pipeline "$query" 2>/dev/null) || {
+  data=$($PHENIX_SHELL ipc call query pipeline "$query" 2>/dev/null) || {
     echo "FAIL: $description (query: $query) - IPC call failed"
     FAILED=$((FAILED + 1))
     return

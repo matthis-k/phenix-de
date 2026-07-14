@@ -718,7 +718,7 @@ Item {
             "db wifi", "dashboard wifi",
             "au", "aud", "audi", "audio",
             "en", "screen", "session",
-            "newxos", "ai", "vpn", "vpn ", "vpn ger", "vpn germany", "vpn of", "vpn no", "vpn nor", "vpn norway",
+            "phenix", "ai", "vpn", "vpn ", "vpn ger", "vpn germany", "vpn of", "vpn no", "vpn nor", "vpn norway",
             "ger", "alg", "bel", "swe", "germany", "algeria", "belgium", "sweden",
             "net", "network", "networking", "bluetooth",
             "notes", "/tmp"
@@ -958,7 +958,7 @@ Item {
                 "/tmp",
                 "a", "n", "w", "z",
                 "ai", "audio", "bluetooth", "documents", "downloads",
-                "files", "net", "network", "networking", "new window", "newxos", "newxos ai",
+                "files", "net", "network", "networking", "new window", "phenix", "phenix ai",
                 "pictures", "private", "rebuild", "session", "shutdown", "switch",
                 "vpn", "vpn ", "vpn g", "vpn ger", "vpn germany", "vpn algeria", "vpn fastest",
                 "wifi", "wifi ", "wifi on",

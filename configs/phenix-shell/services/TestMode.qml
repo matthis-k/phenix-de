@@ -6,10 +6,10 @@ import qs.services
 Singleton {
     readonly property var tracer: Logger.scope("service.testMode", { category: "service" })
     readonly property var prof: Profiler.scope("service.testMode", { category: "service" })
-    readonly property bool isActive: Quickshell.env("NEWSHELL_TEST_MODE") === "1"
+    readonly property bool isActive: Quickshell.env("PHENIX_SHELL_TEST_MODE") === "1"
 
     function fixturePath(key) {
-        return Quickshell.env("NEWSHELL_" + key + "_FIXTURE") || "";
+        return Quickshell.env("PHENIX_SHELL_" + key + "_FIXTURE") || "";
     }
 
     function loadFixtureSync(path) {

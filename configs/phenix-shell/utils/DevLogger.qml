@@ -2,7 +2,7 @@ import QtQuick
 import Quickshell
 
 /**
- * Logging helper that only outputs when NEWXOS_DEV environment is set.
+ * Logging helper that only outputs when PHENIX_DEV environment is set.
  * 
  * Usage:
  *   DevLogger.log("message")
@@ -13,7 +13,7 @@ import Quickshell
 QtObject {
     id: root
 
-    property bool isEnabled: Quickshell.env("NEWXOS_DEV") === "1"
+    property bool isEnabled: Quickshell.env("PHENIX_DEV") === "1"
 
     function log() {
         if (!isEnabled) return

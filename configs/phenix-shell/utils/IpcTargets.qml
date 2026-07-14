@@ -3,7 +3,7 @@ import QtQml
 import Quickshell
 
 Singleton {
-    readonly property string namespace: Quickshell.env("NEWSHELL_IPC_NAMESPACE")
+    readonly property string namespace: Quickshell.env("PHENIX_SHELL_IPC_NAMESPACE")
 
     function name(base) {
         const b = String(base || "");

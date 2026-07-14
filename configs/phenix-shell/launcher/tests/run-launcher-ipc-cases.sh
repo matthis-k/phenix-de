@@ -5,7 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/../../../.."
 
-IPC=(newshell ipc call query pipeline)
+IPC=(phenix-shell ipc call query pipeline)
 VERBOSE=false
 
 while [[ $# -gt 0 ]]; do
@@ -61,9 +61,9 @@ assert_jq "vpn" '.rows[0].title == "VPN" and .rows[0].placement == "promoted-chi
 assert_jq "wifi" '.rows[0].title == "Wi-Fi" and .rows[0].placement == "promoted-child" and (.rows[0].switchActions.toggle.id == "toggle") and ([.rows[] | select(.title == "Networking" and .ownVisible == true)] | length) == 0' 'Wi-Fi should promote as switch without visible Networking parent'
 assert_jq "bluetooth" '.rows[0].title == "Bluetooth" and .rows[0].placement == "promoted-child" and ([.rows[] | select(.title == "Networking" and .ownVisible == true)] | length) == 0' 'Bluetooth should promote without visible Networking parent'
 
-assert_jq "newxos" '.rows[0].title == "Newxos" and .rows[0].placement == "nested-group" and (.rows[0].recipes.activate // [] | tostring | contains("run-action") | not)' 'Newxos should be retained expanded group with safe enter'
-assert_jq "newxos " '.rows[0].title == "Newxos" and .rows[0].placement == "nested-group" and ((.rows[0].children // []) | length) > 0' 'newxos trailing space should browse Newxos children'
-assert_jq "ai" '.rows[0].title == "AI" and .rows[0].placement == "promoted-child" and ([.rows[] | select(.title == "Newxos" and .ownVisible == true)] | length) == 0 and (.rows[0].breadcrumbText | contains("Newxos"))' 'AI should promote with Newxos only as context'
+assert_jq "phenix" '.rows[0].title == "Phenix" and .rows[0].placement == "nested-group" and (.rows[0].recipes.activate // [] | tostring | contains("run-action") | not)' 'Phenix should be retained expanded group with safe enter'
+assert_jq "phenix " '.rows[0].title == "Phenix" and .rows[0].placement == "nested-group" and ((.rows[0].children // []) | length) > 0' 'phenix trailing space should browse Phenix children'
+assert_jq "ai" '.rows[0].title == "AI" and .rows[0].placement == "promoted-child" and ([.rows[] | select(.title == "Phenix" and .ownVisible == true)] | length) == 0 and (.rows[0].breadcrumbText | contains("Phenix"))' 'AI should promote with Phenix only as context'
 assert_jq "switch" '[.rows[] | select(.title == "Switch System" and (.placement == "promoted-child" or .placement == "flattened") and .semantics.activation.requiresConfirm == true)] | length == 1' 'Switch System should promote and require confirmation'
 assert_jq "rebuild" '[.rows[] | select(.title == "Switch System" and (.placement == "promoted-child" or .placement == "flattened") and .semantics.activation.requiresConfirm == true)] | length == 1' 'rebuild should resolve to Switch System and require confirmation'
 

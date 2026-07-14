@@ -163,9 +163,8 @@ in
 
     system.activationScripts.hyprland-nix-import = lib.mkIf cfg.enableRuntimeLuaImport (
       lib.stringAfter [ "etc" ] ''
-        mkdir -p /run/phenix/hypr /run/newxos/hypr
+        mkdir -p /run/phenix/hypr
         cp -f ${configuredPackage.passthru.nixImportLua} /run/phenix/hypr/nix-import.lua
-        ln -sfn /run/phenix/hypr/nix-import.lua /run/newxos/hypr/nix-import.lua
       ''
     );
   };

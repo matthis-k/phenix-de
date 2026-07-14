@@ -5,7 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/../../../.."
 
-IPC=(newshell ipc call query)
+IPC=(phenix-shell ipc call query)
 FAILED=0
 PASSED=0
 SKIPPED=0
@@ -53,7 +53,7 @@ echo ""
 # ============================================================
 echo "--- Repeated Query Stability ---"
 
-for query in "newxos" "wifi" "zen" "net" "vpn" "n" "a"; do
+for query in "phenix" "wifi" "zen" "net" "vpn" "n" "a"; do
   RESULT1=$(call_pipeline "$query") || { fail "$query-1" "IPC call failed"; continue; }
 
   # Brief pause between calls
@@ -99,16 +99,16 @@ fi
 # ============================================================
 echo "--- Trailing Space ---"
 
-WITH_SPACE=$(call_pipeline "newxos ") || { skip "trailing-space" "IPC call failed"; }
-WITHOUT_SPACE=$(call_pipeline "newxos") || { skip "no-trailing-space" "IPC call failed"; }
+WITH_SPACE=$(call_pipeline "phenix ") || { skip "trailing-space" "IPC call failed"; }
+WITHOUT_SPACE=$(call_pipeline "phenix") || { skip "no-trailing-space" "IPC call failed"; }
 
 # These should differ (trailing space changes evaluation intent)
 NS_NORM1=$(normalize_output "$WITH_SPACE")
 NS_NORM2=$(normalize_output "$WITHOUT_SPACE")
 if [[ "$NS_NORM1" != "$NS_NORM2" ]]; then
-  pass "trailing-space-changes-results: newxos vs newxos "
+  pass "trailing-space-changes-results: phenix vs phenix "
 else
-  skip "trailing-space-changes-results: newxos vs newxos " "Results identical — trailing space evaluation may not be active"
+  skip "trailing-space-changes-results: phenix vs phenix " "Results identical — trailing space evaluation may not be active"
 fi
 
 # ============================================================
