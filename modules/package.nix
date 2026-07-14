@@ -1,41 +1,32 @@
 { inputs, ... }:
-let
-  nixosModules = {
-    hyprland-base = import ./nixos/hyprland-base.nix;
-    nix-cache = import ./nixos/nix-cache.nix;
-  };
-
-  homeModules = {
-    hyprland = import ./home/hyprland.nix;
-  };
-in
 {
-  flake = {
-    inherit nixosModules homeModules;
-  };
-
   perSystem =
     { pkgs, system, ... }:
     let
-      phenix-shell = pkgs.writeShellScriptBin "phenix-shell" ''
-        exec ${pkgs.quickshell}/bin/quickshell --config ${toString ../configs/phenix-shell}/shell.qml "$@"
-      '';
-      waylandApps = {
-        wl-copy = "${pkgs.wl-clipboard}/bin/wl-copy";
-        wl-paste = "${pkgs.wl-clipboard}/bin/wl-paste";
-        grim = "${pkgs.grim}/bin/grim";
-        slurp = "${pkgs.slurp}/bin/slurp";
-        swappy = "${pkgs.swappy}/bin/swappy";
-        tesseract = "${pkgs.tesseract}/bin/tesseract";
+      phenixShell = pkgs.writeShellApplication {
+        name = "phenix-shell";
+        runtimeInputs = [ pkgs.quickshell ];
+        text = ''
+          exec quickshell --config ${../configs/phenix-shell}/shell.qml "$@"
+        '';
+      };
+
+      mkApp = program: description: {
+        type = "app";
+        inherit program;
+        meta.description = description;
       };
     in
     {
       packages = {
         hyprland = inputs.hyprland.packages.${system}.hyprland;
+        phenix-shell = phenixShell;
 
-        inherit phenix-shell;
-
-        inherit (pkgs) kitty;
+        inherit (pkgs)
+          fish
+          kitty
+          starship
+          ;
 
         wayland-utils = pkgs.symlinkJoin {
           name = "wayland-utils";
@@ -47,69 +38,17 @@ in
             tesseract
           ];
         };
-
-        inherit (pkgs) fish;
-
-        inherit (pkgs) starship;
       };
 
-      apps = pkgs.lib.mapAttrs (_name: program: {
-        type = "app";
-        inherit program;
-      }) waylandApps;
-
-      devShells.default = pkgs.mkShell {
-        name = "phenix-de-dev";
-        packages = with pkgs; [
-          nix
-          nixfmt
-          statix
-          deadnix
-          inputs.phenix-tend.packages.${system}.tend
-        ];
-        shellHook = ''
-          repo-hook() {
-            if command -v tend &>/dev/null; then
-              tend check --profile git-hook --staged "$@"
-            else
-              echo "tend not available — enter the root Phenix dev shell" >&2
-              return 1
-            fi
-          }
-          repo-pushgate() {
-            if command -v tend &>/dev/null; then
-              tend check --profile pre-push "$@"
-            else
-              echo "tend not available — enter the root Phenix dev shell" >&2
-              return 1
-            fi
-          }
-          repo-check() {
-            if command -v tend &>/dev/null; then
-              tend check --profile manual "$@"
-            else
-              echo "tend not available — enter the root Phenix dev shell" >&2
-              return 1
-            fi
-          }
-          repo-fix() {
-            if command -v tend &>/dev/null; then
-              tend check --profile fix "$@"
-            else
-              echo "tend not available — enter the root Phenix dev shell" >&2
-              return 1
-            fi
-          }
-          export -f repo-hook repo-pushgate repo-check repo-fix 2>/dev/null || true
-          echo "phenix-de dev shell"
-          echo "  tools: nix nixfmt statix deadnix"
-          if command -v tend &>/dev/null; then
-            echo "  repo-hook      -> tend check --profile git-hook --staged"
-            echo "  repo-pushgate  -> tend check --profile pre-push"
-            echo "  repo-check     -> tend check --profile manual"
-            echo "  repo-fix       -> tend check --profile fix"
-          fi
-        '';
+      apps = {
+        default = mkApp "${phenixShell}/bin/phenix-shell" "Launch the Phenix desktop shell";
+        phenix-shell = mkApp "${phenixShell}/bin/phenix-shell" "Launch the Phenix desktop shell";
+        wl-copy = mkApp "${pkgs.wl-clipboard}/bin/wl-copy" "Copy data to the Wayland clipboard";
+        wl-paste = mkApp "${pkgs.wl-clipboard}/bin/wl-paste" "Read data from the Wayland clipboard";
+        grim = mkApp "${pkgs.grim}/bin/grim" "Capture a Wayland screenshot";
+        slurp = mkApp "${pkgs.slurp}/bin/slurp" "Select a Wayland screen region";
+        swappy = mkApp "${pkgs.swappy}/bin/swappy" "Annotate and edit screenshots";
+        tesseract = mkApp "${pkgs.tesseract}/bin/tesseract" "Run optical character recognition";
       };
     };
 }

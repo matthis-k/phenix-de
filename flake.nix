@@ -9,12 +9,19 @@
   };
 
   inputs = {
-    flake-parts.url = "github:hercules-ci/flake-parts";
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+    };
     phenix-pins.url = "github:matthis-k/phenix-pins";
-    phenix-tend.url = "github:matthis-k/phenix-tend";
     nixpkgs.follows = "phenix-pins/nixpkgs";
+    phenix-tend = {
+      url = "github:matthis-k/phenix-tend";
+      inputs.phenix-pins.follows = "phenix-pins";
+    };
     hyprland = {
       url = "github:hyprwm/Hyprland";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
@@ -25,7 +32,11 @@
         "x86_64-linux"
         "aarch64-linux"
       ];
-      imports = [ ./modules/package.nix ];
+      imports = [
+        ./modules/outputs.nix
+        ./modules/package.nix
+        ./modules/development.nix
+      ];
       flake.flakeModules.default = import ./modules/overlay.nix;
     };
 }

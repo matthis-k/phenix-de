@@ -1,45 +1,33 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}:
-with lib;
+{ config, lib, ... }:
 let
-  cfg = config.phenix.de.nixCache;
+  cfg = config.phenix.de.hyprlandCache;
 in
 {
-  options.phenix.de.nixCache = {
-    enable = mkEnableOption "Phenix DE Nix binary cache configuration";
+  options.phenix.de.hyprlandCache = {
+    enable = lib.mkEnableOption "the Hyprland binary cache";
 
-    extraCaches = mkOption {
-      type = types.listOf types.str;
+    extraSubstituters = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
       default = [ ];
-      example = [ "https://some-cache.cachix.org" ];
-      description = "Additional binary cache URLs to trust.";
+      example = [ "https://example.cachix.org" ];
+      description = "Additional substituters enabled alongside the Hyprland cache.";
     };
 
-    extraPublicKeys = mkOption {
-      type = types.listOf types.str;
+    extraTrustedPublicKeys = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
       default = [ ];
-      example = [ "some-cache.cachix.org-1:xxxxxxxxxxxxx=" ];
-      description = "Public keys for additional caches.";
+      example = [ "example.cachix.org-1:xxxxxxxxxxxxx=" ];
+      description = "Trusted public keys for the additional substituters.";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     nix.settings = {
-      substituters = [
-        "https://hyprland.cachix.org"
-        "https://cache.nixos.org"
-      ]
-      ++ cfg.extraCaches;
-
-      trusted-public-keys = [
+      extra-substituters = [ "https://hyprland.cachix.org" ] ++ cfg.extraSubstituters;
+      extra-trusted-public-keys = [
         "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
-        "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       ]
-      ++ cfg.extraPublicKeys;
+      ++ cfg.extraTrustedPublicKeys;
     };
   };
 }
