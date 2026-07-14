@@ -10,6 +10,9 @@
           nixfmt
           statix
           deadnix
+          lua
+          kdePackages.qtdeclarative
+          quickshell
           inputs.phenix-tend.packages.${system}.tend
         ];
         shellHook = ''
