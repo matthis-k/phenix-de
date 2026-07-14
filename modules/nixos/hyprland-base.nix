@@ -118,22 +118,25 @@ in
     programs.hyprland = {
       enable = true;
       package = selectedPackage;
-      portalPackage = cfg.portalPackage;
+      inherit (cfg) portalPackage;
       withUWSM = true;
       xwayland.enable = true;
     };
 
     security.polkit.enable = true;
-    services.dbus.enable = true;
-    services.power-profiles-daemon.enable = true;
-    services.upower.enable = true;
-    services.xserver.enable = true;
 
-    services.displayManager = lib.mkIf cfg.displayManager.enable {
-      defaultSession = "hyprland-uwsm";
-      sddm = {
-        enable = true;
-        wayland.enable = true;
+    services = {
+      dbus.enable = true;
+      power-profiles-daemon.enable = true;
+      upower.enable = true;
+      xserver.enable = true;
+
+      displayManager = lib.mkIf cfg.displayManager.enable {
+        defaultSession = "hyprland-uwsm";
+        sddm = {
+          enable = true;
+          wayland.enable = true;
+        };
       };
     };
 
