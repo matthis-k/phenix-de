@@ -20,11 +20,5 @@ in
     stylix = theme.mkStylixConfig { inherit pkgs palette; } // {
       homeManagerIntegration.autoImport = false;
     };
-
-    home-manager.sharedModules = [
-      {
-        phenix.de.theme.palette = lib.mkDefault palette;
-      }
-    ];
   };
 }
