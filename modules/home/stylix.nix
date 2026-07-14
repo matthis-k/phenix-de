@@ -26,9 +26,12 @@ in
       gtk4.extraConfig.gtk-application-prefer-dark-theme = 1;
     };
 
-    stylix = theme.mkStylixConfig { inherit pkgs palette; };
-    stylix.targets.fish.enable = false;
-    stylix.targets.kitty.enable = false;
+    stylix = theme.mkStylixConfig { inherit pkgs palette; } // {
+      targets = {
+        fish.enable = false;
+        kitty.enable = false;
+      };
+    };
 
     home.pointerCursor = {
       enable = true;
