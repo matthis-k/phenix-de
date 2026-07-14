@@ -8,7 +8,8 @@
 let
   system = pkgs.stdenv.hostPlatform.system;
   shellPackage = inputs.self.packages.${system}.phenix-shell;
-  iconThemeName = if config.stylix.polarity == "light" then config.stylix.icons.light else config.stylix.icons.dark;
+  iconThemeName =
+    if config.stylix.polarity == "light" then config.stylix.icons.light else config.stylix.icons.dark;
   useDevConfig = config.phenix.devMode or false;
 in
 {

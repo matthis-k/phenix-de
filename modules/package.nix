@@ -94,15 +94,17 @@
       checks = {
         inherit configuredHyprland phenixShell kitty;
 
-        desktop-config = pkgs.runCommand "phenix-desktop-config-check" { nativeBuildInputs = [ pkgs.lua ]; } ''
-          cd ${../.}
-          test -f configs/hypr/hyprland.lua
-          test -f configs/hypr/keymap/tests.lua
-          test -f configs/phenix-shell/shell.qml
-          test -f configs/kitty/kitty.conf
-          lua configs/hypr/keymap/tests.lua
-          touch "$out"
-        '';
+        desktop-config =
+          pkgs.runCommand "phenix-desktop-config-check" { nativeBuildInputs = [ pkgs.lua ]; }
+            ''
+              cd ${../.}
+              test -f configs/hypr/hyprland.lua
+              test -f configs/hypr/keymap/tests.lua
+              test -f configs/phenix-shell/shell.qml
+              test -f configs/kitty/kitty.conf
+              lua configs/hypr/keymap/tests.lua
+              touch "$out"
+            '';
       };
     };
 }
