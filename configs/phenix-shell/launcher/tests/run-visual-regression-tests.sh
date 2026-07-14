@@ -5,7 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/../../../.."
 
-IPC=(newshell ipc call query)
+IPC=(phenix-shell ipc call query)
 FAILED=0
 PASSED=0
 SKIPPED=0
@@ -45,7 +45,7 @@ call_visual_state() {
 
 call_visual_apply() {
   # Applies a query then returns the visual state
-  # Query arg is passed as JSON string (newshell ipc expects JSON args)
+  # Query arg is passed as JSON string (phenix-shell ipc expects JSON args)
   "${IPC[@]}" "visualApply" "\"$1\"" 2>/dev/null || echo '{"error":"IPC call failed"}'
 }
 

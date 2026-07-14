@@ -6,7 +6,7 @@ let
   firefoxAddons = inputs.firefox-addons.packages.${system};
   nixSnowflake = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
   newTab = "https://duckduckgo.com/";
-  openWebUIOrigin = "https://matthisk-desktop-newxos.local";
+  openWebUIOrigin = "https://matthisk-desktop-phenix.local";
 in
 {
   imports = [ inputs.zen-flake.homeModules.beta ];

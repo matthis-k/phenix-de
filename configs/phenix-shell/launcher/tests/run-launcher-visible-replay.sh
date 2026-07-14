@@ -6,7 +6,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/../../../.."
 
-IPC=(newshell ipc call launcher)
+IPC=(phenix-shell ipc call launcher)
 
 CASE=animation-smoke
 STEP_MS=120
@@ -62,19 +62,19 @@ queries_for_case() {
         n ne net network networking network net \
         wifi 'wifi ' 'wifi on' 'wifi off' 'wifi toggle' \
         vpn 'vpn ' 'vpn ger' 'vpn germany' \
-        newxos 'newxos ' 'newxos ai' ai \
+        phenix 'phenix ' 'phenix ai' ai \
         zen 'zen ' 'zen p' 'zen pr' 'zen priv'
       ;;
     fast-typing)
       printf '%s\n' \
         z ze zen 'zen ' 'zen p' 'zen pr' 'zen pri' 'zen priv' \
-        n ne new newx newxo newxos 'newxos ' \
+        n ne new newx newxo phenix 'phenix ' \
         w wi wif wifi 'wifi ' 'wifi o' 'wifi on'
       ;;
     groups)
       printf '%s\n' \
         network net networking \
-        newxos 'newxos ' \
+        phenix 'phenix ' \
         ':' ':wifi' ':wifi ' ':db wifi' \
         '@apps' '@apps zen'
       ;;
@@ -152,7 +152,7 @@ echo ""
 
 if $LEAVE_OPEN; then
   echo "--leave-open: launcher stays open. Close manually or run:"
-  echo "  newshell ipc call launcher interactJson '{\"action\":\"close\"}'"
+  echo "  phenix-shell ipc call launcher interactJson '{\"action\":\"close\"}'"
   echo ""
 fi
 

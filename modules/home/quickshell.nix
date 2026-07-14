@@ -42,10 +42,7 @@ in
         "PATH=%h/.nix-profile/bin:/etc/profiles/per-user/%u/bin:/run/wrappers/bin:/run/current-system/sw/bin"
         "XDG_CURRENT_DESKTOP=Hyprland"
       ]
-      ++ lib.optionals useDevConfig [
-        "PHENIX_DEV=1"
-        "NEWXOS_DEV=1"
-      ];
+      ++ lib.optionals useDevConfig [ "PHENIX_DEV=1" ];
     };
   };
 }

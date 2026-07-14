@@ -357,7 +357,7 @@ PanelWindow {
                 mode: "activate",
                 closeRequested: false,
                 close: false,
-                result: { ok: true, dryRun: true, close: false, closeRequested: false, actionId: target ? (target.id || target.nodeId || "") : "", reason: "NEWSHELL_TEST_MODE" }
+                result: { ok: true, dryRun: true, close: false, closeRequested: false, actionId: target ? (target.id || target.nodeId || "") : "", reason: "PHENIX_SHELL_TEST_MODE" }
             };
         }
         const result = root.activateSelectedCore(!!shiftPressed);
@@ -365,7 +365,7 @@ PanelWindow {
             key: target.nodeId || target.id || "",
             title: target.title || "",
             timestamp: Date.now(),
-            testMode: Quickshell.env("NEWSHELL_TEST_MODE") === "1"
+            testMode: Quickshell.env("PHENIX_SHELL_TEST_MODE") === "1"
         } : null;
         root.applyActivationClose(result);
         return {
@@ -416,7 +416,7 @@ PanelWindow {
     // ── interaction state ────────────────────────────────
 
     function shouldDryRunAction(actionOrRecipe) {
-        if (Quickshell.env("NEWSHELL_TEST_MODE") !== "1")
+        if (Quickshell.env("PHENIX_SHELL_TEST_MODE") !== "1")
             return false;
         return actionOrRecipe && (
             actionOrRecipe.risk === "destructive" ||
@@ -454,9 +454,9 @@ PanelWindow {
             inTree: controller.navigation.isInTree(),
             currentTreeKey: controller.currentTreeKey || "",
             treeVisualRow: controller.treeVisualRow,
-            testMode: Quickshell.env("NEWSHELL_TEST_MODE") === "1",
-            testInstanceId: Quickshell.env("NEWSHELL_TEST_INSTANCE_ID") || "",
-            ipcNamespace: Quickshell.env("NEWSHELL_IPC_NAMESPACE") || ""
+            testMode: Quickshell.env("PHENIX_SHELL_TEST_MODE") === "1",
+            testInstanceId: Quickshell.env("PHENIX_SHELL_TEST_INSTANCE_ID") || "",
+            ipcNamespace: Quickshell.env("PHENIX_SHELL_IPC_NAMESPACE") || ""
         };
         if (!!includeVisual) {
             state.rows = root.logicalRows();

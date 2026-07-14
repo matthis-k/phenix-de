@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Semantic launcher interaction IPC test suite.
 # Supports three instance ownership modes:
-#   self-managed (default): script launches and kills newshell
-#   external:              newshell is started externally (e.g. by Hyprland)
-#                          requires NEWSHELL_TEST_INSTANCE_ID + NEWSHELL_IPC_NAMESPACE
+#   self-managed (default): script launches and kills phenix-shell
+#   external:              phenix-shell is started externally (e.g. by Hyprland)
+#                          requires PHENIX_SHELL_TEST_INSTANCE_ID + PHENIX_SHELL_IPC_NAMESPACE
 #   session:               test against the currently running user service
 #                          uses global IPC targets
 # Never touches global launcher/query targets in self-managed or external modes.
@@ -13,14 +13,14 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 cd "$REPO_ROOT"
 
-INSTANCE_MODE="${NEWSHELL_TEST_INSTANCE_MODE:-self-managed}"
-INSTANCE_ID="${NEWSHELL_TEST_INSTANCE_ID:-newshell-test-$$-${RANDOM}}"
-IPC_NS="${NEWSHELL_IPC_NAMESPACE:-$INSTANCE_ID}"
-LOG_DIR="${TMPDIR:-/tmp}/newxos-newshell-tests"
+INSTANCE_MODE="${PHENIX_SHELL_TEST_INSTANCE_MODE:-self-managed}"
+INSTANCE_ID="${PHENIX_SHELL_TEST_INSTANCE_ID:-phenix-shell-test-$$-${RANDOM}}"
+IPC_NS="${PHENIX_SHELL_IPC_NAMESPACE:-$INSTANCE_ID}"
+LOG_DIR="${TMPDIR:-/tmp}/phenix-phenix-shell-tests"
 LOG_FILE="$LOG_DIR/$INSTANCE_ID.log"
 mkdir -p "$LOG_DIR"
 
-NEWSHELL_BIN="${NEWSHELL_BIN:-newshell}"
+PHENIX_SHELL_BIN="${PHENIX_SHELL_BIN:-phenix-shell}"
 
 FAILED=0
 PASSED=0
@@ -34,20 +34,20 @@ while [[ $# -gt 0 ]]; do
 done
 
 cleanup() {
-  if [[ "${INSTANCE_MODE}" = "self-managed" ]] && [[ -n "${NEWSHELL_PID:-}" ]] && kill -0 "$NEWSHELL_PID" 2>/dev/null; then
-    kill "$NEWSHELL_PID" 2>/dev/null || true
-    wait "$NEWSHELL_PID" 2>/dev/null || true
+  if [[ "${INSTANCE_MODE}" = "self-managed" ]] && [[ -n "${PHENIX_SHELL_PID:-}" ]] && kill -0 "$PHENIX_SHELL_PID" 2>/dev/null; then
+    kill "$PHENIX_SHELL_PID" 2>/dev/null || true
+    wait "$PHENIX_SHELL_PID" 2>/dev/null || true
   fi
 }
 trap cleanup EXIT
 
 case "$INSTANCE_MODE" in
   self-managed)
-    export NEWSHELL_TEST_MODE=1
-    export NEWSHELL_TEST_INSTANCE_ID="$INSTANCE_ID"
-    export NEWSHELL_IPC_NAMESPACE="$IPC_NS"
-    export NEWXOS_DEV="${NEWXOS_DEV:-1}"
-    export NEWXOS_FLAKE="$REPO_ROOT"
+    export PHENIX_SHELL_TEST_MODE=1
+    export PHENIX_SHELL_TEST_INSTANCE_ID="$INSTANCE_ID"
+    export PHENIX_SHELL_IPC_NAMESPACE="$IPC_NS"
+    export PHENIX_DEV="${PHENIX_DEV:-1}"
+    export PHENIX_FLAKE="$REPO_ROOT"
 
     echo "=== Launcher Interaction IPC Test Suite ==="
     echo "Mode: self-managed"
@@ -56,48 +56,48 @@ case "$INSTANCE_MODE" in
     echo "Log: $LOG_FILE"
     echo ""
 
-    "$NEWSHELL_BIN" >"$LOG_FILE" 2>&1 &
-    NEWSHELL_PID=$!
+    "$PHENIX_SHELL_BIN" >"$LOG_FILE" 2>&1 &
+    PHENIX_SHELL_PID=$!
     ;;
   external)
-    if [ -z "$NEWSHELL_TEST_INSTANCE_ID" ]; then
-      echo "error: external mode requires NEWSHELL_TEST_INSTANCE_ID" >&2
+    if [ -z "$PHENIX_SHELL_TEST_INSTANCE_ID" ]; then
+      echo "error: external mode requires PHENIX_SHELL_TEST_INSTANCE_ID" >&2
       exit 2
     fi
-    if [ -z "$NEWSHELL_IPC_NAMESPACE" ]; then
-      echo "error: external mode requires NEWSHELL_IPC_NAMESPACE" >&2
+    if [ -z "$PHENIX_SHELL_IPC_NAMESPACE" ]; then
+      echo "error: external mode requires PHENIX_SHELL_IPC_NAMESPACE" >&2
       exit 2
     fi
     echo "=== Launcher Interaction IPC Test Suite ==="
-    echo "Mode: external (using externally managed newshell)"
+    echo "Mode: external (using externally managed phenix-shell)"
     echo "Instance ID: $INSTANCE_ID"
     echo "IPC namespace: $IPC_NS"
     echo ""
-    NEWSHELL_PID=""
+    PHENIX_SHELL_PID=""
     ;;
   session)
     echo "=== Launcher Interaction IPC Test Suite ==="
     echo "Mode: session (testing running service — not isolated, not CI-safe)"
-    if [ "''${NEWSHELL_TEST_ALLOW_ACTIONS:-0}" = "1" ]; then
-      echo "  NEWSHELL_TEST_ALLOW_ACTIONS=1: mutating tests will run (activateSelected, open/close/toggle, etc.)"
+    if [ "''${PHENIX_SHELL_TEST_ALLOW_ACTIONS:-0}" = "1" ]; then
+      echo "  PHENIX_SHELL_TEST_ALLOW_ACTIONS=1: mutating tests will run (activateSelected, open/close/toggle, etc.)"
     fi
     echo ""
-    NEWSHELL_PID=""
+    PHENIX_SHELL_PID=""
     ;;
   *)
-    echo "error: unknown NEWSHELL_TEST_INSTANCE_MODE=$INSTANCE_MODE" >&2
+    echo "error: unknown PHENIX_SHELL_TEST_INSTANCE_MODE=$INSTANCE_MODE" >&2
     exit 2
     ;;
 esac
 
 # IPC wrappers — use namespaced targets in self-managed/external, global in session
 if [ "$INSTANCE_MODE" = "session" ]; then
-  ipc_launcher() { "$NEWSHELL_BIN" ipc call launcher "$@"; }
-  ipc_query()    { "$NEWSHELL_BIN" ipc call query "$@"; }
-  IPC_TARGET_DESC="global launcher/query via $NEWSHELL_BIN"
+  ipc_launcher() { "$PHENIX_SHELL_BIN" ipc call launcher "$@"; }
+  ipc_query()    { "$PHENIX_SHELL_BIN" ipc call query "$@"; }
+  IPC_TARGET_DESC="global launcher/query via $PHENIX_SHELL_BIN"
 else
-  ipc_launcher() { "$NEWSHELL_BIN" ipc call "$IPC_NS.launcher" "$@"; }
-  ipc_query()    { "$NEWSHELL_BIN" ipc call "$IPC_NS.query" "$@"; }
+  ipc_launcher() { "$PHENIX_SHELL_BIN" ipc call "$IPC_NS.launcher" "$@"; }
+  ipc_query()    { "$PHENIX_SHELL_BIN" ipc call "$IPC_NS.query" "$@"; }
   IPC_TARGET_DESC="namespaced $IPC_NS.launcher/$IPC_NS.query"
 fi
 
@@ -111,13 +111,13 @@ wait_for_instance() {
     if echo "$data" | jq -e '.version == 1' >/dev/null 2>&1; then
       return 0
     fi
-    echo "error: no running newshell service found" >&2
+    echo "error: no running phenix-shell service found" >&2
     return 1
   fi
 
   for _ in $(seq 1 "$tries"); do
-    if [[ -n "${NEWSHELL_PID:-}" ]] && ! kill -0 "$NEWSHELL_PID" 2>/dev/null; then
-      echo "error: spawned newshell exited early" >&2
+    if [[ -n "${PHENIX_SHELL_PID:-}" ]] && ! kill -0 "$PHENIX_SHELL_PID" 2>/dev/null; then
+      echo "error: spawned phenix-shell exited early" >&2
       cat "$LOG_FILE" >&2 || true
       return 1
     fi
@@ -135,7 +135,7 @@ wait_for_instance() {
     sleep 0.05
   done
 
-  echo "error: test newshell instance did not become reachable via $IPC_TARGET_DESC" >&2
+  echo "error: test phenix-shell instance did not become reachable via $IPC_TARGET_DESC" >&2
   if [ "$INSTANCE_MODE" = "self-managed" ]; then
     cat "$LOG_FILE" >&2 || true
   fi
@@ -224,7 +224,7 @@ else
     "state envelope should have matching IPC namespace"
 fi
 
-if [ "$INSTANCE_MODE" = "session" ] && [ "''${NEWSHELL_TEST_ALLOW_ACTIONS:-0}" != "1" ]; then
+if [ "$INSTANCE_MODE" = "session" ] && [ "''${PHENIX_SHELL_TEST_ALLOW_ACTIONS:-0}" != "1" ]; then
   echo "(session mode: skipping open/close/toggle — would change running service launcher visibility)"
 else
   data=$(call_interact '{"action":"open"}')
@@ -292,7 +292,7 @@ assert_jq_data "move-selection-back" "$data" \
 echo ""
 echo "--- Expand/collapse ---"
 
-if [ "$INSTANCE_MODE" = "session" ] && [ "${NEWSHELL_TEST_ALLOW_ACTIONS:-0}" != "1" ]; then
+if [ "$INSTANCE_MODE" = "session" ] && [ "${PHENIX_SHELL_TEST_ALLOW_ACTIONS:-0}" != "1" ]; then
   echo "(session mode: skipping expand/collapse — may trigger backend actions)"
 else
   data=$(call_interact '{"action":"expandSelected"}')
@@ -309,7 +309,7 @@ fi
 echo ""
 echo "--- Risk/confirmation safety ---"
 
-if [ "$INSTANCE_MODE" = "session" ] && [ "${NEWSHELL_TEST_ALLOW_ACTIONS:-0}" != "1" ]; then
+if [ "$INSTANCE_MODE" = "session" ] && [ "${PHENIX_SHELL_TEST_ALLOW_ACTIONS:-0}" != "1" ]; then
   echo "(skipped in session mode — cannot safely execute destructive actions against running service)"
 else
   data=$(call_interact '{"action":"setQuery","query":"shutdown"}')
@@ -380,7 +380,7 @@ assert_jq_data "query-visual-state" "$data" \
 echo ""
 echo "--- Activation structured result ---"
 
-if [ "$INSTANCE_MODE" = "session" ] && [ "${NEWSHELL_TEST_ALLOW_ACTIONS:-0}" != "1" ]; then
+if [ "$INSTANCE_MODE" = "session" ] && [ "${PHENIX_SHELL_TEST_ALLOW_ACTIONS:-0}" != "1" ]; then
   echo "(skipped in session mode — activateSelected may execute real running-service actions)"
 else
   data=$(call_interact '{"action":"activateSelected"}')

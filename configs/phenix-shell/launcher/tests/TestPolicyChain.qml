@@ -1,4 +1,4 @@
-// PolicyChain + DecisionDecider invariants — loadable via newshell-runtime or dev shell
+// PolicyChain + DecisionDecider invariants — loadable via phenix-shell-runtime or dev shell
 // Verifies:
 // 1. Policy priority from spec affects normalization
 // 2. Trace preservation: evaluated entries not overwritten
@@ -7,7 +7,7 @@
 // 5. best-wins handles numeric vs structural decisions
 // 6. Trace aggregate exists after runDecisionPolicies path
 //
-// Usage: newshell ipc call debugPolicies '{"check":"policy-chain-invariants"}'
+// Usage: phenix-shell ipc call debugPolicies '{"check":"policy-chain-invariants"}'
 
 import QtQml
 import Quickshell

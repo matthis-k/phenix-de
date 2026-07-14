@@ -90,7 +90,7 @@ Singleton {
 
     // Everything below is preserved from the original implementation
 
-    property string _statsCacheDir: _localPath(StandardPaths.writableLocation(StandardPaths.CacheLocation)) + "/newshell/stats"
+    property string _statsCacheDir: _localPath(StandardPaths.writableLocation(StandardPaths.CacheLocation)) + "/phenix-shell/stats"
 
     function _localPath(location) {
         return String(location).replace(/^file:(\/\/)?/, "");

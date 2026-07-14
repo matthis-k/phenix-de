@@ -28,7 +28,7 @@
           config_dir=${shellConfig}
           quickshell_args=()
 
-          if [ "''${PHENIX_DEV:-''${NEWXOS_DEV:-0}}" = 1 ]; then
+          if [ "''${PHENIX_DEV:-0}" = 1 ]; then
             config_dir="''${PHENIX_DE_ROOT:-$HOME/phenix/repos/phenix-de}/configs/phenix-shell"
             quickshell_args+=(--verbose)
           fi

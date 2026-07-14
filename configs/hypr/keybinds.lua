@@ -14,7 +14,7 @@ end
 
 local binds = {
     bind({ "super" }, "return", hl.dsp.exec_cmd("kitty"), "Terminal"),
-    bind({ "super" }, "d", hl.dsp.exec_cmd("newshell ipc call launcher toggle"), "App launcher"),
+    bind({ "super" }, "d", hl.dsp.exec_cmd("phenix-shell ipc call launcher toggle"), "App launcher"),
     bind({ "ctrl", "alt" }, "w", hl.dsp.exec_cmd("zen-beta"), "Browser"),
     bind({}, "Print", hl.dsp.exec_cmd("screen-shot region"), "Screenshot region"),
     bind({ "super", "shift" }, "s", hl.dsp.exec_cmd("screen-shot region-direct"), "Screenshot region direct"),
@@ -98,7 +98,7 @@ keymap.map({
     keys = {
         super = {
             preset = "chainable",
-            tap = hl.dsp.exec_cmd("newshell ipc call launcher toggle"),
+            tap = hl.dsp.exec_cmd("phenix-shell ipc call launcher toggle"),
             description = "Launcher",
         },
     },

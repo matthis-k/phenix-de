@@ -2,7 +2,7 @@
 # Test suite for Logger IPC endpoints
 set -euo pipefail
 
-LOGGER_IPC=(newshell ipc call logger)
+LOGGER_IPC=(phenix-shell ipc call logger)
 VERBOSE=false
 
 while [[ $# -gt 0 ]]; do
