@@ -1,12 +1,20 @@
 { inputs, ... }:
+let
+  hyprlandModule = import ./nixos/hyprland-base.nix;
+  hyprlandHomeModule = import ./home/hyprland.nix;
+in
 {
   flake = {
     nixosModules = {
-      hyprland-base = import ./nixos/hyprland-base.nix;
-      nix-cache = import ./nixos/nix-cache.nix;
+      default = hyprlandModule;
+      hyprland = hyprlandModule;
+      hyprlandCache = import ./nixos/nix-cache.nix;
     };
 
-    homeModules.hyprland = import ./home/hyprland.nix;
+    homeModules = {
+      default = hyprlandHomeModule;
+      hyprland = hyprlandHomeModule;
+    };
 
     overlays.default = final: prev: {
       phenix = (prev.phenix or { }) // {
