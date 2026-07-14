@@ -11,13 +11,10 @@
         '';
       };
 
-      waylandApps = {
-        wl-copy = "${pkgs.wl-clipboard}/bin/wl-copy";
-        wl-paste = "${pkgs.wl-clipboard}/bin/wl-paste";
-        grim = "${pkgs.grim}/bin/grim";
-        slurp = "${pkgs.slurp}/bin/slurp";
-        swappy = "${pkgs.swappy}/bin/swappy";
-        tesseract = "${pkgs.tesseract}/bin/tesseract";
+      mkApp = program: description: {
+        type = "app";
+        inherit program;
+        meta.description = description;
       };
     in
     {
@@ -43,9 +40,15 @@
         };
       };
 
-      apps = pkgs.lib.mapAttrs (_: program: {
-        type = "app";
-        inherit program;
-      }) waylandApps;
+      apps = {
+        default = mkApp "${phenixShell}/bin/phenix-shell" "Launch the Phenix desktop shell";
+        phenix-shell = mkApp "${phenixShell}/bin/phenix-shell" "Launch the Phenix desktop shell";
+        wl-copy = mkApp "${pkgs.wl-clipboard}/bin/wl-copy" "Copy data to the Wayland clipboard";
+        wl-paste = mkApp "${pkgs.wl-clipboard}/bin/wl-paste" "Read data from the Wayland clipboard";
+        grim = mkApp "${pkgs.grim}/bin/grim" "Capture a Wayland screenshot";
+        slurp = mkApp "${pkgs.slurp}/bin/slurp" "Select a Wayland screen region";
+        swappy = mkApp "${pkgs.swappy}/bin/swappy" "Annotate and edit screenshots";
+        tesseract = mkApp "${pkgs.tesseract}/bin/tesseract" "Run optical character recognition";
+      };
     };
 }
