@@ -148,7 +148,7 @@ in
     fonts.packages = with pkgs; [
       nerd-fonts.hack
       noto-fonts
-      noto-fonts-emoji
+      noto-fonts-color-emoji
     ];
 
     systemd.user.services.hyprpolkitagent = {
