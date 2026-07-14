@@ -1,0 +1,8 @@
+NewxosActions 1.0 NewxosActions.qml
+SessionActions 1.0 SessionActions.qml
+ScreenshotActions 1.0 ScreenshotActions.qml
+DashboardActions 1.0 DashboardActions.qml
+NetworkActions 1.0 NetworkActions.qml
+AudioActions 1.0 AudioActions.qml
+PowerActions 1.0 PowerActions.qml
+NotificationActions 1.0 NotificationActions.qml
