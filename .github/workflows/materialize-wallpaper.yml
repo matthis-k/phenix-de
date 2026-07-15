@@ -12,6 +12,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: materialize-wallpaper-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   materialize:
     if: github.actor != 'github-actions[bot]'
@@ -24,7 +28,21 @@ jobs:
       - name: Decode wallpaper
         shell: bash
         run: |
-          cat .wallpaper-upload/part-* \
+          cat \
+            .wallpaper-upload/fix00-00 \
+            .wallpaper-upload/fix00-01 \
+            .wallpaper-upload/fix00-02 \
+            .wallpaper-upload/fix00-03 \
+            .wallpaper-upload/part-01 \
+            .wallpaper-upload/part-02 \
+            .wallpaper-upload/fix03-00 \
+            .wallpaper-upload/fix03-01 \
+            .wallpaper-upload/part-04 \
+            .wallpaper-upload/fix05-00 \
+            .wallpaper-upload/fix05-01 \
+            .wallpaper-upload/part-06 \
+            .wallpaper-upload/part-07 \
+            .wallpaper-upload/part-08 \
             | base64 --decode \
             > configs/phenix-shell/assets/wallpaper.jpg
           echo "656d879930389818ba47a6968f2e15d905f87828b2774637a9d6f95c269f1742  configs/phenix-shell/assets/wallpaper.jpg" \
