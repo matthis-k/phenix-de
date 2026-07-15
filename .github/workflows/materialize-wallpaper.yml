@@ -1,0 +1,39 @@
+name: Materialize wallpaper
+
+on:
+  push:
+    branches:
+      - feat/default-phenix-wallpaper
+    paths:
+      - ".wallpaper-upload/**"
+      - ".github/workflows/materialize-wallpaper.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Decode wallpaper
+        shell: bash
+        run: |
+          cat .wallpaper-upload/part-* \
+            | base64 --decode \
+            > configs/phenix-shell/assets/wallpaper.jpg
+          echo "656d879930389818ba47a6968f2e15d905f87828b2774637a9d6f95c269f1742  configs/phenix-shell/assets/wallpaper.jpg" \
+            | sha256sum --check -
+
+      - name: Commit wallpaper
+        shell: bash
+        run: |
+          rm -rf .wallpaper-upload
+          rm .github/workflows/materialize-wallpaper.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: set default Phenix wallpaper"
+          git push
