@@ -1,0 +1,60 @@
+name: Materialize wallpaper
+
+on:
+  pull_request:
+  push:
+    branches:
+      - feat/default-phenix-wallpaper
+    paths:
+      - ".wallpaper-upload/**"
+      - ".github/workflows/materialize-wallpaper.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: materialize-wallpaper-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+
+      - name: Decode wallpaper
+        shell: bash
+        run: |
+          cat \
+            .wallpaper-upload/fix00-00 \
+            .wallpaper-upload/fix00-01 \
+            .wallpaper-upload/fix00-02 \
+            .wallpaper-upload/fix00-03 \
+            .wallpaper-upload/part-01 \
+            .wallpaper-upload/part-02 \
+            .wallpaper-upload/fix03-00 \
+            .wallpaper-upload/fix03-01-a \
+            .wallpaper-upload/fix03-01-b \
+            .wallpaper-upload/part-04 \
+            .wallpaper-upload/fix05-00 \
+            .wallpaper-upload/fix05-01 \
+            .wallpaper-upload/part-06 \
+            .wallpaper-upload/part-07 \
+            .wallpaper-upload/part-08 \
+            | base64 --decode \
+            > configs/phenix-shell/assets/wallpaper.jpg
+          echo "656d879930389818ba47a6968f2e15d905f87828b2774637a9d6f95c269f1742  configs/phenix-shell/assets/wallpaper.jpg" \
+            | sha256sum --check -
+
+      - name: Commit wallpaper
+        shell: bash
+        run: |
+          rm -rf .wallpaper-upload
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: set default Phenix wallpaper"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}"
