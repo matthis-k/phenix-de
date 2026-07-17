@@ -899,7 +899,7 @@ PanelWindow {
             anchors.top: parent.top
             anchors.margins: Config.spacing.sm
             height: implicitHeight
-            spacing: resultsFrame.visible ? Config.spacing.sm : 0
+            spacing: (feedback.visible || resultsFrame.visible) ? Config.spacing.sm : 0
 
             Animations.LayoutBehavior on spacing {
             }
@@ -1059,6 +1059,15 @@ PanelWindow {
 
                     return map[String(event.key)] || lower;
                 }
+            }
+
+            LauncherFeedback {
+                id: feedback
+                Layout.fillWidth: true
+                query: controller.query || ""
+                loading: controller.loading || (controller.query !== "" && controller.resultsQuery !== controller.query)
+                settled: controller.resultsQuery === controller.query
+                resultCount: controller.results ? controller.results.length : 0
             }
 
             Item {
