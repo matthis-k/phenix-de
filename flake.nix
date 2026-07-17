@@ -17,11 +17,6 @@
     nixpkgs.follows = "phenix-pins/nixpkgs";
     home-manager.follows = "phenix-pins/home-manager";
 
-    phenix-tend = {
-      url = "github:matthis-k/phenix-tend";
-      inputs.phenix-pins.follows = "phenix-pins";
-    };
-
     hyprland = {
       url = "github:hyprwm/Hyprland";
       inputs.nixpkgs.follows = "nixpkgs";
