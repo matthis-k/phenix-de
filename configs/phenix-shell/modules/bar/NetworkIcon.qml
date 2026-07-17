@@ -5,6 +5,7 @@ StatusIcon {
 
     readonly property var connectedNetwork: NetworkService.connectedNetwork
 
+    label: VpnService.connected ? qsTr("Network and VPN") : qsTr("Network")
     iconName: {
         if (NetworkService.hasWiredConnection)
             return "network-wired-symbolic";
