@@ -23,7 +23,11 @@
 
       phenixShell = pkgs.writeShellApplication {
         name = "phenix-shell";
-        runtimeInputs = [ pkgs.quickshell ];
+        runtimeInputs = with pkgs; [
+          quickshell
+          systemd
+          uwsm
+        ];
         text = ''
           config_dir=${shellConfig}
           quickshell_args=()
