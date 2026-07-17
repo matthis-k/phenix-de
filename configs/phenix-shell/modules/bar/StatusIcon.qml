@@ -7,6 +7,7 @@ ActionButton {
     id: root
     property var screenState
     property string tabName: ""
+    property string label: ""
     property string iconName: "dialog-warning"
     property string fallbackIconName: "dialog-warning"
     property color iconColor: Config.styling.text0
@@ -25,6 +26,10 @@ ActionButton {
 
     implicitWidth: parent ? parent.height : 24
     implicitHeight: parent ? parent.height : 24
+
+    accessibleName: root.label || root.tabName
+    accessibleDescription: root.label === "" ? "" : qsTr("Open %1").arg(root.label)
+    toolTipText: root.label
 
     active: screenState ? screenState.isIndicatorActive(tabName) : false
     scaleIcon: true

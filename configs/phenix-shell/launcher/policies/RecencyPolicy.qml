@@ -8,11 +8,27 @@ QtObject {
     readonly property var prof: Profiler.scope("policy.recency", { category: "policy" })
 
     function policyMatch(node, query, ctx, specArgs) {
-        if (query.isEmpty || !isFinite(node.lastUsedDaysAgo))
+        const metrics = LauncherUsage.metricsFor(node);
+        if (!isFinite(metrics.daysAgo) || metrics.daysAgo >= 9999)
             return [];
-        var rec = Evidence.recencyScore(node.lastUsedDaysAgo);
-        var result = [{ strategy: "recency", field: "recency", fieldText: String(node.lastUsedDaysAgo), nodeId: node.id, kind: "recency", score: rec, weight: 0.08, effective: rec * 0.08, ranges: [], reason: "last used" }];
-        tracer.trace("policyMatch", function() { return { nodeId: node?.id, lastUsedDaysAgo: node.lastUsedDaysAgo, recencyScore: rec }; });
+
+        const recency = Evidence.recencyScore(metrics.daysAgo);
+        const weight = query.isEmpty ? 0.52 : 0.08;
+        const result = [{
+            strategy: "recency",
+            field: "recency",
+            fieldText: String(metrics.daysAgo),
+            nodeId: node.id,
+            kind: "recency",
+            score: recency,
+            weight: weight,
+            effective: recency * weight,
+            ranges: [],
+            reason: query.isEmpty ? "recently used" : "last used"
+        }];
+        tracer.trace("policyMatch", function() {
+            return { nodeId: node?.id, lastUsedDaysAgo: metrics.daysAgo, recencyScore: recency, weight: weight };
+        });
         return result;
     }
 

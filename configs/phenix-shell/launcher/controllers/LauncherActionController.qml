@@ -42,6 +42,12 @@ Item {
         controlHandler: controlHandler
     }
 
+    function recordSuccessfulAction(target, result) {
+        if (!target || !result || result.success === false)
+            return;
+        LauncherUsage.record(target);
+    }
+
     function _activateSelected(shiftPressed) {
         tracer.info("activateSelected", function() { return { shiftPressed: shiftPressed, inTree: root.controller ? root.controller.isInTree() : false }; });
         if (root.controller && root.controller.isInTree()) {
@@ -114,6 +120,7 @@ Item {
         var confirmationTarget = Object.assign({}, result, { risk: action.risk || result.risk, dangerous: !!(action.dangerous || result.dangerous) });
         return root.activateWithConfirmation(confirmationTarget, function() {
             var recipeResult = ActionRegistry.executeRecipe([["run-action", { action: action.id || "default" }]], result, root.controller);
+            root.recordSuccessfulAction(result, recipeResult);
             return !!recipeResult.success;
         });
     }
@@ -127,6 +134,7 @@ Item {
         }
         var recipe = RecipeResolver.effectiveRecipe(target, slotName || "activate", {});
         var recipeResult = ActionRegistry.executeRecipe(recipe, target, root.controller);
+        root.recordSuccessfulAction(target, recipeResult);
         tracer.trace("executeRecipeSlot", function() { return { slot: slotName, targetId: target.id || target.nodeId || "", close: !!recipeResult.close, success: recipeResult.success }; });
         return { close: !!recipeResult.close, success: recipeResult.success };
     }
@@ -167,7 +175,9 @@ Item {
             return { close: false };
         }
         tracer.trace("runRecipe", function() { return { recipeLen: recipe.length, targetId: target.id || target.nodeId || "" }; });
-        return ActionRegistry.executeRecipe(recipe, target, root.controller);
+        var result = ActionRegistry.executeRecipe(recipe, target, root.controller);
+        root.recordSuccessfulAction(target, result);
+        return result;
     }
 
     function runRecipeSlot(slotName) {

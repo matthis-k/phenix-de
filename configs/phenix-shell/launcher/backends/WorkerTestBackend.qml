@@ -6,6 +6,7 @@ ScriptWorkerBackendBase {
     readonly property var tracer: Logger.scope("backend.workerTest", { category: "backend" })
     readonly property var prof: Profiler.scope("backend.workerTest", { category: "backend" })
 
+    enabled: TestMode.isActive
     category: qsTr("Worker Test")
 
     backendId: "worker-test"
@@ -15,13 +16,13 @@ ScriptWorkerBackendBase {
     helpIcon: "applications-engineering"
     priority: 85
     maxResults: 12
-    routes: [
+    routes: TestMode.isActive ? [
         { prefix: "@worker", priority: 90, combine: "exclusive", afterEmpty: "fallthrough" },
         { priority: 0, combine: "shared", afterEmpty: "stop" }
-    ]
+    ] : []
 
     function shouldParticipate(rawQuery, directive, query) {
-        return !!(directive && directive.active && directive.prefix === "@worker")
+        return TestMode.isActive && !!(directive && directive.active && directive.prefix === "@worker")
     }
 
     function workerDataset() {

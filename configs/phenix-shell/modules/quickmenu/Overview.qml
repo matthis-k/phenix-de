@@ -8,75 +8,30 @@ import qs.components
 DashboardPage {
     id: root
 
-    title: "Overview"
+    title: qsTr("Quick Settings")
 
     property var screenState: null
 
     readonly property string connectionSummary: {
         if (NetworkService.hasWiredConnection)
-            return `${NetworkService.wiredDeviceName} connected`;
+            return qsTr("%1 connected").arg(NetworkService.wiredDeviceName);
         if (NetworkService.connectedSsid)
             return NetworkService.connectedSsid;
-        return NetworkService.wifiEnabled ? "No active network" : "Wi-Fi disabled";
+        return NetworkService.wifiEnabled ? qsTr("No active network") : qsTr("Wi-Fi disabled");
     }
 
     readonly property string bluetoothSummary: {
         if (!BluetoothService.available)
-            return "No adapter available";
+            return qsTr("No adapter available");
         if (!BluetoothService.enabled)
-            return "Bluetooth disabled";
+            return qsTr("Bluetooth disabled");
         const count = BluetoothService.connectedCount;
-        return count > 0 ? `${count} connected` : "Ready to connect";
+        return count > 0 ? qsTr("%1 connected").arg(count) : qsTr("Ready to connect");
     }
 
     DashboardSection {
         Layout.fillWidth: true
-        title: "Session"
-
-        SessionActionsGrid {
-            Layout.fillWidth: true
-        }
-    }
-
-    DashboardSection {
-        Layout.fillWidth: true
-        title: "Connectivity"
-
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: Config.spacing.xs
-
-            DashboardSwitchRow {
-                Layout.fillWidth: true
-                label: "Wi-Fi"
-                subtitle: root.connectionSummary
-                iconName: NetworkService.wifiEnabled ? "network-wireless-symbolic" : "network-wireless-offline-symbolic"
-                iconColor: NetworkService.wifiEnabled ? Config.styling.primaryAccent : Config.styling.text1
-                enabled: NetworkService.wifiHardwareEnabled
-                checked: NetworkService.wifiEnabled
-                onToggled: function (checked) {
-                    NetworkService.setWifiEnabled(checked);
-                }
-            }
-
-            DashboardSwitchRow {
-                Layout.fillWidth: true
-                label: "Bluetooth"
-                subtitle: root.bluetoothSummary
-                iconName: BluetoothService.enabled ? "bluetooth-symbolic" : "bluetooth-disabled-symbolic"
-                iconColor: BluetoothService.enabled ? Config.styling.bluetooth : Config.styling.text1
-                enabled: BluetoothService.available
-                checked: BluetoothService.enabled
-                onToggled: function (checked) {
-                    BluetoothService.setEnabled(checked);
-                }
-            }
-        }
-    }
-
-    DashboardSection {
-        Layout.fillWidth: true
-        title: "Audio"
+        title: qsTr("Audio")
 
         AudioDeviceCard {
             title: AudioService.outputDeviceName
@@ -111,25 +66,65 @@ DashboardPage {
 
     DashboardSection {
         Layout.fillWidth: true
-        title: "Brightness"
+        title: qsTr("Brightness")
         visible: Brightness.available
 
         LabeledSlider {
             Layout.fillWidth: true
-            label: "Display"
+            label: qsTr("Display")
             iconName: Brightness.iconName
             value: Brightness.percent
             from: 0
             to: 100
-            valueText: Brightness.available ? `${Brightness.percent}%` : "Unavailable"
+            valueText: Brightness.available ? `${Brightness.percent}%` : qsTr("Unavailable")
             enabled: Brightness.available
             onValueCommitted: val => Brightness.setPercent(val)
         }
     }
 
+    NavigableSectionHeader {
+        Layout.fillWidth: true
+        title: qsTr("Network")
+        screenState: root.screenState
+        targetTab: "wifi"
+
+        DashboardSwitchRow {
+            Layout.fillWidth: true
+            label: qsTr("Wi-Fi")
+            subtitle: root.connectionSummary
+            iconName: NetworkService.wifiEnabled ? "network-wireless-symbolic" : "network-wireless-offline-symbolic"
+            iconColor: NetworkService.wifiEnabled ? Config.styling.primaryAccent : Config.styling.text1
+            enabled: NetworkService.wifiHardwareEnabled
+            checked: NetworkService.wifiEnabled
+            onToggled: function (checked) {
+                NetworkService.setWifiEnabled(checked);
+            }
+        }
+    }
+
+    NavigableSectionHeader {
+        Layout.fillWidth: true
+        title: qsTr("Bluetooth")
+        screenState: root.screenState
+        targetTab: "bluetooth"
+
+        DashboardSwitchRow {
+            Layout.fillWidth: true
+            label: qsTr("Bluetooth")
+            subtitle: root.bluetoothSummary
+            iconName: BluetoothService.enabled ? "bluetooth-symbolic" : "bluetooth-disabled-symbolic"
+            iconColor: BluetoothService.enabled ? Config.styling.bluetooth : Config.styling.text1
+            enabled: BluetoothService.available
+            checked: BluetoothService.enabled
+            onToggled: function (checked) {
+                BluetoothService.setEnabled(checked);
+            }
+        }
+    }
+
     DashboardSection {
         Layout.fillWidth: true
-        title: "Battery and power"
+        title: qsTr("Battery and power")
         visible: PowerService.hasBattery
 
         Battery {
@@ -141,28 +136,30 @@ DashboardPage {
 
     NavigableSectionHeader {
         Layout.fillWidth: true
-        title: "Notifications"
+        title: qsTr("Notifications")
         screenState: root.screenState
         targetTab: "notifications"
 
         InfoRow {
             Layout.fillWidth: true
             iconName: "bell-symbolic"
-            label: "Status"
-            value: NotificationCenter.doNotDisturbEnabled ? "Do Not Disturb" : `${NotificationCenter.count} unread`
+            label: qsTr("Status")
+            value: NotificationCenter.doNotDisturbEnabled
+                ? qsTr("Do Not Disturb")
+                : qsTr("%1 unread").arg(NotificationCenter.count)
         }
     }
 
     NavigableSectionHeader {
         Layout.fillWidth: true
-        title: "System stats"
+        title: qsTr("System statistics")
         screenState: root.screenState
         targetTab: "stats"
 
         InfoRow {
             Layout.fillWidth: true
             iconName: "processor-symbolic"
-            label: "CPU"
+            label: qsTr("CPU")
             value: `${Math.round(Stats.cpuPercent)}%`
             valueColor: Stats.cpuPercent >= 90 ? Config.styling.critical : (Stats.cpuPercent >= 70 ? Config.styling.warning : Config.styling.text0)
         }
@@ -170,9 +167,17 @@ DashboardPage {
         InfoRow {
             Layout.fillWidth: true
             iconName: "computer-symbolic"
-            label: "Memory"
+            label: qsTr("Memory")
             value: `${Stats.memoryUsedMiB}/${Stats.memoryTotalMiB} MiB`
         }
     }
 
+    DashboardSection {
+        Layout.fillWidth: true
+        title: qsTr("Session")
+
+        SessionActionsGrid {
+            Layout.fillWidth: true
+        }
+    }
 }

@@ -17,13 +17,35 @@ Item {
 
     implicitWidth: row.implicitWidth
     implicitHeight: Math.max(44, row.implicitHeight + Config.spacing.xs * 2)
+    activeFocusOnTab: enabled
+
+    Accessible.role: Accessible.CheckBox
+    Accessible.name: root.label
+    Accessible.description: root.subtitle
+    Accessible.checked: root.checked
+
+    function requestToggle() {
+        if (!root.enabled)
+            return;
+        root.checked = !root.checked;
+        root.toggled(root.checked);
+    }
+
+    Keys.onSpacePressed: root.requestToggle()
+    Keys.onReturnPressed: root.requestToggle()
+    Keys.onEnterPressed: root.requestToggle()
 
     Rectangle {
         anchors.fill: parent
         color: rowMouse.containsMouse && root.enabled ? Config.styling.bg4 : Config.styling.bg3
+        border.color: root.activeFocus ? Config.styling.primaryAccent : "transparent"
+        border.width: root.activeFocus ? 1 : 0
         radius: Config.styling.radius
 
         Animations.StateColorBehavior on color {
+        }
+
+        Animations.StateColorBehavior on border.color {
         }
     }
 
@@ -35,8 +57,8 @@ Item {
         hoverEnabled: root.enabled
         cursorShape: Qt.PointingHandCursor
         onClicked: {
-            root.checked = !root.checked;
-            root.toggled(root.checked);
+            root.forceActiveFocus();
+            root.requestToggle();
         }
     }
 

@@ -2,6 +2,7 @@ import qs.services
 
 StatusIcon {
     id: root
+    label: qsTr("Notifications")
     iconName: NotificationCenter.doNotDisturbEnabled ? "bell-disabled-symbolic" : "bell-symbolic"
     fallbackIconName: NotificationCenter.doNotDisturbEnabled ? "notifications-disabled-symbolic" : "preferences-system-notifications-symbolic"
     iconColor: {

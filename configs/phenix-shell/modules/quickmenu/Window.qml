@@ -49,6 +49,37 @@ PanelWindow {
             selection.setCurrentIndex(targetIndex);
     }
 
+    function componentForPage(pageId) {
+        switch (String(pageId || "")) {
+        case "overview":
+            return overviewPageComponent;
+        case "audio":
+            return audioPageComponent;
+        case "notifications":
+            return notificationsPageComponent;
+        case "bluetooth":
+            return bluetoothPageComponent;
+        case "wifi":
+            return networkPageComponent;
+        case "energy":
+            return energyPageComponent;
+        case "stats":
+            return statsPageComponent;
+        default:
+            return null;
+        }
+    }
+
+    function configureLoadedPage(loader) {
+        if (!loader || !loader.item)
+            return;
+
+        if (loader.item.screenState !== undefined)
+            loader.item.screenState = root.shellScreenState;
+        if (loader.item.tabSwipeTarget !== undefined)
+            loader.item.tabSwipeTarget = root;
+    }
+
     anchors {
         top: true
         right: true
@@ -78,6 +109,41 @@ PanelWindow {
     }
     readonly property real backdropOpacity: root.panelProgress * 0.22
 
+    Component {
+        id: overviewPageComponent
+        Overview {}
+    }
+
+    Component {
+        id: audioPageComponent
+        Audio {}
+    }
+
+    Component {
+        id: notificationsPageComponent
+        Notifications {}
+    }
+
+    Component {
+        id: bluetoothPageComponent
+        Bluetooth {}
+    }
+
+    Component {
+        id: networkPageComponent
+        Network {}
+    }
+
+    Component {
+        id: energyPageComponent
+        Energy {}
+    }
+
+    Component {
+        id: statsPageComponent
+        SystemStats {}
+    }
+
     MouseArea {
         width: panelCard.x
         anchors {
@@ -87,7 +153,7 @@ PanelWindow {
         }
         enabled: root.visible && !!root.shellScreenState && root.shellScreenState.dashboardPhase === "open"
         onClicked: {
-            if (!(selection.currentItem?.popupOpen))
+            if (!(selection.currentItem?.item?.popupOpen || selection.currentItem?.popupOpen))
                 root.shellScreenState?.closeDashboard();
         }
     }
@@ -151,28 +217,17 @@ PanelWindow {
                     onWheel: event => root.queueTabSwipeFromWheelEvent(event)
                 }
 
-                // Page order must match ShellState.dashboardTabs and bar dashboard icon order.
-                Overview {
-                    screenState: root.shellScreenState
-                    tabSwipeTarget: root
-                }
-                Audio {
-                    tabSwipeTarget: root
-                }
-                Notifications {
-                    tabSwipeTarget: root
-                }
-                Bluetooth {
-                    tabSwipeTarget: root
-                }
-                Network {
-                    tabSwipeTarget: root
-                }
-                Energy {
-                    tabSwipeTarget: root
-                }
-                SystemStats {
-                    tabSwipeTarget: root
+                Repeater {
+                    model: root.shellScreenState ? root.shellScreenState.dashboardTabs : []
+
+                    Loader {
+                        id: pageLoader
+                        required property string modelData
+                        readonly property string pageId: modelData
+
+                        sourceComponent: root.componentForPage(pageId)
+                        onLoaded: root.configureLoadedPage(pageLoader)
+                    }
                 }
             }
         }

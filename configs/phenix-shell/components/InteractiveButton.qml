@@ -7,6 +7,9 @@ Button {
 
     property url iconSource: ""
     property string iconName: ""
+    property string accessibleName: ""
+    property string accessibleDescription: ""
+    property string toolTipText: ""
 
     property Item scaleTarget: root.contentItem
     property Item iconScaleTarget: null
@@ -24,6 +27,14 @@ Button {
     focusPolicy: Qt.TabFocus | Qt.ClickFocus
     background: null
     contentItem: defaultContent
+
+    Accessible.role: Accessible.Button
+    Accessible.name: root.accessibleName || root.text
+    Accessible.description: root.accessibleDescription
+
+    ToolTip.visible: root.hovered && root.toolTipText !== ""
+    ToolTip.text: root.toolTipText
+    ToolTip.delay: 500
 
     function applyScale(target, targetScale) {
         if (!target)

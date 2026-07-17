@@ -21,10 +21,69 @@
         luaVariables.monitors = [ { output = "auto"; } ];
       };
 
+      waylandTools = import ./lib/wayland-tools.nix { inherit pkgs; };
+
+      shellRuntimeInputs =
+        (with pkgs; [
+          bash
+          brightnessctl
+          coreutils
+          fd
+          gawk
+          gnugrep
+          gnused
+          networkmanager
+          quickshell
+          systemd
+          util-linux
+          uwsm
+          wl-clipboard
+          xdg-utils
+        ])
+        ++ waylandTools.packages;
+
+      shellRuntimeCommands = [
+        "annotate"
+        "awk"
+        "brightnessctl"
+        "cat"
+        "df"
+        "fd"
+        "grimblast"
+        "head"
+        "loginctl"
+        "mkdir"
+        "nmcli"
+        "notify-send"
+        "printf"
+        "quickshell"
+        "read-image"
+        "setsid"
+        "sh"
+        "systemctl"
+        "systemd-run"
+        "tesseract"
+        "uwsm"
+        "wl-copy"
+        "wl-paste"
+        "xdg-open"
+      ];
+
       phenixShell = pkgs.writeShellApplication {
         name = "phenix-shell";
-        runtimeInputs = [ pkgs.quickshell ];
+        runtimeInputs = shellRuntimeInputs;
         text = ''
+          if [ "''${1:-}" = "--check-runtime" ]; then
+            missing=0
+            for command in ${pkgs.lib.escapeShellArgs shellRuntimeCommands}; do
+              if ! command -v "$command" >/dev/null 2>&1; then
+                printf 'missing shell runtime command: %s\n' "$command" >&2
+                missing=1
+              fi
+            done
+            exit "$missing"
+          fi
+
           config_dir=${shellConfig}
           quickshell_args=()
 
@@ -52,16 +111,12 @@
 
       waylandUtils = pkgs.symlinkJoin {
         name = "phenix-wayland-utils";
-        paths = with pkgs; [
-          grim
-          grimblast
-          libnotify
-          satty
-          slurp
-          swappy
-          tesseract
-          wl-clipboard
-        ];
+        paths = [
+          pkgs.grim
+          pkgs.slurp
+          pkgs.swappy
+        ]
+        ++ waylandTools.packages;
       };
 
       mkApp = program: description: {
@@ -93,6 +148,13 @@
 
       checks = {
         inherit configuredHyprland phenixShell kitty;
+
+        shell-runtime =
+          pkgs.runCommand "phenix-shell-runtime-check" { nativeBuildInputs = [ phenixShell ]; }
+            ''
+              phenix-shell --check-runtime
+              touch "$out"
+            '';
 
         desktop-config =
           pkgs.runCommand "phenix-desktop-config-check" { nativeBuildInputs = [ pkgs.lua ]; }
