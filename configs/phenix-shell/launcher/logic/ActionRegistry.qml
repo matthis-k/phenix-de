@@ -202,6 +202,8 @@ Singleton {
             return BluetoothService.executePayload(payload);
         case "notifications":
             return NotificationCenter.executePayload ? NotificationCenter.executePayload(payload) : false;
+        case "session":
+            return SessionController.executePayload(payload);
         default:
             return false;
         }
