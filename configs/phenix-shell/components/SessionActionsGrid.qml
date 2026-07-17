@@ -1,7 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import Quickshell
-import Quickshell.Io
 import qs.services
 
 ColumnLayout {
@@ -12,23 +10,18 @@ ColumnLayout {
     component SessionAction: ConfirmActionButton {
         id: control
 
-        required property list<string> command
+        required property string operation
         required property color optionColor
-        property string confirmLabel: "Confirm"
+        property string confirmLabel: qsTr("Confirm")
         property string iconName: "dialog-warning"
 
         Layout.fillWidth: true
         Layout.preferredWidth: 1
         implicitHeight: 40
         accentColor: optionColor
+        enabled: !SessionController.busy
 
-        Process {
-            id: runner
-        }
-
-        onConfirmed: runner.exec({
-                command: control.command
-            })
+        onConfirmed: SessionController.execute(control.operation)
 
         contentItem: RowLayout {
             anchors.fill: parent
@@ -44,7 +37,13 @@ ColumnLayout {
 
             Text {
                 Layout.fillWidth: true
-                text: control.confirming ? control.confirmLabel : control.text
+                text: {
+                    if (control.confirming)
+                        return control.confirmLabel;
+                    if (SessionController.busy && SessionController.pendingOperation === control.operation)
+                        return qsTr("Working…");
+                    return control.text;
+                }
                 color: control.confirming ? control.optionColor : Config.styling.text0
                 font.pixelSize: 14
                 font.bold: true
@@ -59,18 +58,18 @@ ColumnLayout {
 
         SessionAction {
             Layout.fillWidth: true
-            command: ["systemctl", "poweroff"]
+            operation: "shutdown"
             optionColor: Config.colors.red
             iconName: "system-shutdown-symbolic"
-            text: "Shutdown"
+            text: qsTr("Shutdown")
         }
 
         SessionAction {
             Layout.fillWidth: true
-            command: ["systemctl", "reboot"]
+            operation: "reboot"
             optionColor: Config.colors.peach
             iconName: "system-reboot-symbolic"
-            text: "Reboot"
+            text: qsTr("Reboot")
         }
     }
 
@@ -80,18 +79,27 @@ ColumnLayout {
 
         SessionAction {
             Layout.fillWidth: true
-            command: ["systemctl", "hibernate"]
+            operation: "hibernate"
             optionColor: Config.colors.sapphire
             iconName: "system-suspend-hibernate-symbolic"
-            text: "Hibernate"
+            text: qsTr("Hibernate")
         }
 
         SessionAction {
             Layout.fillWidth: true
-            command: ["uwsm", "stop"]
+            operation: "logout"
             optionColor: Config.colors.yellow
             iconName: "system-log-out-symbolic"
-            text: "Logout"
+            text: qsTr("Logout")
         }
+    }
+
+    Text {
+        Layout.fillWidth: true
+        visible: SessionController.lastError !== ""
+        text: SessionController.lastError
+        color: Config.styling.critical
+        font.pixelSize: 12
+        wrapMode: Text.Wrap
     }
 }
