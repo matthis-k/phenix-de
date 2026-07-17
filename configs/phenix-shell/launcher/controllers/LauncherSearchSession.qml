@@ -19,6 +19,7 @@ Item {
     property int asyncGeneration: 0
     property int queryRevision: 0
     property var asyncBackendQueries: ({})
+    property bool emptyQueryResultsEnabled: true
 
     signal resultsClearRequested()
     signal searchStarted(string text, int generation, int revision)
@@ -32,6 +33,24 @@ Item {
         onTriggered: root.startSearch(root.query, root.generation, true)
     }
 
+    Connections {
+        target: LauncherUsage
+
+        function onRevisionChanged() {
+            if (root.emptyQueryResultsEnabled && root.query.trim().length === 0)
+                root.refreshEmptyQuery();
+        }
+    }
+
+    function refreshEmptyQuery() {
+        if (!root.emptyQueryResultsEnabled)
+            return;
+        queryRevision += 1;
+        generation += 1;
+        query = "";
+        searchTimer.restart();
+    }
+
     function updateQuery(text) {
         tracer.trace("updateQuery", function() { return { textLen: (text || "").length, revision: queryRevision + 1 }; });
         queryRevision += 1;
@@ -41,11 +60,13 @@ Item {
             controller.selectedActionIndex = 0;
 
         if (!query || query.trim().length === 0) {
-            tracer.debug("updateQuery", function() { return { action: "clear", queryEmpty: true }; });
+            tracer.debug("updateQuery", function() { return { action: "empty-search", queryEmpty: true }; });
             resultsClearRequested();
             if (controller)
                 controller.clearSearchOutputState();
             searchTimer.stop();
+            if (emptyQueryResultsEnabled)
+                searchTimer.restart();
             return;
         }
 
@@ -59,10 +80,13 @@ Item {
         resultsClearRequested();
         loading = false;
         generation += 1;
+        queryRevision += 1;
         if (controller)
             controller.clearSearchOutputState();
         asyncBackendQueries = {};
         asyncGeneration += 1;
+        if (emptyQueryResultsEnabled)
+            searchTimer.restart();
     }
 
     function requestSearch(text, requestGeneration) {
@@ -173,5 +197,10 @@ Item {
                 return true;
         }
         return false;
+    }
+
+    Component.onCompleted: {
+        if (root.emptyQueryResultsEnabled)
+            root.refreshEmptyQuery();
     }
 }
