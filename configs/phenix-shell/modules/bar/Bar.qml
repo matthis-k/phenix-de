@@ -54,13 +54,12 @@ Rectangle {
             duration: root.transitionMs
         }
 
-        // Icon order must match ShellState.dashboardTabs and quickmenu/Window.qml SwipeView pages.
-        OverviewIcon   { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
-        AudioIcon      { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
+        // Keep the bar focused on frequent status and control tasks. Bluetooth
+        // details and system statistics remain available from Quick Settings.
+        NetworkIcon      { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
+        AudioIcon        { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
         NotificationIcon { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
-        BluetoothIcon  { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
-        NetworkIcon    { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
-        EnergyIcon     { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
-        StatsIcon      { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
+        EnergyIcon       { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
+        OverviewIcon     { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
     }
 }
