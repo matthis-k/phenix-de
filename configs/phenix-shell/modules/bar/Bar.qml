@@ -54,12 +54,11 @@ Rectangle {
             duration: root.transitionMs
         }
 
-        // Keep the bar focused on frequent status and control tasks. Bluetooth
-        // details and system statistics remain available from Quick Settings.
         NetworkIcon      { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
         AudioIcon        { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
         NotificationIcon { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
         EnergyIcon       { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
+        StatsIcon        { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
         OverviewIcon     { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
     }
 }
