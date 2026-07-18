@@ -10,6 +10,9 @@ Button {
     property string accessibleName: ""
     property string accessibleDescription: ""
     property string toolTipText: ""
+    property int toolTipDelay: 500
+    property int toolTipTimeout: 5000
+    property real toolTipOffset: 8
 
     property Item scaleTarget: root.contentItem
     property Item iconScaleTarget: null
@@ -32,9 +35,23 @@ Button {
     Accessible.name: root.accessibleName || root.text
     Accessible.description: root.accessibleDescription
 
-    ToolTip.visible: root.hovered && root.toolTipText !== ""
-    ToolTip.text: root.toolTipText
-    ToolTip.delay: 500
+    ToolTip {
+        id: toolTip
+
+        visible: root.hovered && !root.down && root.toolTipText !== ""
+        text: root.toolTipText
+        delay: root.toolTipDelay
+        timeout: root.toolTipTimeout
+
+        // Keep the popup clear of the pointer target. Popup margins allow Qt to
+        // constrain the tooltip to the surrounding window near screen edges.
+        x: Math.round((root.width - implicitWidth) / 2)
+        y: root.height + root.toolTipOffset
+        margins: root.toolTipOffset
+        modal: false
+        focus: false
+        closePolicy: Popup.NoAutoClose
+    }
 
     function applyScale(target, targetScale) {
         if (!target)
