@@ -1,12 +1,13 @@
 import QtQml
 import qs.services
 
-// Executes the finite launcher command algebra. This is deliberately a normal
-// dependency owned by LauncherActionController, not a process-global registry.
+// Executes the finite launcher command algebra against narrow injected ports.
 QtObject {
     id: root
 
-    required property var controller
+    required property var runtime
+    required property var controlPort
+    required property var serviceCommands
     property var legacyIntentExecutor: null
 
     readonly property var tracer: Logger.scope("launcher.commandExecutor", { category: "launcher" })
@@ -92,17 +93,18 @@ QtObject {
 
             var payload = action.payload || {};
             if (payload.service) {
-                var serviceSuccess = dispatchServicePayload(payload, target);
+                var serviceSuccess = root.serviceCommands.execute(payload);
                 return outcome(serviceSuccess, false, serviceSuccess ? "" : "service-command-failed");
             }
 
-            var backend = backendFor(target.source || target.backendId);
+            var backend = root.runtime.backendFor(target.source || target.backendId);
             if (!backend)
                 return outcome(false, false, "backend-not-found");
 
-            backend.activate(target, action);
-            if (target.switchActions && root.controller && root.controller.actions)
-                root.controller.actions.refreshSwitchResult(target, action);
+            if (!backend.activate(target, action))
+                return outcome(false, false, "backend-activation-unsupported");
+            if (target.switchActions)
+                root.runtime.refreshSwitchResult(target, action);
             return outcome(true, false, "");
         } catch (error) {
             root.tracer.error("activationFailed", function() {
@@ -123,10 +125,8 @@ QtObject {
         else if (args.text !== undefined)
             text = String(args.text);
 
-        if (!text || !root.controller || typeof root.controller.queryReplacementRequested !== "function")
+        if (!text || !root.runtime.replaceQuery(text))
             return outcome(false, false, "missing-query-replacement");
-
-        root.controller.queryReplacementRequested(text);
         return outcome(true, false, "");
     }
 
@@ -134,50 +134,16 @@ QtObject {
         var control = target && target.control;
         if (!control || control.kind !== "slider")
             return outcome(false, false, "missing-slider-control");
-
-        var delta = Number(args.delta || 0);
-        var step = Number(control.step || 1);
-        switch (control.target) {
-        case "brightness": {
-            var brightness = alignedControlValue(Brightness.percent, delta, step, control.from || 0, control.to || 100);
-            Brightness.setPercent(brightness);
-            return outcome(true, false, "");
-        }
-        case "pipewire":
-        case "audio": {
-            var current = AudioService.volumePercentById(control.nodeId);
-            if (current === null || current === undefined)
-                return outcome(false, false, "audio-node-not-found");
-            var volume = alignedControlValue(current, delta, step, control.from || 0, control.to || 150);
-            return outcome(AudioService.setVolumeById(control.nodeId, volume), false, "audio-command-failed");
-        }
-        case "power-profile":
-            PowerService.cycleProfile(delta * step);
-            return outcome(true, false, "");
-        default:
-            return outcome(false, false, "unsupported-control-target");
-        }
+        var success = root.controlPort.adjust(control, Number(args.delta || 0));
+        return outcome(success, false, success ? "" : "control-command-failed");
     }
 
     function setControl(target, args) {
         var control = target && target.control;
         if (!control)
             return outcome(false, false, "missing-control");
-
-        var value = Number(args.value);
-        switch (control.target) {
-        case "brightness":
-            Brightness.setPercent(value);
-            return outcome(true, false, "");
-        case "pipewire":
-        case "audio":
-            return outcome(AudioService.setVolumeById(control.nodeId, value), false, "audio-command-failed");
-        case "power-profile":
-            PowerService.setProfile(PowerService.profileFromIndex(value));
-            return outcome(true, false, "");
-        default:
-            return outcome(false, false, "unsupported-control-target");
-        }
+        var success = root.controlPort.setValue(control, Number(args.value));
+        return outcome(success, false, success ? "" : "control-command-failed");
     }
 
     function resolveAction(target, args) {
@@ -210,19 +176,6 @@ QtObject {
         return null;
     }
 
-    function backendFor(id) {
-        var backends = root.controller && root.controller.backends || [];
-        for (var i = 0; i < backends.length; i += 1) {
-            var backend = backends[i];
-            var backendId = root.controller && typeof root.controller.backendId === "function"
-                ? root.controller.backendId(backend)
-                : backend && backend.backendId || "";
-            if (backend && backendId === id)
-                return backend;
-        }
-        return null;
-    }
-
     function canActivate(target, action) {
         var risk = target.risk || action.risk || {};
         var node = {
@@ -231,39 +184,13 @@ QtObject {
             risk: risk,
             dangerous: !!(target.dangerous || action.dangerous)
         };
-        var query = root.controller && root.controller.query || "";
-        var confirmed = !!(root.controller && root.controller.confirmationSatisfied);
-        return ActivationGate.canActivate(node, action, root.controller, query, confirmed);
-    }
-
-    function dispatchServicePayload(payload, target) {
-        switch (String(payload.service || "")) {
-        case "brightness":
-            return Brightness.executePayload ? Brightness.executePayload(payload) : false;
-        case "audio":
-            return AudioService.executePayload(payload);
-        case "power":
-            return PowerService.executePayload(payload);
-        case "network":
-            return NetworkService.executePayload(payload);
-        case "vpn":
-            return VpnService.executePayload(payload);
-        case "bluetooth":
-            return BluetoothService.executePayload(payload);
-        case "notifications":
-            return NotificationCenter.executePayload ? NotificationCenter.executePayload(payload) : false;
-        case "session":
-            return SessionController.executePayload(payload);
-        default:
-            return false;
-        }
-    }
-
-    function alignedControlValue(current, delta, step, from, to) {
-        var base = delta < 0 ? Math.floor(current / step) * step : Math.ceil(current / step) * step;
-        if (Math.abs(base - current) < 0.0001)
-            base += delta * step;
-        return Math.max(from, Math.min(to, base));
+        return ActivationGate.canActivate(
+            node,
+            action,
+            root.runtime.activationContext(),
+            root.runtime.query,
+            root.runtime.confirmationSatisfied
+        );
     }
 
     function outcome(success, close, error) {
