@@ -77,10 +77,8 @@ Item {
 
             onClicked: {
                 root.toplevel?.wayland?.close();
-                ShellActions.addHyprlandPreviewHover(screen, -1);
-                const previewWindow = ShellState.getScreenByName(screen.name);
-                if (previewWindow && previewWindow.hyprlandPreview)
-                    previewWindow.hyprlandPreview.clearPreview();
+                ShellCoordinator.addHyprlandPreviewHover(screen, -1);
+                ShellCoordinator.clearHyprlandPreview(screen);
             }
 
             contentItem: Icon {
@@ -108,10 +106,8 @@ Item {
         TapHandler {
             onSingleTapped: {
                 root.toplevel?.wayland?.activate();
-                ShellActions.addHyprlandPreviewHover(screen, -1);
-                const previewWindow = ShellState.getScreenByName(screen.name);
-                if (previewWindow && previewWindow.hyprlandPreview)
-                    previewWindow.hyprlandPreview.clearPreview();
+                ShellCoordinator.addHyprlandPreviewHover(screen, -1);
+                ShellCoordinator.clearHyprlandPreview(screen);
             }
         }
     }
