@@ -29,9 +29,35 @@ Item {
         actionController: root
     }
 
+    LauncherRuntimePort {
+        id: runtimePort
+        controller: root.controller
+    }
+
+    LauncherControlPort {
+        id: controlPort
+        brightness: Brightness
+        audio: AudioService
+        power: PowerService
+    }
+
+    LauncherServiceCommands {
+        id: serviceCommands
+        brightness: Brightness
+        audio: AudioService
+        power: PowerService
+        network: NetworkService
+        vpn: VpnService
+        bluetooth: BluetoothService
+        notifications: NotificationCenter
+        session: SessionController
+    }
+
     CommandExecutor {
         id: commandExecutor
-        controller: root.controller
+        runtime: runtimePort
+        controlPort: controlPort
+        serviceCommands: serviceCommands
         legacyIntentExecutor: legacyIntentExecutor
     }
 
