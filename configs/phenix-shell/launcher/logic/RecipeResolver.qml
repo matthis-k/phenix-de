@@ -39,7 +39,7 @@ Singleton {
         var parentOverrides = options.parentInteractions || {};
         mergeInteractions(merged, parentOverrides);
 
-        var nodeOverrides = target.interactions || target.interactions;
+        var nodeOverrides = target.interactions;
         if (nodeOverrides && typeof nodeOverrides === "object")
             mergeInteractions(merged, nodeOverrides);
 
@@ -51,12 +51,12 @@ Singleton {
             return normalizeRecipeArray(target.recipes.activate);
 
         if (hasReplaceQuery(target))
-            return [["edit-query", { mode: "replace", from: "metadata.replaceQuery" }]];
+            return normalizeRecipeArray([["edit-query", { mode: "replace", from: "metadata.replaceQuery" }]]);
 
         if (hasDefaultExecutableAction(target))
-            return [["run-action", { action: "default" }], ["close"]];
+            return normalizeRecipeArray([["run-action", { action: "default" }], ["close"]]);
 
-        return [["noop"]];
+        return normalizeRecipeArray([["noop"]]);
     }
 
     function resolveComplete(target, options) {
@@ -64,10 +64,10 @@ Singleton {
             return normalizeRecipeArray(target.recipes.complete);
 
         if (hasReplaceQuery(target))
-            return [["edit-query", { mode: "replace", from: "metadata.replaceQuery" }]];
+            return normalizeRecipeArray([["edit-query", { mode: "replace", from: "metadata.replaceQuery" }]]);
 
         if (target.filterable)
-            return [["edit-query", { mode: "replace", from: "metadata.replaceQuery" }]];
+            return normalizeRecipeArray([["edit-query", { mode: "replace", from: "metadata.replaceQuery" }]]);
 
         return [];
     }
@@ -76,25 +76,25 @@ Singleton {
         var out = {};
 
         if (target.control && target.control.kind === "slider") {
-            out["h"] = { label: "Decrease", recipe: [["adjust-control", { delta: -1 }]] };
-            out["l"] = { label: "Increase", recipe: [["adjust-control", { delta: 1 }]] };
+            out["h"] = { label: "Decrease", recipe: normalizeRecipeArray([["adjust-control", { delta: -1 }]]) };
+            out["l"] = { label: "Increase", recipe: normalizeRecipeArray([["adjust-control", { delta: 1 }]]) };
         }
 
         if (target.switchActions) {
             out["h"] = {
                 label: "Off",
-                recipe: [["run-action", { prefer: ["off", "disable", "decrease", "left"] }]]
+                recipe: normalizeRecipeArray([["run-action", { prefer: ["off", "disable", "decrease", "left"] }]])
             };
             out["l"] = {
                 label: "On",
-                recipe: [["run-action", { prefer: ["on", "enable", "increase", "right"] }]]
+                recipe: normalizeRecipeArray([["run-action", { prefer: ["on", "enable", "increase", "right"] }]])
             };
         }
 
         if (target.switchActions && target.switchActions.toggle) {
             out["m"] = {
                 label: "Mute",
-                recipe: [["run-action", { prefer: ["toggle", "mute", "toggle-mute"] }]]
+                recipe: normalizeRecipeArray([["run-action", { prefer: ["toggle", "mute", "toggle-mute"] }]])
             };
         }
 
@@ -104,11 +104,11 @@ Singleton {
             var id = action.id || "";
 
             if (id === "off" || id === "disable" || id === "decrease" || id === "left")
-                out["h"] = { label: action.label || id, recipe: [["run-action", { action: id }]] };
+                out["h"] = { label: action.label || id, recipe: normalizeRecipeArray([["run-action", { action: id }]]) };
             else if (id === "on" || id === "enable" || id === "increase" || id === "right")
-                out["l"] = { label: action.label || id, recipe: [["run-action", { action: id }]] };
+                out["l"] = { label: action.label || id, recipe: normalizeRecipeArray([["run-action", { action: id }]]) };
             else if (id === "toggle" || id === "mute" || id === "toggle-mute")
-                out["m"] = { label: action.label || id, recipe: [["run-action", { action: id }]] };
+                out["m"] = { label: action.label || id, recipe: normalizeRecipeArray([["run-action", { action: id }]]) };
         }
 
         return out;
@@ -132,11 +132,7 @@ Singleton {
     }
 
     function normalizeRecipeArray(recipe) {
-        if (!recipe || !Array.isArray(recipe))
-            return [];
-        return recipe.map(function(step) {
-            return ActionSpec.normalize(step);
-        });
+        return CommandSpec.normalizeRecipe(recipe);
     }
 
     function hasReplaceQuery(target) {

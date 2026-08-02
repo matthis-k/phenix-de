@@ -23,16 +23,23 @@ Item {
         controller: root.controller
     }
 
-    ControlInteractionController {
-        id: controlHandler
-        controller: root.controller
-        targetResolver: targetResolver
-    }
-
     LegacyIntentExecutor {
         id: legacyIntentExecutor
         controller: root.controller
         actionController: root
+    }
+
+    CommandExecutor {
+        id: commandExecutor
+        controller: root.controller
+        legacyIntentExecutor: legacyIntentExecutor
+    }
+
+    ControlInteractionController {
+        id: controlHandler
+        controller: root.controller
+        targetResolver: targetResolver
+        commandExecutor: commandExecutor
     }
 
     ResultActionResolver {
@@ -40,6 +47,7 @@ Item {
         controller: root.controller
         actionController: root
         controlHandler: controlHandler
+        commandExecutor: commandExecutor
     }
 
     function recordSuccessfulAction(target, result) {
@@ -114,14 +122,24 @@ Item {
 
         tracer.info("activateResult", function() { return { resultId: result.id || result.nodeId || "", actionId: action.id || "" }; });
         if (result.metadata && result.metadata.replaceQuery) {
-            var editResult = ActionRegistry.executeRecipe([["edit-query", { from: "metadata.replaceQuery" }]], result, root.controller);
-            return !!editResult.success;
+            var editResult = commandExecutor.execute({
+                kind: "edit-query",
+                args: { from: "metadata.replaceQuery" }
+            }, result);
+            return editResult.success;
         }
-        var confirmationTarget = Object.assign({}, result, { risk: action.risk || result.risk, dangerous: !!(action.dangerous || result.dangerous) });
+
+        var confirmationTarget = Object.assign({}, result, {
+            risk: action.risk || result.risk,
+            dangerous: !!(action.dangerous || result.dangerous)
+        });
         return root.activateWithConfirmation(confirmationTarget, function() {
-            var recipeResult = ActionRegistry.executeRecipe([["run-action", { action: action.id || "default" }]], result, root.controller);
-            root.recordSuccessfulAction(result, recipeResult);
-            return !!recipeResult.success;
+            var commandResult = commandExecutor.execute({
+                kind: "activate",
+                args: { action: action.id || "default" }
+            }, result);
+            root.recordSuccessfulAction(result, commandResult);
+            return commandResult.success;
         });
     }
 
@@ -130,13 +148,13 @@ Item {
     function _executeRecipeSlot(target, slotName) {
         if (!target) {
             tracer.debug("executeRecipeSlot", function() { return { reason: "no target" }; });
-            return { close: false };
+            return { close: false, success: false, error: "missing-target" };
         }
         var recipe = RecipeResolver.effectiveRecipe(target, slotName || "activate", {});
-        var recipeResult = ActionRegistry.executeRecipe(recipe, target, root.controller);
+        var recipeResult = commandExecutor.executeRecipe(recipe, target);
         root.recordSuccessfulAction(target, recipeResult);
-        tracer.trace("executeRecipeSlot", function() { return { slot: slotName, targetId: target.id || target.nodeId || "", close: !!recipeResult.close, success: recipeResult.success }; });
-        return { close: !!recipeResult.close, success: recipeResult.success };
+        tracer.trace("executeRecipeSlot", function() { return { slot: slotName, targetId: target.id || target.nodeId || "", close: recipeResult.close, success: recipeResult.success }; });
+        return recipeResult;
     }
 
     readonly property var executeRecipeSlot: prof.fn("executeRecipeSlot", _executeRecipeSlot)
@@ -172,10 +190,10 @@ Item {
     function runRecipe(recipe, target) {
         if (!recipe || !target) {
             tracer.debug("runRecipe", function() { return { reason: !recipe ? "no recipe" : "no target" }; });
-            return { close: false };
+            return { close: false, success: false, error: !recipe ? "missing-recipe" : "missing-target" };
         }
         tracer.trace("runRecipe", function() { return { recipeLen: recipe.length, targetId: target.id || target.nodeId || "" }; });
-        var result = ActionRegistry.executeRecipe(recipe, target, root.controller);
+        var result = commandExecutor.executeRecipe(recipe, target);
         root.recordSuccessfulAction(target, result);
         return result;
     }
@@ -183,11 +201,11 @@ Item {
     function runRecipeSlot(slotName) {
         var target = root.selectedActionTarget();
         if (!target)
-            return { close: false };
+            return { close: false, success: false, error: "missing-target" };
 
         var recipe = root.effectiveRecipeForTarget(target, slotName);
         if (!recipe || recipe.length === 0)
-            return { close: false };
+            return { close: false, success: false, error: "missing-recipe" };
 
         return root.runRecipe(recipe, target);
     }
@@ -196,13 +214,13 @@ Item {
         var target = root.selectedActionTarget();
         if (!target) {
             tracer.debug("runInteractionForKey", function() { return { key: keyName, reason: "no target" }; });
-            return { close: false, success: false };
+            return { close: false, success: false, error: "missing-target" };
         }
 
         var interactions = root.effectiveInteractionsForTarget(target);
         if (!interactions || !interactions[keyName]) {
             tracer.debug("runInteractionForKey", function() { return { key: keyName, reason: "no matching interaction" }; });
-            return { close: false, success: false };
+            return { close: false, success: false, error: "missing-interaction" };
         }
 
         tracer.info("runInteractionForKey", function() { return { key: keyName, targetId: target.id || target.nodeId || "" }; });
@@ -236,18 +254,18 @@ Item {
         if (root.controller && root.controller.isInTree()) {
             if (root.controller.currentTreeKey)
                 return { close: targetResolver.activateTreeRowByKey(root.controller.currentTreeKey, null), closeRequested: false };
-            return { close: false };
+            return { close: false, success: false };
         }
 
         var result = root.controller ? root.controller.selectedResult() : null;
         if (!result)
-            return { close: false };
+            return { close: false, success: false };
 
         var activationResult = root.activateWithConfirmation(result, function() {
             var recipeResult = root.runRecipeSlot("activate");
-            return { close: recipeResult.close, closeRequested: recipeResult.close };
+            return { close: recipeResult.close, closeRequested: recipeResult.close, success: recipeResult.success };
         });
-        return activationResult || { close: false, closeRequested: false };
+        return activationResult || { close: false, closeRequested: false, success: false };
     }
 
     function selectedActionTarget() {
