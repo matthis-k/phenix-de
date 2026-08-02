@@ -2,7 +2,6 @@ pragma Singleton
 import QtQml
 import Quickshell
 import qs.services
-import "PolicySpec.qml"
 
 Singleton {
     readonly property var prof: Profiler.scope("launcher.policyChain", { category: "launcher" })
@@ -14,10 +13,7 @@ Singleton {
     })
 
     function resolvePolicy(ctx, kind, spec) {
-        var resolver = ctx && ctx.policyResolver;
-        if (!resolver || typeof resolver.resolve !== "function")
-            throw new Error("Launcher policyResolver dependency is required");
-        return resolver.resolve(kind, spec);
+        return PolicyPlan.resolve(ctx, kind, spec);
     }
 
     function nowMs() {
@@ -79,15 +75,14 @@ Singleton {
 
     function _run(names, call, modeOrPhase, tracePerPolicy, timings) {
         var mode = defaultModes[modeOrPhase] || modeOrPhase;
-        tracer.trace("run", function() { return { names: (names || []).length, mode: modeOrPhase || "unknown", resolvedMode: mode }; });
+        var specs = PolicyPlan.compile(names || []);
+        tracer.trace("run", function() { return { names: specs.length, mode: modeOrPhase || "unknown", resolvedMode: mode }; });
         if (!mode)
             return { value: null, decision: null, priority: 0 };
 
         var results = [];
-        for (var i = 0; i < names.length; i += 1) {
-            var spec = PolicySpec.normalize(names[i]);
-            if (!spec)
-                continue;
+        for (var i = 0; i < specs.length; i += 1) {
+            var spec = specs[i];
 
             var pStart = timings ? nowMs() : 0;
             var raw = call(spec.name, spec);
@@ -100,7 +95,7 @@ Singleton {
                 continue;
             var r = normalizePolicyResult(raw, spec);
 
-            // Trace each policy at the real execution site
+            // Trace each policy at the real execution site.
             if (typeof tracePerPolicy === "function") {
                 var effect = "no-op";
                 var modeEffect = "";
@@ -134,10 +129,8 @@ Singleton {
             results.push(r);
             if (mode === "first-wins") {
                 if (typeof tracePerPolicy === "function") {
-                    for (var j = i + 1; j < names.length; j += 1) {
-                        var remainingSpec = PolicySpec.normalize(names[j]);
-                        if (!remainingSpec)
-                            continue;
+                    for (var j = i + 1; j < specs.length; j += 1) {
+                        var remainingSpec = specs[j];
                         tracePerPolicy({
                             name: remainingSpec.name,
                             priority: remainingSpec.priority || 0,
