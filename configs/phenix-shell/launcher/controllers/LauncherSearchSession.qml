@@ -97,9 +97,10 @@ Item {
         tracer.info("startSearch", function() { return { text: text, generation: requestGeneration, bump: bumpAsyncGeneration }; });
         var ag = bumpAsyncGeneration ? (root.asyncGeneration += 1) : root.asyncGeneration;
         var revision = root.queryRevision;
-        triggerAsyncBackends(text, requestGeneration);
+        var backendPorts = BackendContract.adaptAll(root.backends || []);
+        triggerAsyncBackends(text, requestGeneration, backendPorts);
         searchStarted(text, requestGeneration, revision);
-        Engine.searchAsync(backends || [], text || "", stateForSearch(), searchOptions(),
+        Engine.searchAsync(backendPorts, text || "", stateForSearch(), searchOptions(),
             function() { return root.generation === requestGeneration && root.asyncGeneration === ag; },
             function(output) {
                 if (!output)
@@ -124,31 +125,32 @@ Item {
         return controller ? controller.searchOptions() : {};
     }
 
-    function _triggerAsyncBackends(text, currentGeneration) {
+    function _triggerAsyncBackends(text, currentGeneration, providedPorts) {
         tracer.trace("triggerAsyncBackends", function() { return { text: text, generation: currentGeneration }; });
+        var backendPorts = providedPorts || BackendContract.adaptAll(root.backends || []);
         var route = RoutingTree.routeQuery(root.routingTree, text || "");
         var directive = route && route.endpoints && route.endpoints.length > 0
-            ? Engine.buildDirectiveFromRoute(text || "", route, backends || [])
-            : Tokenize.parseDirective(text || "", backends || []);
+            ? Engine.buildDirectiveFromRoute(text || "", route, backendPorts)
+            : Tokenize.parseDirective(text || "", backendPorts);
         var parsedQuery = Tokenize.tokenize(directive.searchRaw || "");
 
-        for (let i = 0; i < (backends || []).length; i += 1) {
-            let backend = backends[i];
-            if (!backend || !backend.enabled || typeof backend.resultsAsync !== "function")
+        for (let i = 0; i < backendPorts.length; i += 1) {
+            let backend = backendPorts[i];
+            if (!backend.enabled || !backend.asyncCapable)
                 continue;
-            if (typeof backend.shouldParticipate === "function" && !backend.shouldParticipate(text || "", directive, parsedQuery))
+            if (!backend.shouldParticipate(text || "", directive, parsedQuery))
                 continue;
             if (directive.active && directive.backendIds.indexOf(backend.backendId) < 0)
                 continue;
 
-            let key = backend.backendId || String(i);
+            let key = backend.backendId;
             let state = asyncBackendQueries[key] || {};
             if (state.ready === text || state.pending === text)
                 continue;
 
             beginAsyncBackendSearch(backend, key, text);
 
-            backend.resultsAsync(text, function(newResults) {
+            backend.searchAsync(text, function(newResults) {
                 receiveAsyncBackendResults(backend, key, text, currentGeneration, newResults || []);
             });
         }
@@ -162,9 +164,7 @@ Item {
         state.pending = text;
         state.ready = "";
         asyncBackendQueries[key] = state;
-        backend.pendingCompositeQuery = text;
-        backend.compositeQuery = "";
-        backend.applyStreamUpdate({ op: "clear" });
+        backend.beginAsyncSearch(text);
         refreshLoading();
     }
 
@@ -179,9 +179,7 @@ Item {
         state.pending = "";
         state.ready = text;
         asyncBackendQueries[key] = state;
-        backend.pendingCompositeQuery = "";
-        backend.compositeQuery = text;
-        backend.applyStreamUpdate(update || []);
+        backend.finishAsyncSearch(text, update || []);
         refreshLoading();
         root.asyncGeneration += 1;
         requestSearch(text, requestGeneration);
