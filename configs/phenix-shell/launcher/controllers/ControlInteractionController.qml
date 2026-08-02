@@ -9,6 +9,7 @@ QtObject {
 
     property var controller: null
     property var targetResolver: null
+    required property var commandExecutor
 
     function _adjustSelectedValue(delta) {
         var result = root.targetResolver ? root.targetResolver.selectedActionTarget() : null;
@@ -18,7 +19,10 @@ QtObject {
         }
 
         if (result.control) {
-            var controlResult = ActionRegistry.executeRecipe([["adjust-control", { delta: delta }]], result, root.controller);
+            var controlResult = root.commandExecutor.execute({
+                kind: "adjust-control",
+                args: { delta: delta }
+            }, result);
             if (controlResult.success) {
                 tracer.trace("adjustSelectedValue", function() { return { delta: delta, action: "control", success: true }; });
                 return true;
@@ -31,7 +35,7 @@ QtObject {
         tracer.info("adjustSelectedValue", function() { return { delta: delta, targetId: result.id || result.nodeId || "", title: result.title || "", preferredIds: preferredIds, switchActions: !!result.switchActions, switchState: result.switchState }; });
         for (var i = 0; i < preferredIds.length; i += 1) {
             if (root.controller && root.controller.activateResultAction(result, preferredIds[i])) {
-                if (root.controller && root.controller.isInTree() && root.controller.currentTreeKey && result.switchActions && root.controller.selectedIndex >= 0) {
+                if (root.controller.isInTree() && root.controller.currentTreeKey && result.switchActions && root.controller.selectedIndex >= 0) {
                     var treeRow = root.controller.findTreeRowData(root.controller.currentTreeKey);
                     if (treeRow)
                         treeRow.switchState = result.switchState;
@@ -54,7 +58,7 @@ QtObject {
             return false;
         }
         if (result.switchActions && (result.switchActions.toggle || result.switchActions.on || result.switchActions.off)) {
-            var toggleResult = ActionRegistry.executeRecipe([["toggle"]], result, root.controller);
+            var toggleResult = root.commandExecutor.execute({ kind: "toggle-control", args: {} }, result);
             tracer.info("toggleSelectedMute", function() { return { targetId: result.id || result.nodeId || "", success: !!toggleResult.success }; });
             return !!toggleResult.success;
         }
@@ -64,7 +68,6 @@ QtObject {
 
     function _refreshSwitchResult(result, action) {
         var payload = action && action.payload || {};
-        // Check action.state first, then fall back to payload.state
         var state = action && action.state !== undefined ? action.state : payload.state;
         var previous = result ? result.switchState : undefined;
         if (state === true || state === false) {
