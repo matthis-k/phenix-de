@@ -2,6 +2,7 @@ pragma Singleton
 import QtQml
 import Quickshell
 import qs.services
+import "DecisionSelection.js" as DecisionSelection
 
 Singleton {
     readonly property var prof: Profiler.scope("launcher.policyChain", { category: "launcher" })
@@ -95,7 +96,6 @@ Singleton {
                 continue;
             var r = normalizePolicyResult(raw, spec);
 
-            // Trace each policy at the real execution site.
             if (typeof tracePerPolicy === "function") {
                 var effect = "no-op";
                 var modeEffect = "";
@@ -179,36 +179,20 @@ Singleton {
             }
             return { value: acc, decision: acc };
         }
-        case "accumulate-votes": {
-            return {
-                value: results,
-                decision: results,
-                priority: 0
-            };
+        case "accumulate-votes":
+            return { value: results, decision: results, priority: 0 };
+        case "all-and": {
+            var all = results.every(function(r) { return r.value; });
+            return { value: all, decision: all };
         }
-        case "all-and":
-            return { value: results.every(function(r) { return r.value; }), decision: results.every(function(r) { return r.value; }) };
-        case "all-or":
-            return { value: results.some(function(r) { return r.value; }), decision: results.some(function(r) { return r.value; }) };
+        case "all-or": {
+            var any = results.some(function(r) { return r.value; });
+            return { value: any, decision: any };
+        }
         case "first-wins":
             return results[0];
-        case "best-wins": {
-            var best = results[0];
-            for (var i = 1; i < results.length; i += 1) {
-                var ri = results[i];
-                var riNum = typeof ri.decision === "number";
-                var bestNum = typeof best.decision === "number";
-                if (riNum && bestNum) {
-                    if (ri.priority > best.priority ||
-                        (ri.priority === best.priority && ri.decision > best.decision))
-                        best = ri;
-                } else {
-                    if (ri.priority > best.priority)
-                        best = ri;
-                }
-            }
-            return best;
-        }
+        case "best-wins":
+            return DecisionSelection.best(results, "first");
         default:
             return results[0] || { value: null, decision: null, priority: 0 };
         }

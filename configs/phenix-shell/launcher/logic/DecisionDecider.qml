@@ -2,6 +2,7 @@ pragma Singleton
 import QtQml
 import Quickshell
 import qs.services
+import "DecisionSelection.js" as DecisionSelection
 
 // Reducer for normalized policy votes.
 // Pipeline: decision kind → decider → policy votes → final decision
@@ -25,13 +26,13 @@ Singleton {
 
         switch (mode) {
         case "highest-priority":
-            selected = highestPriority(filtered, tieBreak);
+            selected = DecisionSelection.highestPriority(filtered, tieBreak);
             break;
         case "first-wins":
             selected = filtered.length > 0 ? filtered[0] : null;
             break;
         case "best-wins":
-            selected = bestWins(filtered, tieBreak);
+            selected = DecisionSelection.best(filtered, tieBreak);
             break;
         case "accumulate":
             return {
@@ -68,7 +69,7 @@ Singleton {
             if (typeof options.custom === "function")
                 selected = options.custom(filtered, options.context);
             else
-                selected = highestPriority(filtered, tieBreak);
+                selected = DecisionSelection.highestPriority(filtered, tieBreak);
         }
 
         return {
@@ -82,34 +83,11 @@ Singleton {
     }
 
     function highestPriority(votes, tieBreak) {
-        if (!votes || votes.length === 0) return null;
-        var best = votes[0];
-        for (var i = 1; i < votes.length; i += 1) {
-            var v = votes[i];
-            if (v.priority > best.priority || (v.priority === best.priority && tieBreak === "last"))
-                best = v;
-        }
-        return best;
+        return DecisionSelection.highestPriority(votes, tieBreak);
     }
 
     function bestWins(votes, tieBreak) {
-        if (!votes || votes.length === 0) return null;
-        var best = votes[0];
-        for (var i = 1; i < votes.length; i += 1) {
-            var v = votes[i];
-            var vNum = typeof v.decision === "number";
-            var bestNum = typeof best.decision === "number";
-            if (vNum && bestNum) {
-                if (v.priority > best.priority ||
-                    (v.priority === best.priority && v.decision > best.decision))
-                    best = v;
-            } else {
-                if (v.priority > best.priority ||
-                    (v.priority === best.priority && tieBreak === "last"))
-                    best = v;
-            }
-        }
-        return best;
+        return DecisionSelection.best(votes, tieBreak);
     }
 
     function toDebug(result) {
