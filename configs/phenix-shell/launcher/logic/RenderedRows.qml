@@ -9,7 +9,6 @@ import "ScoreBundle.qml"
 import "PolicyChain.qml"
 import "DecisionDecider.qml"
 import "PresentationContext.qml"
-import "CompositeSearchPolicyRegistry.js" as JsRegistry
 
 Singleton {
     readonly property var prof: Profiler.scope("launcher.renderedRows", { category: "launcher" })
@@ -43,7 +42,7 @@ Singleton {
         if (defaultActionNames.length > 0) {
             var daVotes = [];
             PolicyChain.run(defaultActionNames, function(name, spec) {
-                var policy = PolicyChain.lookupPolicy(JsRegistry.defaultAction, spec);
+                var policy = PolicyChain.resolvePolicy(ctx, "defaultAction", spec);
                 if (!policy) return null;
                 var vote = policy.apply(ev, ctx, spec && spec.args);
                 if (vote) daVotes.push(vote);

@@ -5,7 +5,6 @@ import qs.services
 import "Tokenize.qml"
 import "Evidence.qml"
 import "PolicyChain.qml"
-import "CompositeSearchPolicyRegistry.js" as JsRegistry
 
 Singleton {
     readonly property var prof: Profiler.scope("launcher.tokenFlow", { category: "launcher" })
@@ -16,7 +15,7 @@ Singleton {
         var profile = (node.evaluationProfile && node.evaluationProfile.profile) || {};
         var flowNames = profile.tokenFlow || ["pass-all"];
         return PolicyChain.run(flowNames, function(name, spec) {
-            var policy = PolicyChain.lookupPolicy(JsRegistry.tokenFlow, spec);
+            var policy = PolicyChain.resolvePolicy(ctx, "tokenFlow", spec);
             if (!policy) return null;
             return policy.apply(node, query, ctx, spec && spec.args);
         }, "first-wins");

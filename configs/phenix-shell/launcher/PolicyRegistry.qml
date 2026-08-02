@@ -2,15 +2,21 @@ pragma Singleton
 import QtQml
 import Quickshell
 import qs.services
-import "logic/CompositeSearchPolicyRegistry.js" as JsRegistry
+import "logic/PolicyCatalog.js" as PolicyCatalog
 
 Singleton {
     readonly property var tracer: Logger.scope("launcher.policyRegistry", { category: "launcher" })
     readonly property var prof: Profiler.scope("launcher.policyRegistry", { category: "launcher" })
 
+    readonly property var catalog: ({
+        resolve: function(kind, name) { return PolicyCatalog.resolve(kind, name); },
+        list: function(kind) { return PolicyCatalog.list(kind); },
+        toDto: function() { return PolicyCatalog.toDto(); }
+    })
+
     function registerEvidence(id, group, matchFn) {
         tracer.trace("registerEvidence", function() { return { id: id, group: group }; });
-        JsRegistry.evidence.register(id, {
+        PolicyCatalog.register("evidence", id, {
             name: id,
             phase: "evidence",
             group: group || "own",
@@ -19,10 +25,7 @@ Singleton {
     }
 
     function _register(kind, id, applyFn) {
-        var registry = JsRegistry[kind];
-        if (!registry)
-            throw new Error("Unknown policy registry: " + kind);
-        registry.register(id, {
+        PolicyCatalog.register(kind, id, {
             name: id,
             phase: kind,
             apply: applyFn
@@ -40,4 +43,6 @@ Singleton {
     function registerRiskGate(id, fn) { _register("riskGate", id, fn); }
     function registerNesting(id, fn) { _register("nesting", id, fn); }
     function registerChildBypass(id, fn) { _register("childBypass", id, fn); }
+
+    function catalogDto() { return PolicyCatalog.toDto(); }
 }

@@ -8,7 +8,6 @@ import "Evidence.qml"
 import "PolicyChain.qml"
 import "ScoreBundle.qml"
 import "TokenFlow.qml"
-import "CompositeSearchPolicyRegistry.js" as JsRegistry
 
 Singleton {
     readonly property var prof: Profiler.scope("launcher.evaluate", { category: "launcher" })
@@ -90,7 +89,7 @@ Singleton {
                 if (globalEvidenceFields && (!effectiveArgs || (!effectiveArgs.fields && !effectiveArgs.filterType))) {
                     effectiveArgs = Object.assign({}, effectiveArgs || {}, { fields: globalEvidenceFields });
                 }
-                var policy = PolicyChain.lookupPolicy(JsRegistry.evidence, spec);
+                var policy = PolicyChain.resolvePolicy(ctx, "evidence", spec);
                 if (!policy || policy.phase !== "evidence") return null;
                 var items = policy.match(node, query, ctx, effectiveArgs);
                 if (!items || !items.length) return null;
@@ -216,7 +215,7 @@ Singleton {
         if (node && node.id && ctx._policyTrace && !ctx._policyTrace[node.id]) ctx._policyTrace[node.id] = {};
         var boostTimings = ctx._policyTimings ? ctx._policyTimings.boost : null;
         var descendantBoost = (PolicyChain.run(boostNames, function(name, spec) {
-            var bpol = PolicyChain.lookupPolicy(JsRegistry.boost, spec);
+            var bpol = PolicyChain.resolvePolicy(ctx, "boost", spec);
             if (!bpol || bpol.phase !== "boost") return null;
             var boostVal = bpol.apply(node, query, ctx, evaluatedChildren, scores, spec && spec.args);
             return boostVal > 0 ? boostVal : null;
@@ -240,7 +239,7 @@ Singleton {
 
         var actionAliasBoost = 0;
         if (node.switchActions && own.value > 0) {
-            var aliasPol = JsRegistry.boost.get("switch-aliases");
+            var aliasPol = PolicyChain.resolvePolicy(ctx, "boost", { name: "switch-aliases" });
             if (aliasPol) {
                 var aliasBoostVal = aliasPol.apply(node, query, ctx, evaluatedChildren, scores);
                 if (aliasBoostVal > 0)

@@ -10,7 +10,6 @@ import "ResultSemantics.qml"
 import "TakeoverEngine.qml"
 import "DecisionTrace.qml"
 import "DecisionDecider.qml"
-import "CompositeSearchPolicyRegistry.js" as JsRegistry
 
 Singleton {
     id: root
@@ -158,12 +157,12 @@ Singleton {
 
     readonly property var shape: prof.fn("shape", _shape)
 
-    function runDecisionPolicies(ev, ctx, kind, names, registry, reducerOptions) {
+    function runDecisionPolicies(ev, ctx, kind, names, reducerOptions) {
         if (!names || names.length === 0) return null;
         DecisionTrace.initPolicyTrace(ev, ctx);
         var votes = [];
         var chainResult = PolicyChain.run(names, function(name, spec) {
-            var policy = PolicyChain.lookupPolicy(registry, spec);
+            var policy = PolicyChain.resolvePolicy(ctx, kind, spec);
             if (!policy) return null;
             return policy.apply(ev, ctx, spec && spec.args);
         }, "accumulate-votes", function(tr) {
@@ -194,7 +193,7 @@ Singleton {
         var profile = (ev.node.evaluationProfile && ev.node.evaluationProfile.profile) || {};
         var nestingNames = profile.nesting || [];
         if (nestingNames.length === 0) return null;
-        var reduced = runDecisionPolicies(ev, ctx, "nesting", nestingNames, JsRegistry.nesting, { mode: "highest-priority", tieBreak: "first" });
+        var reduced = runDecisionPolicies(ev, ctx, "nesting", nestingNames, { mode: "highest-priority", tieBreak: "first" });
         return reduced && reduced.decision;
     }
 
@@ -256,7 +255,7 @@ Singleton {
 
         // Evaluate retain decision once (used by all paths)
         var retainReduced = retainNames.length > 0
-            ? runDecisionPolicies(ev, ctx, "retainParent", retainNames, JsRegistry.retainParent, { mode: "highest-priority", tieBreak: "first" })
+            ? runDecisionPolicies(ev, ctx, "retainParent", retainNames, { mode: "highest-priority", tieBreak: "first" })
             : null;
         var retainResult = retainReduced && retainReduced.decision;
 
@@ -320,7 +319,7 @@ Singleton {
 
         // Policy expand votes (accumulated via runDecisionPolicies)
         if (expandNames.length > 0) {
-            var policyReduced = runDecisionPolicies(ev, ctx, "expand", expandNames, JsRegistry.expand, { mode: "highest-priority", tieBreak: "first" });
+            var policyReduced = runDecisionPolicies(ev, ctx, "expand", expandNames, { mode: "highest-priority", tieBreak: "first" });
             if (policyReduced && policyReduced.decision && policyReduced.decision.expand)
                 expandVotes.push(policyReduced);
         }

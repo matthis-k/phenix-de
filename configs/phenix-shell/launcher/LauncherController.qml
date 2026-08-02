@@ -11,6 +11,12 @@ Item {
     readonly property var prof: Profiler.scope("launcher.controller", { category: "launcher" })
     id: root
 
+    PolicyResolver {
+        id: defaultPolicyResolver
+        catalog: PolicyRegistry.catalog
+    }
+
+    property var policyResolver: defaultPolicyResolver
     property alias query: searchSession.query
     property var backends: []
     property alias results: navigation.results
@@ -225,6 +231,7 @@ Item {
 
     function searchOptions() {
         return {
+            policyResolver: root.policyResolver,
             routingTree: root.routingTree,
             visibilityThreshold: visibilityThreshold,
             includePath: includePath,

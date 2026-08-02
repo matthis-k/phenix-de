@@ -4,7 +4,6 @@ import Quickshell
 import qs.services
 import "PolicyChain.qml"
 import "DecisionDecider.qml"
-import "CompositeSearchPolicyRegistry.js" as JsRegistry
 
 Singleton {
     readonly property var prof: Profiler.scope("launcher.takeover", { category: "launcher" })
@@ -40,7 +39,7 @@ Singleton {
             : takeoverRequestRaw;
 
         PolicyChain.run(takeoverNames, function(name, spec) {
-            var policy = PolicyChain.lookupPolicy(JsRegistry.takeoverRequest, spec);
+            var policy = PolicyChain.resolvePolicy(ctx, "takeoverRequest", spec);
             if (!policy) return null;
             var result = policy.apply(childEv, parentEv, ctx, spec && spec.args);
             if (result && Array.isArray(result)) {
@@ -78,7 +77,7 @@ Singleton {
         var acceptNames = takeoverAcceptRaw === undefined ? ["accept-dominated-claims"] : takeoverAcceptRaw;
         var acceptVotes = [];
         PolicyChain.run(acceptNames, function(name, spec) {
-            var policy = PolicyChain.lookupPolicy(JsRegistry.takeoverAccept, spec);
+            var policy = PolicyChain.resolvePolicy(ctx, "takeoverAccept", spec);
             if (!policy) return null;
             var vote = policy.apply(parentEv, claims, ctx, spec && spec.args);
             if (vote && vote.decision) acceptVotes.push(vote);
