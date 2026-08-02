@@ -13,9 +13,11 @@ Singleton {
         childVisible: "all-and"
     })
 
-    function lookupPolicy(registry, spec) {
-        if (!registry || !spec) return null;
-        return spec.name ? registry.get(spec.name) : null;
+    function resolvePolicy(ctx, kind, spec) {
+        var resolver = ctx && ctx.policyResolver;
+        if (!resolver || typeof resolver.resolve !== "function")
+            throw new Error("Launcher policyResolver dependency is required");
+        return resolver.resolve(kind, spec);
     }
 
     function nowMs() {

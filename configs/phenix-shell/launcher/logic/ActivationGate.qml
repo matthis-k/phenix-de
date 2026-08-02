@@ -5,7 +5,6 @@ import qs.services
 import "PolicyChain.qml"
 import "DecisionDecider.qml"
 import "PolicySpec.qml"
-import "CompositeSearchPolicyRegistry.js" as JsRegistry
 
 Singleton {
     readonly property var prof: Profiler.scope("launcher.activationGate", { category: "launcher" })
@@ -96,7 +95,7 @@ Singleton {
 
         var riskVotes = [];
         PolicyChain.run(riskGateNames, function(name, spec) {
-            var policy = PolicyChain.lookupPolicy(JsRegistry.riskGate, spec);
+            var policy = PolicyChain.resolvePolicy(ctx, "riskGate", spec);
             if (!policy) return null;
             var vote = policy.apply(node, ctx, runtime, spec && spec.args);
             if (vote) riskVotes.push(vote);
