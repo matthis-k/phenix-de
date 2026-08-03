@@ -130,11 +130,14 @@ PanelWindow {
     }
 
     Component.onCompleted: {
+        HyprlandPreviewCoordinator.registerPreview(root.screen, root);
         if (WlrLayershell) {
             WlrLayershell.layer = WlrLayer.Overlay;
             WlrLayershell.exclusionMode = ExclusionMode.Ignore;
         }
     }
+
+    Component.onDestruction: HyprlandPreviewCoordinator.unregisterPreview(root.screen, root)
 
     Item {
         id: revealFrame

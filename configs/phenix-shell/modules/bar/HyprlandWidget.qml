@@ -94,8 +94,7 @@ Item {
 
             Repeater {
                 model: workspace.toplevels
-
-                delegate: TopLevel {}  // modelData auto-assigned to required property
+                delegate: TopLevel {}
             }
         }
     }
@@ -137,9 +136,9 @@ Item {
         onHoveredChanged: {
             if (hovered) {
                 const globalPos = tl.mapToGlobal(Qt.point(tl.width / 2, 0));
-                ShellActions.requestHyprlandPreview(screen, toplevel, globalPos.x);
+                HyprlandPreviewCoordinator.showPreviewAtGlobal(screen, toplevel, globalPos.x);
             }
-            ShellActions.addHyprlandPreviewHover(screen, hovered ? 1 : -1);
+            HyprlandPreviewCoordinator.addExternalHover(screen, hovered ? 1 : -1);
         }
 
         onClicked: {
