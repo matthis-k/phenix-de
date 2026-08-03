@@ -3,12 +3,31 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQml
 import QtQml.Models
+import qs.components
 
 QtObject {
     id: root
 
     property var controller: null
     property var coordinator: null
+
+    readonly property int projectionRevision: resultProjection.revision
+    readonly property var snapshotChanges: resultProjection.changes
+    readonly property var snapshotChangeSummary: resultProjection.changeSummary
+
+    SnapshotProjection {
+        id: resultProjection
+        keyOf: function(item) { return item ? item.key || "" : ""; }
+        equals: function(previous, next) {
+            if (previous === next)
+                return true;
+            if (!previous || !next)
+                return false;
+            return previous.payload === next.payload
+                && previous.animationRole === next.animationRole
+                && previous.estimatedHeight === next.estimatedHeight;
+        }
+    }
 
     function keyForResult(result) {
         if (!result)
@@ -59,14 +78,20 @@ QtObject {
         if (!root.controller || !root.coordinator)
             return;
 
-        const items = adaptResults(root.controller.results || []);
-
         const ctx = Object.assign({}, context || {}, {
             queryRevision: root.controller.queryRevision,
             generation: root.controller.generation
         });
+        const items = adaptResults(root.controller.results || []);
+        const committed = resultProjection.apply(items, ctx.reason || "query");
 
-        root.coordinator.applySnapshot(items, ctx);
+        ctx.projectionRevision = resultProjection.revision;
+        if (committed) {
+            ctx.changeSet = resultProjection.changes;
+            ctx.changeSummary = resultProjection.changeSummary;
+        }
+
+        root.coordinator.applySnapshot(resultProjection.snapshot || [], ctx);
     }
 
     function resetTransientState() {
@@ -75,11 +100,18 @@ QtObject {
     }
 
     function resetModel() {
+        resultProjection.reset([]);
         if (root.coordinator)
             root.coordinator.resetModel();
     }
 
     function debugState(extra) {
-        return root.coordinator ? root.coordinator.debugState(extra) : {};
+        var state = root.coordinator ? root.coordinator.debugState(extra) : {};
+        state.projection = {
+            revision: resultProjection.revision,
+            ready: resultProjection.ready,
+            changes: resultProjection.changeSummary
+        };
+        return state;
     }
 }

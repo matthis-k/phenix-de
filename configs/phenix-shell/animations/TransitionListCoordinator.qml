@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQml
 import QtQml.Models
+import "../components/SnapshotDiff.js" as SnapshotDiff
 
 QtObject {
     id: root
@@ -19,6 +20,9 @@ QtObject {
 
     property int snapshotSerial: 0
     property var lastOperations: []
+    property var lastChangeSet: SnapshotDiff.empty()
+    property var lastChangeSummary: lastChangeSet.summary
+    property var _snapshotRows: []
     property var _recentlyRemovedKeys: ({})
     property bool hasActiveItems: false
     property var _lastSnapshotTime: null
@@ -28,6 +32,7 @@ QtObject {
     property string snapshotQuery: ""
     property int snapshotQueryRevision: -1
     property int snapshotGeneration: -1
+    property int projectionRevision: -1
 
     property TransitionPolicy policy: TransitionPolicy { id: transitionPolicy }
 
@@ -38,9 +43,18 @@ QtObject {
     }
 
     property Timer _leavingRemovalTimer: Timer {
-        interval: transitionPolicy.removalDelay(root.animationMode) + 80
+        interval: 1
         repeat: false
         onTriggered: root.removeSettledLeavingRows()
+    }
+
+    property Timer _settleTimer: Timer {
+        interval: Math.max(
+            transitionPolicy.duration(TransitionPolicy.Kind.ListInsert, root.animationMode),
+            transitionPolicy.duration(TransitionPolicy.Kind.ListMove, root.animationMode)
+        ) + 40
+        repeat: false
+        onTriggered: root.settleRows()
     }
 
     signal snapshotApplied()
@@ -59,15 +73,20 @@ QtObject {
                 nextGeneration: nextGeneration,
                 currentGeneration: root.snapshotGeneration
             });
-            return;
+            return false;
         }
+
+        const changes = root.changeSetFor(rows, ctx.changeSet);
 
         root.snapshotSerial += 1;
         root.lastOperations = [];
+        root.lastChangeSet = changes;
+        root.lastChangeSummary = changes.summary || SnapshotDiff.empty().summary;
 
         root.snapshotQuery = String(ctx.inputText || "");
         root.snapshotQueryRevision = nextRevision;
         root.snapshotGeneration = nextGeneration;
+        root.projectionRevision = numberOr(ctx.projectionRevision, root.projectionRevision);
 
         const mode = transitionPolicy.modeForSnapshot({
             inputText: ctx.inputText || "",
@@ -78,7 +97,7 @@ QtObject {
             timeSinceLastSnapshot: root.timeSinceLastSnapshot(),
             snapshotSerial: root.snapshotSerial,
             activeItemCount: rows.length,
-            previousItemCount: visualModel.count
+            previousItemCount: root._snapshotRows.length
         });
 
         root.animationMode = mode;
@@ -89,13 +108,69 @@ QtObject {
         if (root.hardReplaceSnapshots || mode === TransitionPolicy.Mode.None || ctx.reason === "hard-replace") {
             hardReplace(rows);
         } else {
-            reconcileKeyed(rows, ctx);
+            reconcileChanges(rows, changes);
         }
 
+        root._snapshotRows = rows;
         recomputeTargets();
         recomputeHasActiveItems();
+        scheduleSettling();
         logSnapshot(rows);
         root.snapshotApplied();
+        return true;
+    }
+
+    function changeSetFor(rows, supplied) {
+        if (supplied && Array.isArray(supplied.inserted)
+                && Array.isArray(supplied.removed)
+                && Array.isArray(supplied.retained))
+            return root.normalizedChangeSet(supplied);
+
+        return SnapshotDiff.keyed(
+            root._snapshotRows || [],
+            rows,
+            function(row) { return row.key; },
+            root.sameRow
+        );
+    }
+
+    function normalizedChangeSet(changes) {
+        const moved = Array.isArray(changes.moved) ? changes.moved : [];
+        const reordered = Array.isArray(changes.reordered)
+            ? changes.reordered
+            : moved.filter(function(entry) { return entry.movement === "reorder"; });
+        const displaced = Array.isArray(changes.displaced)
+            ? changes.displaced
+            : moved.filter(function(entry) { return entry.movement !== "reorder"; });
+
+        return {
+            changed: changes.changed === true,
+            inserted: changes.inserted || [],
+            removed: changes.removed || [],
+            updated: changes.updated || [],
+            moved: moved,
+            reordered: reordered,
+            displaced: displaced,
+            retained: changes.retained || [],
+            operations: changes.operations || [],
+            summary: changes.summary || {
+                inserted: (changes.inserted || []).length,
+                removed: (changes.removed || []).length,
+                updated: (changes.updated || []).length,
+                moved: moved.length,
+                reordered: reordered.length,
+                displaced: displaced.length,
+                retained: (changes.retained || []).length
+            }
+        };
+    }
+
+    function sameRow(previous, next) {
+        return previous && next
+            && previous.payload === next.payload
+            && previous.animationRole === next.animationRole
+            && previous.fullHeight === next.fullHeight
+            && previous.estimatedHeight === next.estimatedHeight;
     }
 
     function numberOr(value, fallback) {
@@ -127,39 +202,57 @@ QtObject {
         recordOperation("hard-replace", { count: rows.length });
     }
 
-    function reconcileKeyed(rows, ctx) {
+    function reconcileChanges(rows, changes) {
         const targetKeys = makeTargetKeySet(rows);
+        const movement = movementMetadata(changes);
+
+        for (let i = 0; i < changes.removed.length; i += 1) {
+            const removal = changes.removed[i];
+            const index = indexOfKey(removal.key);
+            if (index >= 0)
+                markLeaving(index, removal);
+        }
 
         for (let i = 0; i < rows.length; i += 1) {
             const row = rows[i];
-            clearRecentlyRemoved(row.key);
-
             const existingIndex = indexOfKey(row.key);
-            if (existingIndex >= 0) {
-                setTargetPresent(existingIndex, row, i);
-            } else {
-                insertTargetItem(row, i, rows);
-            }
+            const metadata = {
+                movementKind: movement.kindByKey[row.key] || "stationary",
+                contentChanged: movement.updatedKeys[row.key] === true
+            };
+
+            if (existingIndex >= 0)
+                setTargetPresent(existingIndex, row, i, metadata);
+            else
+                insertTargetItem(row, i);
         }
 
         for (let i = visualModel.count - 1; i >= 0; i -= 1) {
             const item = visualModel.get(i);
-            if (targetKeys[item.key])
+            if (targetKeys[item.key] || item.phase === "leaving")
                 continue;
-            if (item.phase === "leaving")
-                continue;
-
-            rememberRecentlyRemoved(item.key);
-            visualModel.setProperty(i, "phase", "leaving");
-            visualModel.setProperty(i, "targetOpacity", 0);
-            visualModel.setProperty(i, "targetScale", 0.98);
-            visualModel.setProperty(i, "targetHeight", 0);
-            visualModel.setProperty(i, "visualHeight", item.visualHeight);
-            visualModel.setProperty(i, "zValue", -1);
-            recordOperation("remove", { key: item.key, from: i });
+            markLeaving(i, { key: item.key, index: item.rank, fallback: true });
         }
 
         scheduleLeavingRemoval();
+    }
+
+    function movementMetadata(changes) {
+        const kindByKey = {};
+        const updatedKeys = {};
+        let i;
+
+        for (i = 0; i < (changes.displaced || []).length; i += 1)
+            kindByKey[String(changes.displaced[i].key)] = "displaced";
+        for (i = 0; i < (changes.reordered || []).length; i += 1)
+            kindByKey[String(changes.reordered[i].key)] = "reorder";
+        for (i = 0; i < (changes.updated || []).length; i += 1)
+            updatedKeys[String(changes.updated[i].key)] = true;
+
+        return {
+            kindByKey: kindByKey,
+            updatedKeys: updatedKeys
+        };
     }
 
     function makeLiveItem(row, rank, initialY) {
@@ -168,9 +261,13 @@ QtObject {
             key: row.key,
             payload: row.payload,
             rank: rank,
+            previousRank: rank,
             targetRank: rank,
-            zValue: zValueForRank(rank),
+            zValue: zValueForMovement(rank, "stationary", rank),
             phase: "live",
+            movementKind: "stationary",
+            contentChanged: false,
+            leaveDeadline: 0,
             animationRole: row.animationRole || "",
             y: initialY,
             targetY: initialY,
@@ -182,29 +279,52 @@ QtObject {
         };
     }
 
-    function setTargetPresent(index, row, rank) {
+    function setTargetPresent(index, row, rank, metadata) {
         const current = visualModel.get(index);
         const measured = positiveOr(current.measuredHeight, row.fullHeight || row.estimatedHeight || root.estimatedRowHeight);
+        const wasLeaving = current.phase === "leaving";
+        const movementKind = wasLeaving ? "resurrect" : (metadata.movementKind || "stationary");
+        const nextPhase = current.phase === "entering" && !wasLeaving ? "entering" : "live";
+
+        clearRecentlyRemoved(row.key);
 
         visualModel.setProperty(index, "payload", row.payload);
+        visualModel.setProperty(index, "previousRank", current.rank);
         visualModel.setProperty(index, "rank", rank);
         visualModel.setProperty(index, "targetRank", rank);
-        visualModel.setProperty(index, "zValue", zValueForRank(rank));
-        visualModel.setProperty(index, "phase", current.phase === "entering" ? "entering" : "live");
+        visualModel.setProperty(index, "phase", nextPhase);
+        visualModel.setProperty(index, "movementKind", movementKind);
+        visualModel.setProperty(index, "contentChanged", metadata.contentChanged === true);
+        visualModel.setProperty(index, "leaveDeadline", 0);
         visualModel.setProperty(index, "animationRole", row.animationRole || "");
         visualModel.setProperty(index, "targetHeight", measured);
         visualModel.setProperty(index, "targetOpacity", 1);
         visualModel.setProperty(index, "targetScale", 1);
 
-        recordOperation("target-live", {
-            key: row.key,
-            index: index,
-            rank: rank,
-            previousPhase: current.phase
-        });
+        if (nextPhase !== "entering")
+            visualModel.setProperty(index, "visualHeight", measured);
+
+        visualModel.setProperty(index, "zValue", zValueForMovement(rank, movementKind, current.rank));
+
+        if (wasLeaving) {
+            recordOperation("resurrect", {
+                key: row.key,
+                from: current.rank,
+                to: rank
+            });
+        } else if (movementKind !== "stationary") {
+            recordOperation(movementKind, {
+                key: row.key,
+                from: current.rank,
+                to: rank
+            });
+        }
+
+        if (metadata.contentChanged === true)
+            recordOperation("update", { key: row.key, at: rank });
     }
 
-    function insertTargetItem(row, rank, rows) {
+    function insertTargetItem(row, rank) {
         const insertIndex = insertionIndexForRank(rank);
         const y = insertionYForRank(rank);
         const full = row.fullHeight || row.estimatedHeight || root.estimatedRowHeight;
@@ -214,9 +334,13 @@ QtObject {
             key: row.key,
             payload: row.payload,
             rank: rank,
+            previousRank: -1,
             targetRank: rank,
-            zValue: zValueForRank(rank),
+            zValue: zValueForMovement(rank, "insert", -1),
             phase: entering ? "entering" : "live",
+            movementKind: "insert",
+            contentChanged: false,
+            leaveDeadline: 0,
             animationRole: row.animationRole || "",
             y: y,
             targetY: y,
@@ -237,9 +361,7 @@ QtObject {
         if (entering) {
             Qt.callLater(function() {
                 const idx = indexOfKey(row.key);
-                if (idx < 0)
-                    return;
-                if (visualModel.get(idx).phase === "leaving")
+                if (idx < 0 || visualModel.get(idx).phase === "leaving")
                     return;
 
                 visualModel.setProperty(idx, "targetOpacity", 1);
@@ -249,6 +371,30 @@ QtObject {
                 recomputeTargets();
             });
         }
+    }
+
+    function markLeaving(index, removal) {
+        const item = visualModel.get(index);
+        if (!item || item.phase === "leaving")
+            return;
+
+        rememberRecentlyRemoved(item.key);
+        visualModel.setProperty(index, "previousRank", item.rank);
+        visualModel.setProperty(index, "phase", "leaving");
+        visualModel.setProperty(index, "movementKind", "remove");
+        visualModel.setProperty(index, "contentChanged", false);
+        visualModel.setProperty(index, "leaveDeadline", Date.now() + transitionPolicy.removalDelay(root.animationMode) + 80);
+        visualModel.setProperty(index, "targetOpacity", 0);
+        visualModel.setProperty(index, "targetScale", 0.98);
+        visualModel.setProperty(index, "targetHeight", 0);
+        visualModel.setProperty(index, "visualHeight", 0);
+        visualModel.setProperty(index, "zValue", -1);
+
+        recordOperation("remove", {
+            key: item.key,
+            from: removal && removal.index !== undefined ? removal.index : item.rank,
+            fallback: !!(removal && removal.fallback)
+        });
     }
 
     function insertionIndexForRank(rank) {
@@ -303,7 +449,11 @@ QtObject {
             if (item.phase !== "entering")
                 visualModel.setProperty(idx, "visualHeight", h);
 
-            visualModel.setProperty(idx, "zValue", zValueForRank(order));
+            visualModel.setProperty(
+                idx,
+                "zValue",
+                zValueForMovement(order, item.movementKind || "stationary", item.previousRank)
+            );
             y += h;
         }
 
@@ -325,7 +475,8 @@ QtObject {
 
         if (visualModel.get(idx).phase !== "leaving") {
             visualModel.setProperty(idx, "targetHeight", h);
-            visualModel.setProperty(idx, "visualHeight", h);
+            if (visualModel.get(idx).phase !== "entering")
+                visualModel.setProperty(idx, "visualHeight", h);
         }
 
         recordOperation("measure", { key: key, height: h });
@@ -379,22 +530,72 @@ QtObject {
     }
 
     function scheduleLeavingRemoval() {
+        const now = Date.now();
+        let nextDelay = -1;
+
         for (let i = 0; i < visualModel.count; i += 1) {
-            if (visualModel.get(i).phase === "leaving") {
-                root._leavingRemovalTimer.restart();
+            const item = visualModel.get(i);
+            if (item.phase !== "leaving")
+                continue;
+
+            const deadline = numberOr(item.leaveDeadline, now);
+            const remaining = Math.max(1, deadline - now);
+            if (nextDelay < 0 || remaining < nextDelay)
+                nextDelay = remaining;
+        }
+
+        if (nextDelay < 0) {
+            root._leavingRemovalTimer.stop();
+            return;
+        }
+
+        root._leavingRemovalTimer.interval = nextDelay;
+        root._leavingRemovalTimer.restart();
+    }
+
+    function scheduleSettling() {
+        for (let i = 0; i < visualModel.count; i += 1) {
+            const item = visualModel.get(i);
+            if (item.phase === "entering"
+                    || (item.phase !== "leaving" && item.movementKind !== "stationary")
+                    || item.contentChanged) {
+                root._settleTimer.restart();
                 return;
             }
         }
     }
 
+    function settleRows() {
+        for (let i = 0; i < visualModel.count; i += 1) {
+            const item = visualModel.get(i);
+            if (item.phase === "leaving")
+                continue;
+
+            if (item.phase === "entering") {
+                const settledHeight = positiveOr(item.measuredHeight, root.estimatedRowHeight);
+                visualModel.setProperty(i, "phase", "live");
+                visualModel.setProperty(i, "targetHeight", settledHeight);
+                visualModel.setProperty(i, "visualHeight", settledHeight);
+            }
+            visualModel.setProperty(i, "previousRank", item.rank);
+            visualModel.setProperty(i, "movementKind", "stationary");
+            visualModel.setProperty(i, "contentChanged", false);
+            visualModel.setProperty(i, "zValue", zValueForMovement(item.rank, "stationary", item.rank));
+        }
+    }
+
     function removeSettledLeavingRows() {
+        const now = Date.now();
+
         for (let i = visualModel.count - 1; i >= 0; i -= 1) {
-            if (visualModel.get(i).phase === "leaving")
+            const item = visualModel.get(i);
+            if (item.phase === "leaving" && numberOr(item.leaveDeadline, 0) <= now)
                 visualModel.remove(i);
         }
 
         recomputeTargets();
         recomputeHasActiveItems();
+        scheduleLeavingRemoval();
     }
 
     function normaliseItems(items) {
@@ -436,18 +637,26 @@ QtObject {
             return String(item.key);
         if (item.id)
             return String(item.id);
+        if (item.nodeId)
+            return String(item.nodeId);
         return "";
     }
 
     function indexOfKey(key) {
         for (let i = 0; i < visualModel.count; i += 1) {
-            if (visualModel.get(i).key === key)
+            if (String(visualModel.get(i).key) === String(key))
                 return i;
         }
         return -1;
     }
 
-    function zValueForRank(rank) {
+    function zValueForMovement(rank, movementKind, previousRank) {
+        if (movementKind === "reorder" || movementKind === "resurrect")
+            return 30000 - rank;
+        if (movementKind === "insert")
+            return 20000 - rank;
+        if (movementKind === "displaced")
+            return 10000 - rank;
         return 10000 - rank;
     }
 
@@ -476,10 +685,16 @@ QtObject {
         root.snapshotQuery = "";
         root.snapshotQueryRevision = -1;
         root.snapshotGeneration = -1;
+        root.projectionRevision = -1;
     }
 
     function resetModel() {
+        root._leavingRemovalTimer.stop();
+        root._settleTimer.stop();
         visualModel.clear();
+        root._snapshotRows = [];
+        root.lastChangeSet = SnapshotDiff.empty();
+        root.lastChangeSummary = root.lastChangeSet.summary;
         root.contentHeight = 0;
         root.hasActiveItems = false;
         root.resetTransientState();
@@ -501,6 +716,7 @@ QtObject {
             "mode", root.animationMode,
             "input", rows.length,
             "model", visualModel.count,
+            "changes", JSON.stringify(root.lastChangeSummary),
             "q:", root.snapshotQuery,
             "rev:", root.snapshotQueryRevision
         );
@@ -516,21 +732,18 @@ QtObject {
                 index: i,
                 key: item.key,
                 phase: item.phase,
+                movementKind: item.movementKind,
+                contentChanged: item.contentChanged,
+                leaveDeadline: item.leaveDeadline,
                 rank: item.rank,
-                targetRank: item.targetRank,
-                y: item.y,
-                targetY: item.targetY,
-                visualHeight: item.visualHeight,
-                targetHeight: item.targetHeight,
-                measuredHeight: item.measuredHeight,
-                opacity: item.targetOpacity,
-                scale: item.targetScale,
-                zValue: item.zValue
+                previousRank: item.previousRank,
+                targetRank: item.targetRank
             });
         }
 
         return {
             snapshotSerial: root.snapshotSerial,
+            projectionRevision: root.projectionRevision,
             query: root.snapshotQuery,
             queryRevision: root.snapshotQueryRevision,
             generation: root.snapshotGeneration,
@@ -539,6 +752,7 @@ QtObject {
             modelCount: visualModel.count,
             contentHeight: root.contentHeight,
             rows: rows,
+            changeSummary: root.lastChangeSummary,
             lastOperations: root.lastOperations,
             recentlyRemovedKeys: recentlyRemoved,
             metrics: extra || {}
