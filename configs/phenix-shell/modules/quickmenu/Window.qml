@@ -9,25 +9,19 @@ import qs.components
 PanelWindow {
     id: root
     property var shellScreenState
-    property string presentationMode: "overview"
-    readonly property bool detailed: presentationMode === "detailed"
+    readonly property string presentationMode: DashboardPresentation.mode
+    readonly property bool detailed: DashboardPresentation.detailed
     readonly property bool dashboardVisible: !!shellScreenState && shellScreenState.dashboardPhase !== "closed"
     property real tabSwipeAccumulator: 0
     readonly property real tabSwipeThreshold: Config.spacing.xxl
     focusable: true
 
-    function normalizePresentationMode(mode) {
-        return String(mode || "").toLowerCase() === "detailed"
-            ? "detailed"
-            : "overview";
-    }
-
     function setPresentationMode(mode) {
-        presentationMode = normalizePresentationMode(mode);
+        DashboardPresentation.setMode(mode);
     }
 
     function togglePresentationMode() {
-        setPresentationMode(detailed ? "overview" : "detailed");
+        DashboardPresentation.toggle();
     }
 
     function resetTabSwipe() {
