@@ -143,7 +143,7 @@ Rectangle {
             }
 
             DashboardIconButton {
-                visible: root.collapsible
+                visible: root.collapsible && !root.showDetailToggle
                 Layout.preferredWidth: 24
                 Layout.preferredHeight: 24
                 Layout.alignment: Qt.AlignVCenter
