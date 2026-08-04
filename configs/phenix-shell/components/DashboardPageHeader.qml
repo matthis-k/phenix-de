@@ -6,9 +6,8 @@ ColumnLayout {
     id: root
 
     property string title: ""
-    property string subtitle: ""
     property Component accessory: null
-    property bool showDivider: title !== "" || subtitle !== "" || accessory !== null
+    property bool showDivider: title !== "" || accessory !== null
 
     spacing: Config.spacing.xs
 
@@ -34,17 +33,8 @@ ColumnLayout {
             sourceComponent: root.accessory
             Layout.preferredWidth: item ? item.implicitWidth : 0
             Layout.preferredHeight: item ? item.implicitHeight : 0
-            Layout.alignment: Qt.AlignTop
+            Layout.alignment: Qt.AlignVCenter
         }
-    }
-
-    Text {
-        visible: root.subtitle !== ""
-        text: root.subtitle
-        Layout.fillWidth: true
-        color: Config.styling.text2
-        font.pixelSize: 13
-        wrapMode: Text.WordWrap
     }
 
     Rectangle {
