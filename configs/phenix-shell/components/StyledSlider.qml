@@ -71,10 +71,8 @@ Slider {
             duration: Config.motion.micro
         }
 
-        Behavior on width {
-            Animations.NumberBehavior {
-                kind: Animations.NumberBehavior.Kind.Micro
-            }
+        Animations.NumberBehavior on width {
+            kind: Animations.NumberBehavior.Kind.Micro
         }
     }
 }
