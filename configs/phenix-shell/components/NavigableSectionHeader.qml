@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+
 import qs.animations as Animations
 import qs.services
 import qs.components
@@ -39,6 +40,13 @@ Rectangle {
         root.localDetailed = !root.localDetailed;
     }
 
+    function navigate() {
+        if (!root.navigable)
+            return;
+        root.screenState.openDashboard(root.targetTab);
+        root.headerClicked();
+    }
+
     Accessible.description: root.subtitle
     color: Config.styling.bg1
     radius: Config.styling.radius
@@ -53,50 +61,58 @@ Rectangle {
             Layout.fillWidth: true
             spacing: Config.spacing.xs
 
-            Icon {
-                visible: root.iconName !== ""
-                iconName: root.iconName
-                fallbackIconName: root.iconName
-                color: root.iconColor
-                implicitSize: 18
-                Layout.alignment: Qt.AlignVCenter
-            }
+            ActionButton {
+                id: navigationAction
 
-            Text {
                 Layout.fillWidth: true
-                text: root.title
-                color: root.navigable
-                    ? (hoverHighlight ? Config.styling.secondaryAccent : root.titleColor)
-                    : root.titleColor
-                font.pixelSize: 16
-                font.bold: true
-                elide: Text.ElideRight
+                Layout.minimumHeight: 36
+                focusPolicy: root.navigable
+                    ? Qt.TabFocus | Qt.ClickFocus
+                    : Qt.NoFocus
+                hoverEnabled: root.navigable
+                cursorShape: root.navigable ? Qt.PointingHandCursor : Qt.ArrowCursor
+                fillOnHover: root.navigable
+                indicatorOnHover: root.navigable
+                active: false
+                backgroundColor: "transparent"
+                accessibleName: root.navigable
+                    ? qsTr("Open %1").arg(root.title)
+                    : root.title
+                accessibleDescription: root.subtitle
+                onClicked: root.navigate()
 
-                property bool hoverHighlight: false
+                contentItem: RowLayout {
+                    spacing: Config.spacing.xs
 
-                Animations.StateColorBehavior on color {
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    visible: root.navigable
-                    cursorShape: root.navigable ? Qt.PointingHandCursor : Qt.ArrowCursor
-                    hoverEnabled: root.navigable
-
-                    onClicked: {
-                        if (root.navigable) {
-                            root.screenState.openDashboard(root.targetTab);
-                            root.headerClicked();
-                        }
+                    Icon {
+                        visible: root.iconName !== ""
+                        iconName: root.iconName
+                        fallbackIconName: root.iconName
+                        color: root.iconColor
+                        implicitSize: 18
+                        Layout.alignment: Qt.AlignVCenter
                     }
 
-                    onEntered: {
-                        if (root.navigable)
-                            parent.hoverHighlight = true;
+                    Text {
+                        Layout.fillWidth: true
+                        text: root.title
+                        color: navigationAction.hovered && root.navigable
+                            ? Config.styling.secondaryAccent
+                            : root.titleColor
+                        font.pixelSize: 16
+                        font.bold: true
+                        elide: Text.ElideRight
+
+                        Animations.StateColorBehavior on color {}
                     }
-                    onExited: {
-                        if (root.navigable)
-                            parent.hoverHighlight = false;
+
+                    Icon {
+                        visible: root.navigable
+                        iconName: "go-next-symbolic"
+                        fallbackIconName: "go-next-symbolic"
+                        color: Config.styling.text1
+                        implicitSize: 16
+                        Layout.alignment: Qt.AlignVCenter
                     }
                 }
             }

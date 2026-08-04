@@ -23,7 +23,7 @@ Button {
     property real hoveredScale: 1.0
     property real unhoveredScale: 1.0
     property real baseScale: 1.0
-    property int scaleAnimationDuration: 150
+    property int scaleAnimationDuration: Config.motion.micro
     property int scaleAnimationEasing: Easing.OutCubic
     property int cursorShape: Qt.PointingHandCursor
 

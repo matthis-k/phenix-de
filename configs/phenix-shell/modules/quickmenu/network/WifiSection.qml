@@ -29,8 +29,7 @@ ColumnLayout {
     DashboardSection {
         id: connectedSection
         Layout.fillWidth: true
-        title: connectedNetworks.length === 1 ? "Connected network" : "Connected networks"
-        showDetailToggle: connectedNetworks.length > 0
+        title: connectedNetworks.length === 1 ? qsTr("Connected network") : qsTr("Connected networks")
 
         Repeater {
             model: connectedNetworks
@@ -56,7 +55,7 @@ ColumnLayout {
 
         Text {
             visible: connectedNetworks.length === 0
-            text: "No connected Wi-Fi networks"
+            text: qsTr("No connected Wi-Fi networks")
             color: Config.styling.text2
             font.pixelSize: 12
         }
@@ -68,13 +67,13 @@ ColumnLayout {
         Layout.fillHeight: true
         Layout.minimumHeight: 120
         Layout.preferredHeight: 0
-        title: "Available networks"
-        showDetailToggle: disconnectedNetworks.length > 0
+        title: qsTr("Available networks")
         headerAccessory: Component {
             DashboardIconButton {
                 enabled: NetworkService.wifiEnabled
                 iconName: "view-refresh-symbolic"
                 fallbackIconName: "view-refresh-symbolic"
+                accessibleName: qsTr("Rescan Wi-Fi networks")
                 onClicked: NetworkService.rescan()
             }
         }
@@ -109,7 +108,7 @@ ColumnLayout {
 
             Text {
                 visible: NetworkService.networks.length === 0
-                text: "No Wi-Fi networks found"
+                text: qsTr("No Wi-Fi networks found")
                 color: Config.styling.text2
                 font.pixelSize: 12
             }

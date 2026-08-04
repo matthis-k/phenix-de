@@ -8,25 +8,22 @@ import "audio"
 DashboardPage {
     id: root
 
-    title: "Audio"
-    subtitle: root.detailed
-        ? qsTr("All PipeWire devices and active streams")
-        : qsTr("Primary devices; active and exceptional devices are promoted")
-    fillHeight: true
+    title: qsTr("Audio")
+    subtitle: qsTr("Primary devices and application streams")
+    scrollable: true
 
     readonly property int contentWidth: width > 0 ? width : 360
-    readonly property int itemSpacing: 3
-    readonly property int rowHeight: 40
-    readonly property int actionHeight: 28
+    readonly property int itemSpacing: Config.spacing.xs
+    readonly property int actionHeight: 32
     readonly property int iconSlotWidth: 28
     readonly property int iconSize: 20
     readonly property int itemIconSize: 22
     readonly property int itemTextSize: 14
     readonly property int itemSubtextSize: 12
-    readonly property int iconTextGap: 10
-    readonly property int horizontalPadding: 8
-    readonly property int verticalPadding: 4
-    readonly property int sliderHeight: 24
+    readonly property int iconTextGap: Config.spacing.sm
+    readonly property int horizontalPadding: Config.spacing.xs
+    readonly property int verticalPadding: Config.spacing.xs
+    readonly property int sliderHeight: 28
     readonly property int sliderWidth: 100
 
     AudioDashboardObservation {
@@ -43,52 +40,73 @@ DashboardPage {
         entries: AudioService.inputEntries
     }
 
+    readonly property var applicationStreams: {
+        const sourceEntries = root.detailed
+            ? outputObservation.allEntries
+            : outputObservation.visibleEntries;
+        const seen = {};
+        const result = [];
+        sourceEntries.forEach(entry => {
+            (entry.streams || []).forEach(stream => {
+                const key = String(stream.id || stream.name || "");
+                if (seen[key])
+                    return;
+                seen[key] = true;
+                result.push(stream);
+            });
+        });
+        return result;
+    }
+
     AudioDeviceSection {
         id: outputSection
-        title: outputSection.detailed ? "Output devices" : "Output"
+        title: outputSection.detailed ? qsTr("Output devices") : qsTr("Output")
         entries: outputSection.detailed
             ? outputObservation.allEntries
             : outputObservation.visibleEntries
-        sinks: AudioService.outputEntries
-        emptyText: "No output devices found"
-        tabSwipeTarget: root.tabSwipeTarget
+        isInput: false
+        emptyText: qsTr("No output devices found")
         contentWidth: root.contentWidth
-        itemSpacing: root.itemSpacing
-        actionHeight: root.actionHeight
-        iconSlotWidth: root.iconSlotWidth
-        iconSize: root.iconSize
-        itemIconSize: root.itemIconSize
-        itemTextSize: root.itemTextSize
-        itemSubtextSize: root.itemSubtextSize
-        iconTextGap: root.iconTextGap
-        horizontalPadding: root.horizontalPadding
-        verticalPadding: root.verticalPadding
-        sliderHeight: root.sliderHeight
-        sliderWidth: root.sliderWidth
     }
 
     AudioDeviceSection {
         id: inputSection
-        title: inputSection.detailed ? "Input devices" : "Input"
+        title: inputSection.detailed ? qsTr("Input devices") : qsTr("Input")
         entries: inputSection.detailed
             ? inputObservation.allEntries
             : inputObservation.visibleEntries
-        sinks: AudioService.outputEntries
         isInput: true
-        emptyText: "No input devices found"
-        tabSwipeTarget: root.tabSwipeTarget
+        emptyText: qsTr("No input devices found")
         contentWidth: root.contentWidth
-        itemSpacing: root.itemSpacing
-        actionHeight: root.actionHeight
-        iconSlotWidth: root.iconSlotWidth
-        iconSize: root.iconSize
-        itemIconSize: root.itemIconSize
-        itemTextSize: root.itemTextSize
-        itemSubtextSize: root.itemSubtextSize
-        iconTextGap: root.iconTextGap
-        horizontalPadding: root.horizontalPadding
-        verticalPadding: root.verticalPadding
-        sliderHeight: root.sliderHeight
-        sliderWidth: root.sliderWidth
+    }
+
+    DashboardSection {
+        Layout.fillWidth: true
+        title: qsTr("Application streams")
+        visible: root.applicationStreams.length > 0
+
+        Repeater {
+            model: root.applicationStreams
+
+            delegate: AudioStreamRow {
+                required property var modelData
+                Layout.fillWidth: true
+                stream: modelData
+                sinks: AudioService.outputEntries
+                contentWidth: root.contentWidth
+                itemSpacing: root.itemSpacing
+                actionHeight: root.actionHeight
+                iconSlotWidth: root.iconSlotWidth
+                iconSize: root.iconSize
+                itemIconSize: root.itemIconSize
+                itemTextSize: root.itemTextSize
+                itemSubtextSize: root.itemSubtextSize
+                iconTextGap: root.iconTextGap
+                horizontalPadding: root.horizontalPadding
+                verticalPadding: root.verticalPadding
+                sliderHeight: root.sliderHeight
+                sliderWidth: root.sliderWidth
+            }
+        }
     }
 }

@@ -1,15 +1,23 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import qs.animations as Animations
 
 Item {
     id: root
 
     required property Item target
 
-    property int enterDuration: 140
-    property int removeDuration: 120
-    property int transformDuration: 120
+    readonly property Animations.TransitionPolicy transitionPolicy: Animations.TransitionPolicy {}
+    property int enterDuration: transitionPolicy.duration(
+        Animations.TransitionPolicy.Kind.ListInsert,
+        Animations.TransitionPolicy.Mode.Full)
+    property int removeDuration: transitionPolicy.duration(
+        Animations.TransitionPolicy.Kind.ListRemove,
+        Animations.TransitionPolicy.Mode.Full)
+    property int transformDuration: transitionPolicy.duration(
+        Animations.TransitionPolicy.Kind.Scale,
+        Animations.TransitionPolicy.Mode.Full)
 
     property bool _leaving: false
 
@@ -39,19 +47,28 @@ Item {
         revealAnim.stop();
         revealAnim.to = 1;
         revealAnim.duration = root.enterDuration;
-        revealAnim.easing.type = Easing.OutCubic;
+        revealAnim.easing.type = root.transitionPolicy.easing(
+            Animations.TransitionPolicy.Kind.ListInsert,
+            "in",
+            Animations.TransitionPolicy.Mode.Full);
         revealAnim.restart();
 
         opacityAnim.stop();
         opacityAnim.to = 1;
         opacityAnim.duration = root.transformDuration;
-        opacityAnim.easing.type = Easing.OutCubic;
+        opacityAnim.easing.type = root.transitionPolicy.easing(
+            Animations.TransitionPolicy.Kind.Enter,
+            "in",
+            Animations.TransitionPolicy.Mode.Full);
         opacityAnim.restart();
 
         scaleAnim.stop();
         scaleAnim.to = 1;
         scaleAnim.duration = root.transformDuration;
-        scaleAnim.easing.type = Easing.OutCubic;
+        scaleAnim.easing.type = root.transitionPolicy.easing(
+            Animations.TransitionPolicy.Kind.Scale,
+            "in",
+            Animations.TransitionPolicy.Mode.Full);
         scaleAnim.restart();
     }
 
@@ -61,19 +78,28 @@ Item {
         revealAnim.stop();
         revealAnim.to = 0;
         revealAnim.duration = root.removeDuration;
-        revealAnim.easing.type = Easing.InCubic;
+        revealAnim.easing.type = root.transitionPolicy.easing(
+            Animations.TransitionPolicy.Kind.ListRemove,
+            "out",
+            Animations.TransitionPolicy.Mode.Full);
         revealAnim.restart();
 
         opacityAnim.stop();
         opacityAnim.to = 0;
         opacityAnim.duration = root.removeDuration;
-        opacityAnim.easing.type = Easing.InCubic;
+        opacityAnim.easing.type = root.transitionPolicy.easing(
+            Animations.TransitionPolicy.Kind.Exit,
+            "out",
+            Animations.TransitionPolicy.Mode.Full);
         opacityAnim.restart();
 
         scaleAnim.stop();
         scaleAnim.to = 0.96;
         scaleAnim.duration = root.removeDuration;
-        scaleAnim.easing.type = Easing.InCubic;
+        scaleAnim.easing.type = root.transitionPolicy.easing(
+            Animations.TransitionPolicy.Kind.Scale,
+            "out",
+            Animations.TransitionPolicy.Mode.Full);
         scaleAnim.restart();
     }
 

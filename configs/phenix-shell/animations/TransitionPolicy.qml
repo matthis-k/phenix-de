@@ -36,17 +36,12 @@ QtObject {
         if (!root.animationsEnabled || mode === TransitionPolicy.Mode.None)
             return 0;
 
-        const base = root.baseDuration(kind);
-        const scale = root.modeScale(mode);
-        return Math.round(base * scale);
+        return Math.round(root.baseDuration(kind) * root.modeScale(mode));
     }
 
     function easing(kind, direction, mode) {
         if (!root.animationsEnabled || mode === TransitionPolicy.Mode.None)
             return Easing.Linear;
-
-        if (mode === TransitionPolicy.Mode.FastInput)
-            return Easing.OutQuad;
 
         switch (kind) {
         case TransitionPolicy.Kind.Exit:
@@ -60,7 +55,11 @@ QtObject {
         case TransitionPolicy.Kind.Scale:
             return Easing.OutCubic;
         default:
-            return direction === "out" ? Easing.InCubic : Easing.OutCubic;
+            if (direction === "out")
+                return Easing.InCubic;
+            return mode === TransitionPolicy.Mode.FastInput
+                ? Easing.OutQuad
+                : Easing.OutCubic;
         }
     }
 
@@ -70,9 +69,9 @@ QtObject {
         switch (mode) {
         case TransitionPolicy.Mode.Light:
         case TransitionPolicy.Mode.FastInput:
-            return 80;
+            return Config.motion.micro;
         case TransitionPolicy.Mode.Full:
-            return 160;
+            return Config.motion.short;
         default:
             return 0;
         }
@@ -84,16 +83,18 @@ QtObject {
         switch (mode) {
         case TransitionPolicy.Mode.Light:
         case TransitionPolicy.Mode.FastInput:
-            return 120;
+            return Config.motion.short;
         case TransitionPolicy.Mode.Full:
-            return 180;
+            return Config.motion.medium;
         default:
             return 0;
         }
     }
 
     function shouldAnimate(kind, mode) {
-        return root.animationsEnabled && mode !== TransitionPolicy.Mode.None && root.duration(kind, mode) > 0;
+        return root.animationsEnabled
+            && mode !== TransitionPolicy.Mode.None
+            && root.duration(kind, mode) > 0;
     }
 
     function modeForSnapshot(context) {
@@ -106,7 +107,6 @@ QtObject {
         const prevCtxKey = context.previousContextKey || "";
         const reason = context.reason || "";
         const prevCount = context.previousItemCount || 0;
-        const nextCount = context.activeItemCount || 0;
 
         if (reason === "close" || reason === "reset")
             return TransitionPolicy.Mode.None;
@@ -128,7 +128,7 @@ QtObject {
 
         if (root.isSingleCharEdit(prevInput, input)) {
             const timeSince = context.timeSinceLastSnapshot || 999;
-            if (timeSince < 120)
+            if (timeSince < Config.motion.short)
                 return TransitionPolicy.Mode.FastInput;
             return TransitionPolicy.Mode.Light;
         }
@@ -175,9 +175,21 @@ QtObject {
         }
     }
 
-    function isSingleCharEdit(prev, next) {
-        if (Math.abs(prev.length - next.length) !== 1)
+    function isSingleCharEdit(previous, next) {
+        if (Math.abs(previous.length - next.length) !== 1)
             return false;
-        return prev.indexOf(next) === 0 || next.indexOf(prev) === 0;
+
+        const shorter = previous.length < next.length ? previous : next;
+        const longer = previous.length < next.length ? next : previous;
+        let prefix = 0;
+        while (prefix < shorter.length && shorter[prefix] === longer[prefix])
+            prefix++;
+
+        let suffix = 0;
+        while (suffix < shorter.length - prefix
+                && shorter[shorter.length - 1 - suffix] === longer[longer.length - 1 - suffix])
+            suffix++;
+
+        return prefix + suffix === shorter.length;
     }
 }

@@ -10,13 +10,23 @@ import qs.components
 DashboardPage {
     id: root
 
-    title: "System stats"
+    title: qsTr("System stats")
     subtitle: root.detailed
         ? qsTr("Per-core, memory, GPU, storage, and network telemetry")
         : qsTr("Current resource usage with abnormal observations promoted")
     scrollable: true
 
-    readonly property var cpuCoreColors: [Config.colors.green, Config.colors.yellow, Config.colors.red, Config.colors.maroon, Config.colors.peach, Config.colors.mauve, Config.colors.pink, Config.colors.flamingo, Config.colors.rosewater]
+    readonly property var cpuCoreColors: [
+        Config.colors.green,
+        Config.colors.yellow,
+        Config.colors.red,
+        Config.colors.maroon,
+        Config.colors.peach,
+        Config.colors.mauve,
+        Config.colors.pink,
+        Config.colors.flamingo,
+        Config.colors.rosewater
+    ]
     readonly property color ramColor: Config.colors.blue
     readonly property color swapColor: Config.colors.mauve
     readonly property color gpuUsageColor: Config.colors.blue
@@ -62,15 +72,6 @@ DashboardPage {
         partitions: Services.Stats.diskPartitions
     }
 
-    DashboardObservation {
-        id: networkObservation
-        key: "network-throughput"
-        presentationMode: root.presentationMode
-        overviewExposure: Services.Stats.primaryInterface !== ""
-            ? DashboardObservation.Summary
-            : DashboardObservation.Hidden
-    }
-
     function percentColor(percent, normalColor, warningThreshold, criticalThreshold) {
         const value = Number(percent || 0);
         const warning = Number(warningThreshold !== undefined ? warningThreshold : 75);
@@ -99,27 +100,29 @@ DashboardPage {
     function cpuGraphSeries() {
         const _ = Services.Stats.graphRevision;
         return Services.Stats.calculateCpuGraphSeries().map(series => Object.assign({}, series, {
-                color: series.name === "avg" ? Config.colors.blue : root.cpuCoreColors[parseInt(String(series.name).replace("core", "")) % root.cpuCoreColors.length],
-                lineWidth: series.name === "avg" ? 2.5 : 1.2,
-                visible: series.name === "avg"
-                    || cpuObservation.detailed
-                    || cpuObservation.promotedKeys[series.name] === true
-            }));
+            color: series.name === "avg"
+                ? Config.colors.blue
+                : root.cpuCoreColors[parseInt(String(series.name).replace("core", "")) % root.cpuCoreColors.length],
+            lineWidth: series.name === "avg" ? 2.5 : 1.2,
+            visible: series.name === "avg"
+                || cpuObservation.detailed
+                || cpuObservation.promotedKeys[series.name] === true
+        }));
     }
 
     function memoryGraphSeries() {
         const _ = Services.Stats.graphRevision;
         return Services.Stats.calculateMemoryGraphSeries().map(series => Object.assign({}, series, {
-                color: series.name === "RAM" ? root.ramColor : root.swapColor
-            }));
+            color: series.name === "RAM" ? root.ramColor : root.swapColor
+        }));
     }
 
     function gpuGraphSeries() {
         const _ = Services.Stats.graphRevision;
         return Services.Stats.calculateGpuGraphSeries().map(series => Object.assign({}, series, {
-                color: series.name === "VRAM" ? root.gpuVramColor : root.gpuUsageColor,
-                z: series.name === "VRAM" ? 0 : 1
-            }));
+            color: series.name === "VRAM" ? root.gpuVramColor : root.gpuUsageColor,
+            z: series.name === "VRAM" ? 0 : 1
+        }));
     }
 
     AdaptiveDashboardSection {
@@ -132,14 +135,9 @@ DashboardPage {
                 : qsTr("Current aggregate load"))
         iconName: "processor-symbolic"
         iconColor: root.observationColor(cpuObservation, Config.colors.blue)
-        titleColor: cpuObservation.promoted
-            ? root.observationColor(cpuObservation, Config.colors.blue)
-            : Config.styling.text0
-        subtitleColor: cpuObservation.promoted
-            ? root.observationColor(cpuObservation, Config.colors.blue)
-            : Config.styling.text2
+        titleColor: cpuObservation.promoted ? iconColor : Config.styling.text0
+        subtitleColor: cpuObservation.promoted ? iconColor : Config.styling.text2
         subtitleBold: cpuObservation.promoted
-        collapsible: true
         summary: Component {
             HeaderMetric {
                 label: qsTr("AVG")
@@ -147,8 +145,8 @@ DashboardPage {
                 metricColor: root.observationColor(cpuObservation, Config.colors.blue)
             }
         }
-        overviewDelegate: Component { CpuOverview {} }
-        promotedDelegate: Component { CpuOverview {} }
+        overviewDelegate: null
+        promotedDelegate: Component { CpuPromoted {} }
         detailedDelegate: Component { CpuTelemetry {} }
         Layout.fillWidth: true
     }
@@ -160,64 +158,60 @@ DashboardPage {
             ? qsTr("Allocation and usage history")
             : (memoryObservation.promoted
                 ? memoryObservation.promotionReason
-                : qsTr("Current RAM and swap pressure"))
+                : qsTr("Current RAM pressure"))
         iconName: "computer-symbolic"
         iconColor: root.observationColor(memoryObservation, root.ramColor)
-        titleColor: memoryObservation.promoted
-            ? root.observationColor(memoryObservation, root.ramColor)
-            : Config.styling.text0
-        subtitleColor: memoryObservation.promoted
-            ? root.observationColor(memoryObservation, root.ramColor)
-            : Config.styling.text2
+        titleColor: memoryObservation.promoted ? iconColor : Config.styling.text0
+        subtitleColor: memoryObservation.promoted ? iconColor : Config.styling.text2
         subtitleBold: memoryObservation.promoted
-        collapsible: true
         summary: Component {
             RowLayout {
                 spacing: Config.spacing.xs
+
                 HeaderMetric {
                     label: qsTr("RAM")
                     value: Services.Stats.memoryPercent
                     metricColor: root.percentColor(Services.Stats.memoryPercent, root.ramColor, 85, 90)
                 }
+
                 HeaderMetric {
+                    visible: Services.Stats.swapTotalMiB > 0 && Services.Stats.swapPercent > 0
                     label: qsTr("SWAP")
-                    value: Services.Stats.swapTotalMiB > 0 ? Services.Stats.swapPercent : 0
+                    value: Services.Stats.swapPercent
                     metricColor: root.percentColor(Services.Stats.swapPercent, root.swapColor, 85, 90)
                 }
             }
         }
-        overviewDelegate: Component { MemoryOverview {} }
-        promotedDelegate: Component { MemoryOverview {} }
+        overviewDelegate: null
+        promotedDelegate: Component { MemoryPromoted {} }
         detailedDelegate: Component { MemoryTelemetry {} }
         Layout.fillWidth: true
     }
 
     AdaptiveDashboardSection {
         observation: gpuObservation
+        domainVisible: Services.Stats.gpuAvailable
         title: qsTr("GPU")
         subtitle: gpuObservation.detailed
             ? qsTr("Compute, VRAM, and usage history")
             : (gpuObservation.promoted
                 ? gpuObservation.promotionReason
-                : qsTr("Current compute and VRAM pressure"))
+                : qsTr("Current GPU pressure"))
         iconName: "video-display-symbolic"
         iconColor: root.observationColor(gpuObservation, root.gpuUsageColor)
-        titleColor: gpuObservation.promoted
-            ? root.observationColor(gpuObservation, root.gpuUsageColor)
-            : Config.styling.text0
-        subtitleColor: gpuObservation.promoted
-            ? root.observationColor(gpuObservation, root.gpuUsageColor)
-            : Config.styling.text2
+        titleColor: gpuObservation.promoted ? iconColor : Config.styling.text0
+        subtitleColor: gpuObservation.promoted ? iconColor : Config.styling.text2
         subtitleBold: gpuObservation.promoted
-        collapsible: true
         summary: Component {
             RowLayout {
                 spacing: Config.spacing.xs
+
                 HeaderMetric {
                     label: qsTr("GPU")
                     value: Services.Stats.gpuUtilPercent
                     metricColor: root.percentColor(Services.Stats.gpuUtilPercent, root.gpuUsageColor, 85, 90)
                 }
+
                 HeaderMetric {
                     label: qsTr("VRAM")
                     value: Services.Stats.gpuVramPercent
@@ -225,8 +219,8 @@ DashboardPage {
                 }
             }
         }
-        overviewDelegate: Component { GpuOverview {} }
-        promotedDelegate: Component { GpuOverview {} }
+        overviewDelegate: null
+        promotedDelegate: Component { GpuPromoted {} }
         detailedDelegate: Component { GpuTelemetry {} }
         Layout.fillWidth: true
     }
@@ -241,14 +235,9 @@ DashboardPage {
                 : qsTr("Current root filesystem usage"))
         iconName: "drive-harddisk-symbolic"
         iconColor: root.observationColor(storageObservation, Config.colors.peach)
-        titleColor: storageObservation.promoted
-            ? root.observationColor(storageObservation, Config.colors.peach)
-            : Config.styling.text0
-        subtitleColor: storageObservation.promoted
-            ? root.observationColor(storageObservation, Config.colors.peach)
-            : Config.styling.text2
+        titleColor: storageObservation.promoted ? iconColor : Config.styling.text0
+        subtitleColor: storageObservation.promoted ? iconColor : Config.styling.text2
         subtitleBold: storageObservation.promoted
-        collapsible: true
         summary: Component {
             HeaderMetric {
                 label: "/"
@@ -256,11 +245,9 @@ DashboardPage {
                 metricColor: root.percentColor(Services.Stats.rootDiskPercent, Config.colors.peach, 75, 90)
             }
         }
-        overviewDelegate: Component {
-            StorageOverview { rows: storageObservation.rootRows }
-        }
+        overviewDelegate: null
         promotedDelegate: Component {
-            StorageOverview { rows: storageObservation.visibleRows }
+            StorageOverview { rows: storageObservation.exceptionalRows }
         }
         detailedDelegate: Component {
             StorageTable { rows: storageObservation.visibleRows }
@@ -268,15 +255,16 @@ DashboardPage {
         Layout.fillWidth: true
     }
 
-    AdaptiveDashboardSection {
-        observation: networkObservation
+    DashboardSection {
+        Layout.fillWidth: true
         title: qsTr("Network throughput")
         iconName: "network-transmit-receive-symbolic"
         iconColor: Config.colors.green
-        collapsible: true
+        visible: Services.Stats.primaryInterface !== ""
         summary: Component {
             RowLayout {
                 spacing: Config.spacing.xs
+
                 Text {
                     text: `↓ ${Services.Stats.formatRate(Services.Stats.rxBytesPerSecond)}`
                     color: Config.colors.green
@@ -284,6 +272,7 @@ DashboardPage {
                     font.bold: true
                     font.family: "monospace"
                 }
+
                 Text {
                     text: `↑ ${Services.Stats.formatRate(Services.Stats.txBytesPerSecond)}`
                     color: Config.colors.peach
@@ -293,33 +282,6 @@ DashboardPage {
                 }
             }
         }
-        detailedDelegate: Component {
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: Config.spacing.xs
-
-                InfoRow {
-                    iconName: "go-down-symbolic"
-                    iconColor: Config.colors.green
-                    labelColor: Config.colors.green
-                    label: qsTr("Download")
-                    value: Services.Stats.formatRate(Services.Stats.rxBytesPerSecond)
-                    valueColor: Config.colors.green
-                    Layout.fillWidth: true
-                }
-
-                InfoRow {
-                    iconName: "go-up-symbolic"
-                    iconColor: Config.colors.peach
-                    labelColor: Config.colors.peach
-                    label: qsTr("Upload")
-                    value: Services.Stats.formatRate(Services.Stats.txBytesPerSecond)
-                    valueColor: Config.colors.peach
-                    Layout.fillWidth: true
-                }
-            }
-        }
-        Layout.fillWidth: true
     }
 
     component MetricGrid: GridLayout {
@@ -330,17 +292,7 @@ DashboardPage {
         uniformCellWidths: true
     }
 
-    component CpuOverview: MetricGrid {
-        RadialMetric {
-            Layout.fillWidth: true
-            label: qsTr("Average")
-            iconName: "processor-symbolic"
-            percent: Services.Stats.cpuPercent
-            accentColor: root.percentColor(Services.Stats.cpuPercent, Config.colors.blue, 75, 90)
-            detail: qsTr("aggregate")
-            emphasized: cpuObservation.promoted
-        }
-
+    component CpuPromoted: MetricGrid {
         Repeater {
             model: cpuObservation.promotedRows
 
@@ -359,38 +311,38 @@ DashboardPage {
         }
     }
 
-    component MemoryOverview: MetricGrid {
+    component MemoryPromoted: MetricGrid {
         RadialMetric {
             Layout.fillWidth: true
             label: qsTr("RAM")
             iconName: "computer-symbolic"
             percent: Services.Stats.memoryPercent
-            accentColor: root.percentColor(Services.Stats.memoryPercent, root.ramColor, 85, 90)
+            accentColor: root.percentColor(percent, root.ramColor, 85, 90)
             detail: `${Services.Stats.memoryUsedMiB}/${Services.Stats.memoryTotalMiB} MiB`
-            emphasized: Services.Stats.memoryPercent >= memoryObservation.warningThreshold
+            emphasized: true
         }
 
         RadialMetric {
-            visible: Services.Stats.swapTotalMiB > 0
+            visible: Services.Stats.swapTotalMiB > 0 && Services.Stats.swapPercent >= memoryObservation.warningThreshold
             Layout.fillWidth: true
             label: qsTr("Swap")
             iconName: "drive-harddisk-symbolic"
             percent: Services.Stats.swapPercent
-            accentColor: root.percentColor(Services.Stats.swapPercent, root.swapColor, 85, 90)
+            accentColor: root.percentColor(percent, root.swapColor, 85, 90)
             detail: `${Services.Stats.swapUsedMiB}/${Services.Stats.swapTotalMiB} MiB`
-            emphasized: Services.Stats.swapPercent >= memoryObservation.warningThreshold
+            emphasized: true
         }
     }
 
-    component GpuOverview: MetricGrid {
+    component GpuPromoted: MetricGrid {
         RadialMetric {
             Layout.fillWidth: true
             label: qsTr("Compute")
             iconName: "video-display-symbolic"
             percent: Services.Stats.gpuUtilPercent
-            accentColor: root.percentColor(Services.Stats.gpuUtilPercent, root.gpuUsageColor, 85, 90)
+            accentColor: root.percentColor(percent, root.gpuUsageColor, 85, 90)
             detail: Services.Stats.gpuName
-            emphasized: Services.Stats.gpuUtilPercent >= gpuObservation.warningThreshold
+            emphasized: true
         }
 
         RadialMetric {
@@ -398,9 +350,9 @@ DashboardPage {
             label: qsTr("VRAM")
             iconName: "video-display-symbolic"
             percent: Services.Stats.gpuVramPercent
-            accentColor: root.percentColor(Services.Stats.gpuVramPercent, root.gpuVramColor, 85, 90)
+            accentColor: root.percentColor(percent, root.gpuVramColor, 85, 90)
             detail: `${Services.Stats.gpuVramUsedMiB}/${Services.Stats.gpuVramTotalMiB} MiB`
-            emphasized: Services.Stats.gpuVramPercent >= gpuObservation.warningThreshold
+            emphasized: true
         }
     }
 
@@ -419,7 +371,7 @@ DashboardPage {
                 percent: Number(modelData.percent || 0)
                 accentColor: root.percentColor(percent, Config.colors.peach, 75, 90)
                 detail: `${modelData.usedGiB || 0}/${modelData.totalGiB || 0} GiB`
-                emphasized: percent >= storageObservation.warningThreshold
+                emphasized: true
             }
         }
     }
@@ -435,7 +387,9 @@ DashboardPage {
             yMax: 100
             xWindow: 120000
             xMarkerInterval: 60000
-            xMarkerLabel: (x, view) => x < view.maxX ? qsTr("%1m").arg(Math.round((view.maxX - x) / 60000)) : ""
+            xMarkerLabel: (x, view) => x < view.maxX
+                ? qsTr("%1m").arg(Math.round((view.maxX - x) / 60000))
+                : ""
             graphs: root.cpuGraphSeries()
             Layout.fillWidth: true
             Layout.preferredHeight: 180
@@ -444,60 +398,44 @@ DashboardPage {
 
         RowLayout {
             Layout.fillWidth: true
-            spacing: 8
-            Item { Layout.fillWidth: true }
+            spacing: Config.spacing.xs
 
             LegendButton {
-                Layout.preferredWidth: 100
-                Layout.alignment: Qt.AlignHCenter
+                Layout.fillWidth: true
                 graphView: cpuGraph
                 seriesName: "avg"
+                accessibleLabel: qsTr("Toggle CPU average graph")
                 color: Config.colors.blue
 
                 Text {
-                    text: qsTr("average")
+                    text: qsTr("Average")
                     font.pixelSize: 13
                     font.bold: true
                     color: Config.colors.base
-                }
-                Item { Layout.fillWidth: true }
-
-                UsageArc {
-                    implicitWidth: 14
-                    implicitHeight: 14
-                    percent: Services.Stats.cpuPercent
-                    accentColor: Config.colors.base
-                    trackColor: Config.styling.bg4
-                    strokeWidth: 2
                 }
             }
 
             LegendButton {
-                Layout.preferredWidth: 100
-                Layout.alignment: Qt.AlignHCenter
+                Layout.fillWidth: true
                 graphView: cpuGraph
-                seriesFilter: (series) => series.name.startsWith("core")
+                seriesFilter: series => series.name.startsWith("core")
+                accessibleLabel: qsTr("Toggle all CPU core graphs")
                 color: Config.colors.overlay2
 
                 Text {
-                    Layout.fillWidth: true
-                    text: qsTr("cores")
-                    horizontalAlignment: Text.AlignHCenter
+                    text: qsTr("Cores")
                     font.pixelSize: 13
                     font.bold: true
                     color: Config.colors.base
                 }
             }
-
-            Item { Layout.fillWidth: true }
         }
 
         GridLayout {
-            visible: cpuObservation.visibleRows.length > 0
             Layout.fillWidth: true
             columns: 4
-            rowSpacing: 2
-            columnSpacing: 8
+            rowSpacing: Config.spacing.xxs
+            columnSpacing: Config.spacing.xs
             uniformCellWidths: true
 
             Repeater {
@@ -510,23 +448,22 @@ DashboardPage {
                     Layout.fillWidth: true
                     graphView: cpuGraph
                     seriesName: `core${coreIndex}`
+                    accessibleLabel: qsTr("Toggle CPU core %1 graph").arg(coreIndex)
                     color: root.cpuCoreColors[coreIndex % root.cpuCoreColors.length]
 
                     Text {
-                        text: `core${coreIndex}`
-                        font.pixelSize: 13
+                        text: `${parent.coreIndex}`
+                        font.pixelSize: 12
                         font.bold: true
                         color: Config.colors.base
                     }
+
                     Item { Layout.fillWidth: true }
 
-                    UsageArc {
-                        implicitWidth: 14
-                        implicitHeight: 14
-                        percent: Number(modelData.percent || 0)
-                        accentColor: Config.colors.base
-                        trackColor: Config.styling.bg4
-                        strokeWidth: 2
+                    Text {
+                        text: `${Math.round(modelData.percent || 0)}%`
+                        font.pixelSize: 11
+                        color: Config.colors.base
                     }
                 }
             }
@@ -543,14 +480,14 @@ DashboardPage {
             yMax: 100
             xWindow: 300000
             xMarkerInterval: 60000
-            xMarkerLabel: (x, view) => x < view.maxX ? qsTr("%1m").arg(Math.round((view.maxX - x) / 60000)) : ""
+            xMarkerLabel: (x, view) => x < view.maxX
+                ? qsTr("%1m").arg(Math.round((view.maxX - x) / 60000))
+                : ""
             graphs: root.memoryGraphSeries()
             Layout.fillWidth: true
             Layout.preferredHeight: 160
             Layout.minimumHeight: 120
         }
-
-        StatTableHeader {}
 
         StatTableRow {
             label: qsTr("RAM")
@@ -576,86 +513,35 @@ DashboardPage {
         spacing: Config.spacing.xs
 
         Text {
+            Layout.fillWidth: true
             text: Services.Stats.gpuName
-            color: root.observationColor(gpuObservation, Config.styling.text0)
+            color: Config.styling.text0
             font.pixelSize: 13
             font.bold: true
-            Layout.fillWidth: true
         }
 
         GraphView {
-            id: gpuGraph
             active: root.visible
             yMin: 0
             yMax: 100
             xWindow: 120000
             xMarkerInterval: 60000
-            xMarkerLabel: (x, view) => x < view.maxX ? qsTr("%1m").arg(Math.round((view.maxX - x) / 60000)) : ""
+            xMarkerLabel: (x, view) => x < view.maxX
+                ? qsTr("%1m").arg(Math.round((view.maxX - x) / 60000))
+                : ""
             graphs: root.gpuGraphSeries()
             Layout.fillWidth: true
             Layout.preferredHeight: 180
             Layout.minimumHeight: 140
         }
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 8
-            Item { Layout.fillWidth: true }
-
-            LegendButton {
-                Layout.preferredWidth: 100
-                Layout.alignment: Qt.AlignHCenter
-                graphView: gpuGraph
-                seriesName: "GPU"
-                color: root.gpuUsageColor
-
-                Text {
-                    text: qsTr("Compute")
-                    font.pixelSize: 13
-                    font.bold: true
-                    color: Config.colors.base
-                }
-                Item { Layout.fillWidth: true }
-
-                UsageArc {
-                    implicitWidth: 14
-                    implicitHeight: 14
-                    percent: Services.Stats.gpuUtilPercent
-                    accentColor: Config.colors.base
-                    trackColor: Config.styling.bg4
-                    strokeWidth: 2
-                }
-            }
-
-            LegendButton {
-                Layout.preferredWidth: 100
-                Layout.alignment: Qt.AlignHCenter
-                graphView: gpuGraph
-                seriesName: "VRAM"
-                color: root.gpuVramColor
-
-                Text {
-                    text: qsTr("VRAM")
-                    font.pixelSize: 13
-                    font.bold: true
-                    color: Config.colors.base
-                }
-                Item { Layout.fillWidth: true }
-
-                UsageArc {
-                    implicitWidth: 14
-                    implicitHeight: 14
-                    percent: Services.Stats.gpuVramPercent
-                    accentColor: Config.colors.base
-                    trackColor: Config.styling.bg4
-                    strokeWidth: 2
-                }
-            }
-
-            Item { Layout.fillWidth: true }
+        StatTableRow {
+            label: qsTr("Compute")
+            valueText: `${Math.round(Services.Stats.gpuUtilPercent)}%`
+            percent: Services.Stats.gpuUtilPercent
+            rowColor: root.gpuUsageColor
+            percentColor: root.percentColor(percent, root.gpuUsageColor, 85, 90)
         }
-
-        StatTableHeader {}
 
         StatTableRow {
             label: qsTr("VRAM")
@@ -670,52 +556,11 @@ DashboardPage {
         required property var rows
 
         Layout.fillWidth: true
-        spacing: 0
-
-        StatTableHeader {
-            visible: parent.rows.length > 0
-        }
+        spacing: Config.spacing.xxs
 
         Repeater {
             model: parent.rows
             delegate: PartitionRow {}
-        }
-    }
-
-    component StatTableHeader: RowLayout {
-        Layout.fillWidth: true
-        spacing: Config.spacing.xs
-
-        Text {
-            Layout.fillWidth: true
-            text: qsTr("Name")
-            color: Config.colors.blue
-            font.pixelSize: 12
-            font.bold: true
-        }
-
-        Text {
-            Layout.preferredWidth: 120
-            horizontalAlignment: Text.AlignRight
-            text: qsTr("Used / Total")
-            color: Config.colors.mauve
-            font.pixelSize: 12
-            font.bold: true
-        }
-
-        Text {
-            Layout.preferredWidth: 50
-            horizontalAlignment: Text.AlignRight
-            text: "%"
-            color: Config.colors.peach
-            font.pixelSize: 12
-            font.bold: true
-        }
-
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 1
-            color: Config.styling.bg3
         }
     }
 
@@ -740,7 +585,7 @@ DashboardPage {
         }
 
         Text {
-            Layout.preferredWidth: 120
+            Layout.preferredWidth: 150
             horizontalAlignment: Text.AlignRight
             text: parent.valueText
             color: parent.rowColor
@@ -750,7 +595,7 @@ DashboardPage {
         }
 
         Text {
-            Layout.preferredWidth: 50
+            Layout.preferredWidth: 48
             horizontalAlignment: Text.AlignRight
             text: parent.percent >= 0 ? `${Math.round(parent.percent)}%` : "-"
             color: parent.percentColor
@@ -764,7 +609,7 @@ DashboardPage {
         property real value: 0
         property color metricColor: Config.styling.text0
 
-        spacing: 4
+        spacing: Config.spacing.xxs
 
         Text {
             text: parent.label
@@ -786,7 +631,7 @@ DashboardPage {
     component PartitionRow: StatTableRow {
         required property var modelData
 
-        label: modelData.mount || ""
+        label: modelData.mount || modelData.device || qsTr("Filesystem")
         valueText: `${modelData.usedGiB || 0} / ${modelData.totalGiB || 0} GiB`
         percent: modelData.percent !== undefined ? modelData.percent : -1
         rowColor: Config.colors.peach

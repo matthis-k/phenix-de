@@ -26,16 +26,24 @@ Item {
     property int verticalPadding: 4
 
     readonly property bool hasNetwork: !!network
-    readonly property string rowKey: rowRoot.interactionState && rowRoot.network ? String(rowRoot.interactionState.networkKey(rowRoot.network) || "") : ""
-    readonly property bool interactionExpanded: rowRoot.interactionState && rowRoot.rowKey !== "" ? rowRoot.interactionState.interactiveNetworkKey === rowRoot.rowKey : false
+    readonly property string rowKey: rowRoot.interactionState && rowRoot.network
+        ? String(rowRoot.interactionState.networkKey(rowRoot.network) || "")
+        : ""
+    readonly property bool interactionExpanded: rowRoot.interactionState && rowRoot.rowKey !== ""
+        ? rowRoot.interactionState.interactiveNetworkKey === rowRoot.rowKey
+        : false
     readonly property bool forcedDetailed: DashboardPresentation.detailed || rowRoot.inheritedDetailed
     readonly property bool detailed: rowRoot.forcedDetailed || rowRoot.localDetailed
     readonly property bool detailExpanded: rowRoot.interactionExpanded || rowRoot.detailed
-    readonly property bool showAdvanced: rowRoot.interactionExpanded && rowRoot.interactionState ? !!rowRoot.interactionState.interactiveShowAdvanced : false
-    readonly property bool showPasswordInput: rowRoot.interactionExpanded && rowRoot.interactionState ? !!rowRoot.interactionState.interactiveShowPasswordInput : false
-    readonly property string passwordText: rowRoot.interactionExpanded && rowRoot.interactionState ? String(rowRoot.interactionState.interactivePasswordText || "") : ""
-    readonly property string errorText: rowRoot.interactionExpanded && rowRoot.interactionState ? String(rowRoot.interactionState.interactiveErrorText || "") : ""
-    readonly property bool needsPskPrompt: hasNetwork && !network.connected && !NetworkService.isOpenNetwork(network) && NetworkService.securityNeedsPsk(network.security)
+    readonly property bool showPasswordInput: rowRoot.interactionExpanded && rowRoot.interactionState
+        ? !!rowRoot.interactionState.interactiveShowPasswordInput
+        : false
+    readonly property string passwordText: rowRoot.interactionExpanded && rowRoot.interactionState
+        ? String(rowRoot.interactionState.interactivePasswordText || "")
+        : ""
+    readonly property string errorText: rowRoot.interactionExpanded && rowRoot.interactionState
+        ? String(rowRoot.interactionState.interactiveErrorText || "")
+        : ""
 
     implicitWidth: contentWidth
     implicitHeight: header.implicitHeight + (details.implicitHeight > 0 ? details.implicitHeight + itemSpacing : 0)
@@ -59,10 +67,10 @@ Item {
             return;
         }
 
-        if (rowRoot.interactionState)
+        if (rowRoot.interactionState) {
             rowRoot.interactionState.lockInteractionFor(network);
-        if (rowRoot.interactionState)
             rowRoot.interactionState.interactiveErrorText = "";
+        }
 
         if (network.connected)
             return;
@@ -76,18 +84,23 @@ Item {
             rowRoot.interactionState.interactiveShowPasswordInput = true;
 
         if (rowRoot.interactionState && !rowRoot.interactionState.interactivePasswordText.length) {
-            rowRoot.interactionState.interactiveErrorText = "Password required";
+            rowRoot.interactionState.interactiveErrorText = qsTr("Password required");
             return;
         }
 
-        NetworkService.connectToNetwork(network.ssid, rowRoot.interactionState ? rowRoot.interactionState.interactivePasswordText : "");
+        NetworkService.connectToNetwork(
+            network.ssid,
+            rowRoot.interactionState ? rowRoot.interactionState.interactivePasswordText : "");
     }
 
     Connections {
         target: NetworkService
 
         function onConnectedSsidChanged() {
-            if (rowRoot.interactionExpanded && rowRoot.hasNetwork && NetworkService.connectedSsid === rowRoot.network.ssid && rowRoot.interactionState) {
+            if (rowRoot.interactionExpanded
+                    && rowRoot.hasNetwork
+                    && NetworkService.connectedSsid === rowRoot.network.ssid
+                    && rowRoot.interactionState) {
                 rowRoot.interactionState.interactiveErrorText = "";
                 rowRoot.interactionState.interactivePasswordText = "";
                 rowRoot.interactionState.interactiveShowPasswordInput = false;
@@ -103,19 +116,29 @@ Item {
             id: header
             minimumRowHeight: rowHeight
             active: rowRoot.hasNetwork && rowRoot.network.connected
-            accentColor: rowRoot.hasNetwork && rowRoot.network.connected ? Config.colors.blue : Config.styling.activeIndicator
-            fillOpacity: rowRoot.hasNetwork && rowRoot.network.connected ? 0.28 : Config.behaviour.hoverBgOpacity
+            accentColor: rowRoot.hasNetwork && rowRoot.network.connected
+                ? Config.colors.blue
+                : Config.styling.activeIndicator
+            fillOpacity: rowRoot.hasNetwork && rowRoot.network.connected
+                ? 0.28
+                : Config.behaviour.hoverBgOpacity
             iconName: NetworkService.wifiIconName(rowRoot.network)
-            iconColor: rowRoot.hasNetwork && rowRoot.network.connected ? Config.colors.blue : Config.styling.text0
-            title: rowRoot.hasNetwork ? (rowRoot.network.ssid || "Hidden network") : "Unavailable"
+            iconColor: rowRoot.hasNetwork && rowRoot.network.connected
+                ? Config.colors.blue
+                : Config.styling.text0
+            title: rowRoot.hasNetwork
+                ? (rowRoot.network.ssid || qsTr("Hidden network"))
+                : qsTr("Unavailable")
             subtitle: rowRoot.hasNetwork
                 ? `${rowRoot.securityLabel(rowRoot.network)} | ${rowRoot.network.strength || Math.round((rowRoot.network.signalStrength || 0) * 100)}%`
-                : "Network unavailable"
+                : qsTr("Network unavailable")
             status: rowRoot.hasNetwork && rowRoot.network.connected
-                ? "Connected"
-                : rowRoot.hasNetwork && NetworkService.securityNeedsPsk(rowRoot.network.security) && !NetworkService.isOpenNetwork(rowRoot.network)
-                    ? "Secured"
-                    : "Available"
+                ? qsTr("Connected")
+                : rowRoot.hasNetwork
+                    && NetworkService.securityNeedsPsk(rowRoot.network.security)
+                    && !NetworkService.isOpenNetwork(rowRoot.network)
+                    ? qsTr("Secured")
+                    : qsTr("Available")
             statusColor: rowRoot.hasNetwork && rowRoot.network.connected
                 ? Config.colors.blue
                 : Config.styling.text1
@@ -148,7 +171,6 @@ Item {
 
         Expander {
             id: details
-
             Layout.fillWidth: true
             expanded: rowRoot.detailExpanded
             slideDistance: Config.spacing.sm
@@ -187,7 +209,7 @@ Item {
                         Layout.fillWidth: true
                         visible: rowRoot.showPasswordInput
                         text: rowRoot.passwordText
-                        placeholderText: "Wi-Fi password"
+                        placeholderText: qsTr("Wi-Fi password")
                         echoMode: TextInput.Password
                         color: Config.styling.text0
                         placeholderTextColor: Config.styling.text2
@@ -217,14 +239,16 @@ Item {
 
                     RowLayout {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: visible ? 28 : 0
-                        implicitHeight: visible ? 28 : 0
+                        Layout.preferredHeight: visible ? 32 : 0
+                        implicitHeight: visible ? 32 : 0
                         visible: rowRoot.interactionExpanded
                         spacing: itemSpacing
 
                         SmallButton {
                             Layout.fillWidth: true
-                            text: rowRoot.hasNetwork && rowRoot.network.connected ? "Disconnect" : "Connect"
+                            text: rowRoot.hasNetwork && rowRoot.network.connected
+                                ? qsTr("Disconnect")
+                                : qsTr("Connect")
                             onClicked: {
                                 if (!rowRoot.hasNetwork) {
                                     if (rowRoot.interactionState)
@@ -238,24 +262,6 @@ Item {
                                     rowRoot.attemptConnect();
                             }
                         }
-
-                        SmallButton {
-                            visible: !rowRoot.detailed
-                            text: rowRoot.showAdvanced ? "Hide Advanced" : "Show Advanced"
-                            onClicked: {
-                                if (rowRoot.interactionState)
-                                    rowRoot.interactionState.interactiveShowAdvanced = !rowRoot.interactionState.interactiveShowAdvanced;
-                            }
-                        }
-                    }
-
-                    Text {
-                        Layout.fillWidth: true
-                        visible: rowRoot.showAdvanced && !rowRoot.detailed
-                        text: NetworkService.advancedNetworkInfo(rowRoot.network)
-                        color: Config.styling.text2
-                        font.pixelSize: 12
-                        wrapMode: Text.Wrap
                     }
                 }
             }
@@ -264,9 +270,9 @@ Item {
 
     function securityLabel(network) {
         if (!network)
-            return "Unknown";
+            return qsTr("Unknown");
         if (NetworkService.isOpenNetwork(network))
-            return "Open";
+            return qsTr("Open");
         return network.security;
     }
 }
