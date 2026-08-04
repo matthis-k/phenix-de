@@ -73,7 +73,7 @@ Slider {
 
         Behavior on width {
             Animations.NumberBehavior {
-                kind: Animations.TransitionPolicy.Kind.Micro
+                kind: Animations.NumberBehavior.Kind.Micro
             }
         }
     }
