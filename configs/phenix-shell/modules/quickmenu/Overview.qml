@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import Quickshell.Io
 
 import qs.services
 import qs.components
@@ -10,8 +9,8 @@ DashboardPage {
 
     title: qsTr("Quick Settings")
     subtitle: root.detailed
-        ? qsTr("Complete device state and system telemetry")
-        : qsTr("Primary controls with current values and exceptional states promoted")
+        ? qsTr("Expanded device state and system telemetry")
+        : qsTr("Primary controls and exceptional state")
 
     property var screenState: null
 
@@ -103,12 +102,14 @@ DashboardPage {
     }
 
     DashboardSection {
-        id: audioSection
+        id: quickControlsSection
         Layout.fillWidth: true
-        title: qsTr("Audio")
+        title: qsTr("Quick controls")
         iconName: AudioService.outputIconName
-        iconColor: AudioService.outputMuted ? Config.styling.critical : AudioService.outputIconColor
-        titleColor: AudioService.outputMuted ? Config.styling.critical : AudioService.outputIconColor
+        iconColor: AudioService.outputMuted
+            ? Config.styling.critical
+            : AudioService.outputIconColor
+        titleColor: iconColor
         showDetailToggle: !!AudioService.defaultSource
 
         AudioDeviceCard {
@@ -116,7 +117,8 @@ DashboardPage {
             iconName: AudioService.outputIconName
             iconColor: AudioService.outputIconColor
             valueText: AudioService.defaultSink ? `${AudioService.outputVolume}%` : ""
-            from: 0; to: 100
+            from: 0
+            to: 100
             value: AudioService.outputVolume
             stepSize: 1
             iconEnabled: !!AudioService.defaultSink
@@ -126,13 +128,26 @@ DashboardPage {
             onValueModified: value => AudioService.setOutputVolume(value)
         }
 
+        LabeledSlider {
+            Layout.fillWidth: true
+            visible: Brightness.available
+            label: qsTr("Brightness")
+            iconName: Brightness.iconName
+            value: Brightness.percent
+            from: 0
+            to: 100
+            valueText: `${Brightness.percent}%`
+            onValueCommitted: value => Brightness.setPercent(value)
+        }
+
         AudioDeviceCard {
-            visible: audioSection.detailed
+            visible: quickControlsSection.detailed || AudioService.inputMuted
             title: AudioService.inputDeviceName
             iconName: AudioService.inputIconName
             iconColor: AudioService.inputIconColor
             valueText: AudioService.defaultSource ? `${AudioService.inputVolume}%` : ""
-            from: 0; to: 100
+            from: 0
+            to: 100
             value: AudioService.inputVolume
             stepSize: 1
             iconEnabled: !!AudioService.defaultSource
@@ -143,34 +158,15 @@ DashboardPage {
         }
     }
 
-    DashboardSection {
-        Layout.fillWidth: true
-        title: qsTr("Brightness")
-        iconName: Brightness.iconName
-        iconColor: Config.colors.yellow
-        titleColor: Config.colors.yellow
-        visible: Brightness.available
-
-        LabeledSlider {
-            Layout.fillWidth: true
-            label: qsTr("Display")
-            iconName: Brightness.iconName
-            value: Brightness.percent
-            from: 0
-            to: 100
-            valueText: Brightness.available ? `${Brightness.percent}%` : qsTr("Unavailable")
-            enabled: Brightness.available
-            onValueCommitted: val => Brightness.setPercent(val)
-        }
-    }
-
     NavigableSectionHeader {
         id: networkSection
         Layout.fillWidth: true
         title: qsTr("Network")
         iconName: NetworkService.hasWiredConnection
             ? "network-wired-symbolic"
-            : (NetworkService.wifiEnabled ? "network-wireless-symbolic" : "network-wireless-offline-symbolic")
+            : (NetworkService.wifiEnabled
+                ? "network-wireless-symbolic"
+                : "network-wireless-offline-symbolic")
         iconColor: NetworkService.connected
             ? Config.colors.green
             : (NetworkService.wifiEnabled ? Config.styling.warning : Config.styling.text1)
@@ -183,21 +179,23 @@ DashboardPage {
             Layout.fillWidth: true
             label: qsTr("Wi-Fi")
             subtitle: root.connectionSummary
-            iconName: NetworkService.wifiEnabled ? "network-wireless-symbolic" : "network-wireless-offline-symbolic"
+            iconName: NetworkService.wifiEnabled
+                ? "network-wireless-symbolic"
+                : "network-wireless-offline-symbolic"
             iconColor: NetworkService.connected
                 ? Config.colors.green
                 : (NetworkService.wifiEnabled ? Config.styling.warning : Config.styling.text1)
             enabled: NetworkService.wifiHardwareEnabled
             checked: NetworkService.wifiEnabled
-            onToggled: function (checked) {
-                NetworkService.setWifiEnabled(checked);
-            }
+            onToggled: checked => NetworkService.setWifiEnabled(checked)
         }
 
         InfoRow {
             Layout.fillWidth: true
             visible: networkSection.detailed && NetworkService.connected
-            iconName: NetworkService.hasWiredConnection ? "network-wired-symbolic" : "network-wireless-symbolic"
+            iconName: NetworkService.hasWiredConnection
+                ? "network-wired-symbolic"
+                : "network-wireless-symbolic"
             iconColor: Config.colors.green
             labelColor: Config.colors.green
             label: qsTr("Interface")
@@ -207,17 +205,6 @@ DashboardPage {
                     ? NetworkService.wiredDeviceName
                     : NetworkService.wifiDeviceName)
             valueColor: Config.colors.green
-        }
-
-        InfoRow {
-            Layout.fillWidth: true
-            visible: networkSection.detailed && !!root.activeInterface && root.activeInterface.mac !== ""
-            iconName: "network-server-symbolic"
-            iconColor: Config.colors.blue
-            labelColor: Config.colors.blue
-            label: qsTr("Interface MAC")
-            value: root.activeInterface ? root.activeInterface.mac : ""
-            valueColor: Config.colors.blue
         }
 
         InfoRow {
@@ -235,24 +222,13 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: networkSection.detailed && !NetworkService.hasWiredConnection && NetworkService.connectedAddress !== ""
-            iconName: "network-wireless-symbolic"
-            iconColor: Config.colors.peach
-            labelColor: Config.colors.peach
-            label: qsTr("Access point BSSID")
-            value: NetworkService.connectedAddress
-            valueColor: Config.colors.peach
-        }
-
-        InfoRow {
-            Layout.fillWidth: true
             visible: networkSection.detailed
             iconName: "network-transmit-receive-symbolic"
-            iconColor: Config.colors.green
-            labelColor: Config.colors.green
+            iconColor: NetworkService.connected ? Config.colors.green : Config.styling.warning
+            labelColor: iconColor
             label: qsTr("Connectivity")
             value: NetworkService.connectivity
-            valueColor: NetworkService.connected ? Config.colors.green : Config.styling.warning
+            valueColor: iconColor
         }
     }
 
@@ -260,8 +236,12 @@ DashboardPage {
         id: bluetoothSection
         Layout.fillWidth: true
         title: qsTr("Bluetooth")
-        iconName: BluetoothService.enabled ? "bluetooth-symbolic" : "bluetooth-disabled-symbolic"
-        iconColor: BluetoothService.enabled ? Config.styling.bluetooth : Config.styling.text1
+        iconName: BluetoothService.enabled
+            ? "bluetooth-symbolic"
+            : "bluetooth-disabled-symbolic"
+        iconColor: BluetoothService.enabled
+            ? Config.styling.bluetooth
+            : Config.styling.text1
         titleColor: iconColor
         screenState: root.screenState
         targetTab: "bluetooth"
@@ -271,13 +251,15 @@ DashboardPage {
             Layout.fillWidth: true
             label: qsTr("Bluetooth")
             subtitle: root.bluetoothSummary
-            iconName: BluetoothService.enabled ? "bluetooth-symbolic" : "bluetooth-disabled-symbolic"
-            iconColor: BluetoothService.enabled ? Config.styling.bluetooth : Config.styling.text1
+            iconName: BluetoothService.enabled
+                ? "bluetooth-symbolic"
+                : "bluetooth-disabled-symbolic"
+            iconColor: BluetoothService.enabled
+                ? Config.styling.bluetooth
+                : Config.styling.text1
             enabled: BluetoothService.available
             checked: BluetoothService.enabled
-            onToggled: function (checked) {
-                BluetoothService.setEnabled(checked);
-            }
+            onToggled: checked => BluetoothService.setEnabled(checked)
         }
 
         InfoRow {
@@ -303,9 +285,9 @@ DashboardPage {
         showDetailToggle: true
 
         Battery {
-            id: batteryContent
             Layout.fillWidth: true
-            showGraph: batterySection.detailed
+            showGraph: false
+            powerModesFirst: batterySection.detailed
         }
     }
 
@@ -313,7 +295,9 @@ DashboardPage {
         id: notificationsSection
         Layout.fillWidth: true
         title: qsTr("Notifications")
-        iconName: NotificationCenter.doNotDisturbEnabled ? "notifications-disabled-symbolic" : "bell-symbolic"
+        iconName: NotificationCenter.doNotDisturbEnabled
+            ? "notifications-disabled-symbolic"
+            : "bell-symbolic"
         iconColor: NotificationCenter.doNotDisturbEnabled
             ? Config.colors.mauve
             : (NotificationCenter.count > 0 ? Config.colors.yellow : Config.styling.text1)
@@ -323,13 +307,15 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            iconName: NotificationCenter.doNotDisturbEnabled ? "notifications-disabled-symbolic" : "bell-symbolic"
+            iconName: notificationsSection.iconName
             iconColor: notificationsSection.iconColor
             labelColor: notificationsSection.iconColor
-            label: qsTr("Status")
-            value: NotificationCenter.doNotDisturbEnabled
+            label: NotificationCenter.doNotDisturbEnabled
                 ? qsTr("Do Not Disturb")
-                : qsTr("%1 unread").arg(NotificationCenter.count)
+                : qsTr("Unread")
+            value: NotificationCenter.doNotDisturbEnabled
+                ? qsTr("Enabled")
+                : String(NotificationCenter.count)
             valueColor: notificationsSection.iconColor
         }
     }
@@ -337,7 +323,7 @@ DashboardPage {
     NavigableSectionHeader {
         id: statsSection
         Layout.fillWidth: true
-        title: qsTr("System statistics")
+        title: qsTr("System health")
         iconName: "processor-symbolic"
         iconColor: root.observationColor(cpuObservation, Config.colors.blue)
         titleColor: iconColor
@@ -346,8 +332,6 @@ DashboardPage {
         showDetailToggle: true
 
         MetricGrid {
-            visible: !statsSection.detailed
-
             RadialMetric {
                 Layout.fillWidth: true
                 label: qsTr("CPU")
@@ -379,36 +363,33 @@ DashboardPage {
             }
 
             RadialMetric {
-                visible: Stats.swapTotalMiB > 0
+                visible: statsSection.detailed && Stats.swapTotalMiB > 0
                 Layout.fillWidth: true
                 label: qsTr("Swap")
                 iconName: "drive-harddisk-symbolic"
                 percent: Stats.swapPercent
                 accentColor: root.percentColor(Stats.swapPercent, Config.colors.mauve, 85, 90)
                 detail: `${Stats.swapUsedMiB}/${Stats.swapTotalMiB} MiB`
-                emphasized: Stats.swapPercent >= memoryObservation.warningThreshold
             }
 
             RadialMetric {
-                visible: Stats.gpuAvailable
+                visible: statsSection.detailed && Stats.gpuAvailable
                 Layout.fillWidth: true
                 label: qsTr("GPU")
                 iconName: "video-display-symbolic"
                 percent: Stats.gpuUtilPercent
                 accentColor: root.percentColor(Stats.gpuUtilPercent, Config.colors.green, 85, 90)
                 detail: qsTr("compute")
-                emphasized: Stats.gpuUtilPercent >= gpuObservation.warningThreshold
             }
 
             RadialMetric {
-                visible: Stats.gpuAvailable
+                visible: statsSection.detailed && Stats.gpuAvailable
                 Layout.fillWidth: true
                 label: qsTr("VRAM")
                 iconName: "video-display-symbolic"
                 percent: Stats.gpuVramPercent
                 accentColor: root.percentColor(Stats.gpuVramPercent, Config.colors.mauve, 85, 90)
                 detail: `${Stats.gpuVramUsedMiB}/${Stats.gpuVramTotalMiB} MiB`
-                emphasized: Stats.gpuVramPercent >= gpuObservation.warningThreshold
             }
 
             Repeater {
@@ -429,9 +410,7 @@ DashboardPage {
             }
 
             Repeater {
-                model: storageObservation.exceptionalRows.filter(function(row) {
-                    return String(row?.mount || "") !== "/";
-                })
+                model: storageObservation.exceptionalRows.filter(row => String(row?.mount || "") !== "/")
 
                 delegate: RadialMetric {
                     required property var modelData
@@ -444,78 +423,6 @@ DashboardPage {
                     emphasized: true
                 }
             }
-        }
-
-        InfoRow {
-            Layout.fillWidth: true
-            visible: statsSection.detailed
-            iconName: "processor-symbolic"
-            iconColor: root.percentColor(Stats.cpuPercent, Config.colors.blue, 75, 90)
-            labelColor: iconColor
-            label: qsTr("CPU average")
-            value: `${Math.round(Stats.cpuPercent)}%`
-            valueColor: iconColor
-        }
-
-        Repeater {
-            model: statsSection.detailed ? cpuObservation.promotedRows : []
-
-            InfoRow {
-                required property var modelData
-                Layout.fillWidth: true
-                iconName: "processor-symbolic"
-                iconColor: modelData.severity === DashboardObservation.Critical
-                    ? Config.styling.critical
-                    : Config.styling.warning
-                labelColor: iconColor
-                label: qsTr("Core %1 outlier").arg(modelData.index)
-                value: `${Math.round(modelData.percent)}%`
-                valueColor: iconColor
-            }
-        }
-
-        InfoRow {
-            Layout.fillWidth: true
-            visible: statsSection.detailed
-            iconName: "computer-symbolic"
-            iconColor: root.percentColor(Stats.memoryPercent, Config.colors.blue, 85, 90)
-            labelColor: iconColor
-            label: qsTr("Memory")
-            value: `${Stats.memoryUsedMiB}/${Stats.memoryTotalMiB} MiB`
-            valueColor: iconColor
-        }
-
-        InfoRow {
-            Layout.fillWidth: true
-            visible: statsSection.detailed && Stats.swapTotalMiB > 0
-            iconName: "drive-harddisk-symbolic"
-            iconColor: root.percentColor(Stats.swapPercent, Config.colors.mauve, 85, 90)
-            labelColor: iconColor
-            label: qsTr("Swap")
-            value: `${Stats.swapUsedMiB}/${Stats.swapTotalMiB} MiB`
-            valueColor: iconColor
-        }
-
-        InfoRow {
-            Layout.fillWidth: true
-            visible: statsSection.detailed
-            iconName: "drive-harddisk-symbolic"
-            iconColor: root.percentColor(Stats.rootDiskPercent, Config.colors.peach, 75, 90)
-            labelColor: iconColor
-            label: qsTr("Root filesystem")
-            value: `${Math.round(Stats.rootDiskPercent)}%`
-            valueColor: iconColor
-        }
-
-        InfoRow {
-            Layout.fillWidth: true
-            visible: statsSection.detailed && Stats.gpuAvailable
-            iconName: "video-display-symbolic"
-            iconColor: root.observationColor(gpuObservation, Config.colors.green)
-            labelColor: iconColor
-            label: qsTr("GPU / VRAM")
-            value: `${Math.round(Stats.gpuUtilPercent)}% / ${Math.round(Stats.gpuVramPercent)}%`
-            valueColor: iconColor
         }
 
         InfoRow {
