@@ -10,6 +10,7 @@ Item {
 
     required property var device
     property QtObject interactionState: null
+    property bool detailed: false
     property int contentWidth: 320
     property int itemSpacing: 3
     property int rowHeight: 36
@@ -24,7 +25,7 @@ Item {
     readonly property bool hasDevice: !!root.device
     readonly property string rowKey: root.interactionState && root.device ? String(root.interactionState.deviceKey(root.device) || "") : ""
     readonly property bool expanded: root.interactionState && root.rowKey !== "" ? root.interactionState.interactiveDeviceKey === root.rowKey : false
-    readonly property bool showAdvanced: root.expanded && root.interactionState ? !!root.interactionState.interactiveShowAdvanced : false
+    readonly property bool showAdvanced: root.detailed && root.expanded && root.interactionState ? !!root.interactionState.interactiveShowAdvanced : false
     readonly property bool isConnecting: root.hasDevice && BluetoothService.deviceStatusLabel(root.device) === "Connecting"
     readonly property bool isDisconnecting: root.hasDevice && BluetoothService.deviceStatusLabel(root.device) === "Disconnecting"
     readonly property bool isPairing: root.hasDevice && !!root.device.pairing
@@ -53,7 +54,11 @@ Item {
             iconColor: root.hasDevice && root.device.connected ? Config.colors.blue : Config.styling.text0
             title: root.hasDevice ? BluetoothService.displayName(root.device) : "Unavailable"
             subtitle: root.hasDevice
-                ? `${BluetoothService.deviceTypeLabel(root.device)} | ${BluetoothService.batteryLabel(root.device)}${root.device.paired ? " | Paired" : ""}`
+                ? (root.detailed
+                    ? `${BluetoothService.deviceTypeLabel(root.device)} | ${BluetoothService.batteryLabel(root.device)}${root.device.paired ? " | Paired" : ""}`
+                    : (root.device.connected
+                        ? BluetoothService.batteryLabel(root.device)
+                        : (root.device.paired ? "Paired" : "")))
                 : "Device unavailable"
             status: root.hasDevice
                 ? root.device.connected
@@ -109,6 +114,7 @@ Item {
 
                     Text {
                         Layout.fillWidth: true
+                        visible: root.detailed
                         text: root.hasDevice
                             ? `State: ${BluetoothService.deviceStatusLabel(root.device)} | Adapter: ${root.device.adapter ? root.device.adapter.adapterId : "unknown"}`
                             : "Device unavailable"
@@ -147,7 +153,7 @@ Item {
                         }
 
                         SmallButton {
-                            visible: root.hasDevice && (root.device.paired || root.device.bonded || root.device.trusted)
+                            visible: root.detailed && root.hasDevice && (root.device.paired || root.device.bonded || root.device.trusted)
                             text: root.hasDevice && root.device.trusted ? "Untrust" : "Trust"
                             onClicked: {
                                 if (root.hasDevice)
@@ -156,7 +162,7 @@ Item {
                         }
 
                         SmallButton {
-                            visible: root.hasDevice && (root.device.paired || root.device.bonded)
+                            visible: root.detailed && root.hasDevice && (root.device.paired || root.device.bonded)
                             text: "Forget"
                             onClicked: {
                                 if (!root.hasDevice) {
@@ -172,6 +178,7 @@ Item {
                         }
 
                         SmallButton {
+                            visible: root.detailed
                             text: root.showAdvanced ? "Hide Advanced" : "Show Advanced"
                             onClicked: {
                                 if (root.interactionState)
