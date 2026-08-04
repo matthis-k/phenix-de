@@ -10,7 +10,7 @@ DashboardSection {
 
     property var devices: []
     property QtObject interactionState: null
-    property string emptyText: "No Bluetooth devices"
+    property string emptyText: qsTr("No Bluetooth devices")
     property var tabSwipeTarget: null
     property int contentWidth: 320
     property int itemSpacing: 3
@@ -24,7 +24,6 @@ DashboardSection {
     property int verticalPadding: 4
     property bool scroll: false
 
-    showDetailToggle: root.devices.length > 0
     Layout.fillWidth: true
 
     DashboardScrollArea {
