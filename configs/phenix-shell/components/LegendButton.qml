@@ -14,8 +14,9 @@ ActionButton {
 
     default property alias content: contentRow.children
 
-    property bool checked: true
-    readonly property bool effectiveChecked: checked === undefined ? true : checked
+    checkable: true
+    checked: true
+    readonly property bool effectiveChecked: root.checked
     readonly property var visibilityRevision: graphView && graphView.visibilityRevision !== undefined
         ? graphView.visibilityRevision
         : 0
