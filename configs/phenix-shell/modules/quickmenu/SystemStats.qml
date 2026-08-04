@@ -13,7 +13,7 @@ DashboardPage {
     title: "System stats"
     subtitle: root.detailed
         ? qsTr("Per-core, memory, GPU, storage, and network telemetry")
-        : qsTr("Aggregate telemetry with abnormal observations promoted")
+        : qsTr("Current resource usage with abnormal observations promoted")
     scrollable: true
 
     readonly property var cpuCoreColors: [Config.colors.green, Config.colors.yellow, Config.colors.red, Config.colors.maroon, Config.colors.peach, Config.colors.mauve, Config.colors.pink, Config.colors.flamingo, Config.colors.rosewater]
@@ -71,6 +71,31 @@ DashboardPage {
             : DashboardObservation.Hidden
     }
 
+    function percentColor(percent, normalColor, warningThreshold, criticalThreshold) {
+        const value = Number(percent || 0);
+        const warning = Number(warningThreshold !== undefined ? warningThreshold : 75);
+        const critical = Number(criticalThreshold !== undefined ? criticalThreshold : 90);
+        if (value >= critical)
+            return Config.styling.critical;
+        if (value >= warning)
+            return Config.styling.warning;
+        return normalColor;
+    }
+
+    function observationColor(observation, normalColor) {
+        switch (observation.severity) {
+        case DashboardObservation.Critical:
+            return Config.styling.critical;
+        case DashboardObservation.Warning:
+            return Config.styling.warning;
+        case DashboardObservation.Notice:
+            return Config.styling.primaryAccent;
+        case DashboardObservation.Normal:
+        default:
+            return normalColor;
+        }
+    }
+
     function cpuGraphSeries() {
         const _ = Services.Stats.graphRevision;
         return Services.Stats.calculateCpuGraphSeries().map(series => Object.assign({}, series, {
@@ -99,159 +124,171 @@ DashboardPage {
 
     AdaptiveDashboardSection {
         observation: cpuObservation
-        title: "CPU Usage"
+        title: qsTr("CPU usage")
         subtitle: cpuObservation.detailed
-            ? qsTr("Average and every logical core")
+            ? qsTr("Average and every logical core over time")
             : (cpuObservation.promoted
-                ? qsTr("Average plus %1 promoted core outlier(s)").arg(cpuObservation.promotedRows.length)
-                : qsTr("Average; no per-core outliers"))
+                ? qsTr("%1 hot core(s) promoted").arg(cpuObservation.promotedRows.length)
+                : qsTr("Current aggregate load"))
+        iconName: "processor-symbolic"
+        iconColor: root.observationColor(cpuObservation, Config.colors.blue)
+        titleColor: cpuObservation.promoted
+            ? root.observationColor(cpuObservation, Config.colors.blue)
+            : Config.styling.text0
+        subtitleColor: cpuObservation.promoted
+            ? root.observationColor(cpuObservation, Config.colors.blue)
+            : Config.styling.text2
+        subtitleBold: cpuObservation.promoted
         collapsible: true
         summary: Component {
             HeaderMetric {
-                label: "avg"
+                label: qsTr("AVG")
                 value: Services.Stats.cpuPercent
-                metricColor: Config.colors.blue
+                metricColor: root.observationColor(cpuObservation, Config.colors.blue)
             }
         }
-        overviewDelegate: Component {
-            Text {
-                Layout.fillWidth: true
-                text: qsTr("No core is above 90% or materially above the CPU average.")
-                color: Config.styling.text2
-                font.pixelSize: 12
-                wrapMode: Text.WordWrap
-            }
-        }
-        promotedDelegate: Component {
-            CpuTelemetry {}
-        }
-        detailedDelegate: Component {
-            CpuTelemetry {}
-        }
+        overviewDelegate: Component { CpuOverview {} }
+        promotedDelegate: Component { CpuOverview {} }
+        detailedDelegate: Component { CpuTelemetry {} }
         Layout.fillWidth: true
     }
 
     AdaptiveDashboardSection {
         observation: memoryObservation
-        title: "Memory"
+        title: qsTr("Memory")
         subtitle: memoryObservation.detailed
-            ? qsTr("Usage history and exact allocation")
+            ? qsTr("Allocation and usage history")
             : (memoryObservation.promoted
                 ? memoryObservation.promotionReason
-                : qsTr("Aggregate RAM and swap usage"))
+                : qsTr("Current RAM and swap pressure"))
+        iconName: "computer-symbolic"
+        iconColor: root.observationColor(memoryObservation, root.ramColor)
+        titleColor: memoryObservation.promoted
+            ? root.observationColor(memoryObservation, root.ramColor)
+            : Config.styling.text0
+        subtitleColor: memoryObservation.promoted
+            ? root.observationColor(memoryObservation, root.ramColor)
+            : Config.styling.text2
+        subtitleBold: memoryObservation.promoted
         collapsible: true
         summary: Component {
             RowLayout {
                 spacing: Config.spacing.xs
                 HeaderMetric {
-                    label: "RAM"
+                    label: qsTr("RAM")
                     value: Services.Stats.memoryPercent
-                    metricColor: root.ramColor
+                    metricColor: root.percentColor(Services.Stats.memoryPercent, root.ramColor, 85, 90)
                 }
                 HeaderMetric {
-                    label: "Swap"
+                    label: qsTr("SWAP")
                     value: Services.Stats.swapTotalMiB > 0 ? Services.Stats.swapPercent : 0
-                    metricColor: root.swapColor
+                    metricColor: root.percentColor(Services.Stats.swapPercent, root.swapColor, 85, 90)
                 }
             }
         }
-        promotedDelegate: Component {
-            MemoryTelemetry {}
-        }
-        detailedDelegate: Component {
-            MemoryTelemetry {}
-        }
+        overviewDelegate: Component { MemoryOverview {} }
+        promotedDelegate: Component { MemoryOverview {} }
+        detailedDelegate: Component { MemoryTelemetry {} }
         Layout.fillWidth: true
     }
 
     AdaptiveDashboardSection {
         observation: gpuObservation
-        title: "GPU"
+        title: qsTr("GPU")
         subtitle: gpuObservation.detailed
             ? qsTr("Compute, VRAM, and usage history")
             : (gpuObservation.promoted
                 ? gpuObservation.promotionReason
-                : qsTr("Aggregate compute and VRAM usage"))
+                : qsTr("Current compute and VRAM pressure"))
+        iconName: "video-display-symbolic"
+        iconColor: root.observationColor(gpuObservation, root.gpuUsageColor)
+        titleColor: gpuObservation.promoted
+            ? root.observationColor(gpuObservation, root.gpuUsageColor)
+            : Config.styling.text0
+        subtitleColor: gpuObservation.promoted
+            ? root.observationColor(gpuObservation, root.gpuUsageColor)
+            : Config.styling.text2
+        subtitleBold: gpuObservation.promoted
         collapsible: true
         summary: Component {
             RowLayout {
                 spacing: Config.spacing.xs
                 HeaderMetric {
-                    label: "Compute"
+                    label: qsTr("GPU")
                     value: Services.Stats.gpuUtilPercent
-                    metricColor: root.gpuUsageColor
+                    metricColor: root.percentColor(Services.Stats.gpuUtilPercent, root.gpuUsageColor, 85, 90)
                 }
                 HeaderMetric {
-                    label: "VRAM"
+                    label: qsTr("VRAM")
                     value: Services.Stats.gpuVramPercent
-                    metricColor: root.gpuVramColor
+                    metricColor: root.percentColor(Services.Stats.gpuVramPercent, root.gpuVramColor, 85, 90)
                 }
             }
         }
-        promotedDelegate: Component {
-            GpuTelemetry {}
-        }
-        detailedDelegate: Component {
-            GpuTelemetry {}
-        }
+        overviewDelegate: Component { GpuOverview {} }
+        promotedDelegate: Component { GpuOverview {} }
+        detailedDelegate: Component { GpuTelemetry {} }
         Layout.fillWidth: true
     }
 
     AdaptiveDashboardSection {
         observation: storageObservation
-        title: "Storage"
+        title: qsTr("Storage")
         subtitle: storageObservation.detailed
             ? qsTr("Every mounted filesystem")
             : (storageObservation.promoted
                 ? storageObservation.promotionReason
-                : qsTr("Root filesystem usage"))
+                : qsTr("Current root filesystem usage"))
+        iconName: "drive-harddisk-symbolic"
+        iconColor: root.observationColor(storageObservation, Config.colors.peach)
+        titleColor: storageObservation.promoted
+            ? root.observationColor(storageObservation, Config.colors.peach)
+            : Config.styling.text0
+        subtitleColor: storageObservation.promoted
+            ? root.observationColor(storageObservation, Config.colors.peach)
+            : Config.styling.text2
+        subtitleBold: storageObservation.promoted
         collapsible: true
         summary: Component {
             HeaderMetric {
                 label: "/"
                 value: Services.Stats.rootDiskPercent
-                metricColor: Services.Stats.rootDiskPercent >= 90
-                    ? Config.styling.critical
-                    : (Services.Stats.rootDiskPercent >= 75
-                        ? Config.styling.warning
-                        : Config.styling.text0)
+                metricColor: root.percentColor(Services.Stats.rootDiskPercent, Config.colors.peach, 75, 90)
             }
         }
         overviewDelegate: Component {
-            StorageTable {
-                rows: storageObservation.rootRows
-            }
+            StorageOverview { rows: storageObservation.rootRows }
         }
         promotedDelegate: Component {
-            StorageTable {
-                rows: storageObservation.visibleRows
-            }
+            StorageOverview { rows: storageObservation.visibleRows }
         }
         detailedDelegate: Component {
-            StorageTable {
-                rows: storageObservation.visibleRows
-            }
+            StorageTable { rows: storageObservation.visibleRows }
         }
         Layout.fillWidth: true
     }
 
     AdaptiveDashboardSection {
         observation: networkObservation
-        title: "Network throughput"
+        title: qsTr("Network throughput")
+        iconName: "network-transmit-receive-symbolic"
+        iconColor: Config.colors.green
         collapsible: true
         summary: Component {
             RowLayout {
                 spacing: Config.spacing.xs
                 Text {
-                    text: Services.Stats.formatRate(Services.Stats.rxBytesPerSecond)
-                    color: Config.styling.text0
+                    text: `↓ ${Services.Stats.formatRate(Services.Stats.rxBytesPerSecond)}`
+                    color: Config.colors.green
                     font.pixelSize: 12
+                    font.bold: true
                     font.family: "monospace"
                 }
                 Text {
-                    text: Services.Stats.formatRate(Services.Stats.txBytesPerSecond)
-                    color: Config.styling.text2
+                    text: `↑ ${Services.Stats.formatRate(Services.Stats.txBytesPerSecond)}`
+                    color: Config.colors.peach
                     font.pixelSize: 12
+                    font.bold: true
                     font.family: "monospace"
                 }
             }
@@ -263,20 +300,128 @@ DashboardPage {
 
                 InfoRow {
                     iconName: "go-down-symbolic"
-                    label: "Download"
+                    iconColor: Config.colors.green
+                    labelColor: Config.colors.green
+                    label: qsTr("Download")
                     value: Services.Stats.formatRate(Services.Stats.rxBytesPerSecond)
+                    valueColor: Config.colors.green
                     Layout.fillWidth: true
                 }
 
                 InfoRow {
                     iconName: "go-up-symbolic"
-                    label: "Upload"
+                    iconColor: Config.colors.peach
+                    labelColor: Config.colors.peach
+                    label: qsTr("Upload")
                     value: Services.Stats.formatRate(Services.Stats.txBytesPerSecond)
+                    valueColor: Config.colors.peach
                     Layout.fillWidth: true
                 }
             }
         }
         Layout.fillWidth: true
+    }
+
+    component MetricGrid: GridLayout {
+        Layout.fillWidth: true
+        columns: Math.max(1, Math.floor((width + columnSpacing) / (108 + columnSpacing)))
+        columnSpacing: Config.spacing.xs
+        rowSpacing: Config.spacing.xs
+        uniformCellWidths: true
+    }
+
+    component CpuOverview: MetricGrid {
+        RadialMetric {
+            Layout.fillWidth: true
+            label: qsTr("Average")
+            iconName: "processor-symbolic"
+            percent: Services.Stats.cpuPercent
+            accentColor: root.percentColor(Services.Stats.cpuPercent, Config.colors.blue, 75, 90)
+            detail: qsTr("aggregate")
+            emphasized: cpuObservation.promoted
+        }
+
+        Repeater {
+            model: cpuObservation.promotedRows
+
+            delegate: RadialMetric {
+                required property var modelData
+                Layout.fillWidth: true
+                label: qsTr("Core %1").arg(modelData.index)
+                iconName: "processor-symbolic"
+                percent: Number(modelData.percent || 0)
+                accentColor: modelData.severity === DashboardObservation.Critical
+                    ? Config.styling.critical
+                    : Config.styling.warning
+                detail: qsTr("outlier")
+                emphasized: true
+            }
+        }
+    }
+
+    component MemoryOverview: MetricGrid {
+        RadialMetric {
+            Layout.fillWidth: true
+            label: qsTr("RAM")
+            iconName: "computer-symbolic"
+            percent: Services.Stats.memoryPercent
+            accentColor: root.percentColor(Services.Stats.memoryPercent, root.ramColor, 85, 90)
+            detail: `${Services.Stats.memoryUsedMiB}/${Services.Stats.memoryTotalMiB} MiB`
+            emphasized: Services.Stats.memoryPercent >= memoryObservation.warningThreshold
+        }
+
+        RadialMetric {
+            visible: Services.Stats.swapTotalMiB > 0
+            Layout.fillWidth: true
+            label: qsTr("Swap")
+            iconName: "drive-harddisk-symbolic"
+            percent: Services.Stats.swapPercent
+            accentColor: root.percentColor(Services.Stats.swapPercent, root.swapColor, 85, 90)
+            detail: `${Services.Stats.swapUsedMiB}/${Services.Stats.swapTotalMiB} MiB`
+            emphasized: Services.Stats.swapPercent >= memoryObservation.warningThreshold
+        }
+    }
+
+    component GpuOverview: MetricGrid {
+        RadialMetric {
+            Layout.fillWidth: true
+            label: qsTr("Compute")
+            iconName: "video-display-symbolic"
+            percent: Services.Stats.gpuUtilPercent
+            accentColor: root.percentColor(Services.Stats.gpuUtilPercent, root.gpuUsageColor, 85, 90)
+            detail: Services.Stats.gpuName
+            emphasized: Services.Stats.gpuUtilPercent >= gpuObservation.warningThreshold
+        }
+
+        RadialMetric {
+            Layout.fillWidth: true
+            label: qsTr("VRAM")
+            iconName: "video-display-symbolic"
+            percent: Services.Stats.gpuVramPercent
+            accentColor: root.percentColor(Services.Stats.gpuVramPercent, root.gpuVramColor, 85, 90)
+            detail: `${Services.Stats.gpuVramUsedMiB}/${Services.Stats.gpuVramTotalMiB} MiB`
+            emphasized: Services.Stats.gpuVramPercent >= gpuObservation.warningThreshold
+        }
+    }
+
+    component StorageOverview: MetricGrid {
+        id: storageGrid
+        required property var rows
+
+        Repeater {
+            model: storageGrid.rows
+
+            delegate: RadialMetric {
+                required property var modelData
+                Layout.fillWidth: true
+                label: modelData.mount || modelData.device || qsTr("Filesystem")
+                iconName: "drive-harddisk-symbolic"
+                percent: Number(modelData.percent || 0)
+                accentColor: root.percentColor(percent, Config.colors.peach, 75, 90)
+                detail: `${modelData.usedGiB || 0}/${modelData.totalGiB || 0} GiB`
+                emphasized: percent >= storageObservation.warningThreshold
+            }
+        }
     }
 
     component CpuTelemetry: ColumnLayout {
@@ -300,7 +445,6 @@ DashboardPage {
         RowLayout {
             Layout.fillWidth: true
             spacing: 8
-
             Item { Layout.fillWidth: true }
 
             LegendButton {
@@ -311,21 +455,25 @@ DashboardPage {
                 color: Config.colors.blue
 
                 Text {
-                    text: "average"
+                    text: qsTr("average")
                     font.pixelSize: 13
+                    font.bold: true
                     color: Config.colors.base
                 }
                 Item { Layout.fillWidth: true }
 
-                UsagePie {
+                UsageArc {
+                    implicitWidth: 14
+                    implicitHeight: 14
                     percent: Services.Stats.cpuPercent
-                    fillColor: Config.colors.base
+                    accentColor: Config.colors.base
+                    trackColor: Config.styling.bg4
+                    strokeWidth: 2
                 }
             }
 
             LegendButton {
-                visible: cpuObservation.detailed
-                Layout.preferredWidth: visible ? 100 : 0
+                Layout.preferredWidth: 100
                 Layout.alignment: Qt.AlignHCenter
                 graphView: cpuGraph
                 seriesFilter: (series) => series.name.startsWith("core")
@@ -333,9 +481,10 @@ DashboardPage {
 
                 Text {
                     Layout.fillWidth: true
-                    text: "cores"
+                    text: qsTr("cores")
                     horizontalAlignment: Text.AlignHCenter
                     font.pixelSize: 13
+                    font.bold: true
                     color: Config.colors.base
                 }
             }
@@ -356,7 +505,6 @@ DashboardPage {
 
                 delegate: LegendButton {
                     required property var modelData
-
                     readonly property int coreIndex: Number(modelData.index || 0)
 
                     Layout.fillWidth: true
@@ -367,13 +515,18 @@ DashboardPage {
                     Text {
                         text: `core${coreIndex}`
                         font.pixelSize: 13
+                        font.bold: true
                         color: Config.colors.base
                     }
                     Item { Layout.fillWidth: true }
 
-                    UsagePie {
+                    UsageArc {
+                        implicitWidth: 14
+                        implicitHeight: 14
                         percent: Number(modelData.percent || 0)
-                        fillColor: Config.colors.base
+                        accentColor: Config.colors.base
+                        trackColor: Config.styling.bg4
+                        strokeWidth: 2
                     }
                 }
             }
@@ -400,23 +553,21 @@ DashboardPage {
         StatTableHeader {}
 
         StatTableRow {
-            visible: memoryObservation.detailed || Services.Stats.memoryPercent >= memoryObservation.warningThreshold
-            label: "RAM"
+            label: qsTr("RAM")
             valueText: `${Services.Stats.memoryUsedMiB} / ${Services.Stats.memoryTotalMiB} MiB`
             percent: Services.Stats.memoryPercent
             rowColor: root.ramColor
-            percentColor: Services.Stats.memoryPercent >= 90 ? Config.styling.critical : root.ramColor
+            percentColor: root.percentColor(percent, root.ramColor, 85, 90)
         }
 
         StatTableRow {
-            visible: memoryObservation.detailed || Services.Stats.swapPercent >= memoryObservation.warningThreshold
-            label: "Swap"
+            label: qsTr("Swap")
             valueText: Services.Stats.swapTotalMiB > 0
                 ? `${Services.Stats.swapUsedMiB} / ${Services.Stats.swapTotalMiB} MiB`
-                : "Disabled"
+                : qsTr("Disabled")
             percent: Services.Stats.swapTotalMiB > 0 ? Services.Stats.swapPercent : -1
             rowColor: root.swapColor
-            percentColor: Services.Stats.swapPercent >= 90 ? Config.styling.critical : root.swapColor
+            percentColor: root.percentColor(percent, root.swapColor, 85, 90)
         }
     }
 
@@ -426,7 +577,7 @@ DashboardPage {
 
         Text {
             text: Services.Stats.gpuName
-            color: Config.styling.text0
+            color: root.observationColor(gpuObservation, Config.styling.text0)
             font.pixelSize: 13
             font.bold: true
             Layout.fillWidth: true
@@ -449,7 +600,6 @@ DashboardPage {
         RowLayout {
             Layout.fillWidth: true
             spacing: 8
-
             Item { Layout.fillWidth: true }
 
             LegendButton {
@@ -460,15 +610,20 @@ DashboardPage {
                 color: root.gpuUsageColor
 
                 Text {
-                    text: "Compute"
+                    text: qsTr("Compute")
                     font.pixelSize: 13
+                    font.bold: true
                     color: Config.colors.base
                 }
                 Item { Layout.fillWidth: true }
 
-                UsagePie {
+                UsageArc {
+                    implicitWidth: 14
+                    implicitHeight: 14
                     percent: Services.Stats.gpuUtilPercent
-                    fillColor: Config.colors.base
+                    accentColor: Config.colors.base
+                    trackColor: Config.styling.bg4
+                    strokeWidth: 2
                 }
             }
 
@@ -480,32 +635,34 @@ DashboardPage {
                 color: root.gpuVramColor
 
                 Text {
-                    text: "VRAM"
+                    text: qsTr("VRAM")
                     font.pixelSize: 13
+                    font.bold: true
                     color: Config.colors.base
                 }
                 Item { Layout.fillWidth: true }
 
-                UsagePie {
+                UsageArc {
+                    implicitWidth: 14
+                    implicitHeight: 14
                     percent: Services.Stats.gpuVramPercent
-                    fillColor: Config.colors.base
+                    accentColor: Config.colors.base
+                    trackColor: Config.styling.bg4
+                    strokeWidth: 2
                 }
             }
 
             Item { Layout.fillWidth: true }
         }
 
-        StatTableHeader {
-            visible: gpuObservation.detailed || Services.Stats.gpuVramPercent >= gpuObservation.warningThreshold
-        }
+        StatTableHeader {}
 
         StatTableRow {
-            visible: gpuObservation.detailed || Services.Stats.gpuVramPercent >= gpuObservation.warningThreshold
-            label: "VRAM"
+            label: qsTr("VRAM")
             valueText: `${Services.Stats.gpuVramUsedMiB} / ${Services.Stats.gpuVramTotalMiB} MiB`
             percent: Services.Stats.gpuVramPercent
             rowColor: root.gpuVramColor
-            percentColor: Services.Stats.gpuVramPercent >= 90 ? Config.styling.critical : root.gpuVramColor
+            percentColor: root.percentColor(percent, root.gpuVramColor, 85, 90)
         }
     }
 
@@ -531,8 +688,8 @@ DashboardPage {
 
         Text {
             Layout.fillWidth: true
-            text: "Name"
-            color: Config.styling.text2
+            text: qsTr("Name")
+            color: Config.colors.blue
             font.pixelSize: 12
             font.bold: true
         }
@@ -540,8 +697,8 @@ DashboardPage {
         Text {
             Layout.preferredWidth: 120
             horizontalAlignment: Text.AlignRight
-            text: "Used / Total"
-            color: Config.styling.text2
+            text: qsTr("Used / Total")
+            color: Config.colors.mauve
             font.pixelSize: 12
             font.bold: true
         }
@@ -550,7 +707,7 @@ DashboardPage {
             Layout.preferredWidth: 50
             horizontalAlignment: Text.AlignRight
             text: "%"
-            color: Config.styling.text2
+            color: Config.colors.peach
             font.pixelSize: 12
             font.bold: true
         }
@@ -571,12 +728,14 @@ DashboardPage {
         property real percent: 0
         property color rowColor: Config.styling.text0
         property color percentColor: Config.styling.text0
+        readonly property bool important: percent >= 75
 
         Text {
             Layout.fillWidth: true
             text: parent.label
-            color: parent.rowColor
+            color: parent.important ? parent.percentColor : parent.rowColor
             font.pixelSize: 13
+            font.bold: parent.important
             elide: Text.ElideRight
         }
 
@@ -586,6 +745,7 @@ DashboardPage {
             text: parent.valueText
             color: parent.rowColor
             font.pixelSize: 13
+            font.bold: parent.important
             font.family: "monospace"
         }
 
@@ -610,11 +770,16 @@ DashboardPage {
             text: parent.label
             color: parent.metricColor
             font.pixelSize: 12
+            font.bold: true
         }
 
-        UsagePie {
+        UsageArc {
+            implicitWidth: 14
+            implicitHeight: 14
             percent: parent.value
-            fillColor: parent.metricColor
+            accentColor: parent.metricColor
+            trackColor: Config.styling.bg4
+            strokeWidth: 2
         }
     }
 
@@ -624,8 +789,7 @@ DashboardPage {
         label: modelData.mount || ""
         valueText: `${modelData.usedGiB || 0} / ${modelData.totalGiB || 0} GiB`
         percent: modelData.percent !== undefined ? modelData.percent : -1
-        percentColor: percent >= 90
-            ? Config.styling.critical
-            : (percent >= 75 ? Config.styling.warning : Config.styling.text0)
+        rowColor: Config.colors.peach
+        percentColor: root.percentColor(percent, Config.colors.peach, 75, 90)
     }
 }
