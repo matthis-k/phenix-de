@@ -52,7 +52,6 @@ DashboardPage {
         title: "Connected devices"
         devices: root.connectedDevices
         interactionState: interactionState
-        detailed: root.detailed
         emptyText: "No connected Bluetooth devices"
         contentWidth: root.contentWidth
         itemSpacing: root.itemSpacing
@@ -71,7 +70,6 @@ DashboardPage {
         title: "Other devices"
         devices: root.otherDevices
         interactionState: interactionState
-        detailed: root.detailed
         emptyText: BluetoothService.enabled ? "No Bluetooth devices found" : "Bluetooth is off"
         scroll: true
         tabSwipeTarget: root.tabSwipeTarget
