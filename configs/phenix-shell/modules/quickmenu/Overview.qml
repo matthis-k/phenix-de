@@ -24,6 +24,11 @@ DashboardPage {
         return presentationPolicy.cpuCoreOutliers(Stats.cpuCorePercents, Stats.cpuPercent, 4);
     }
 
+    readonly property var activeInterface: {
+        const _ = NetworkInterfaces.revision;
+        return NetworkInterfaces.activeInterface();
+    }
+
     readonly property string connectionSummary: {
         if (NetworkService.hasWiredConnection)
             return qsTr("%1 connected").arg(NetworkService.wiredDeviceName);
@@ -119,24 +124,36 @@ DashboardPage {
             visible: root.detailed && NetworkService.connected
             iconName: NetworkService.hasWiredConnection ? "network-wired-symbolic" : "network-wireless-symbolic"
             label: qsTr("Interface")
-            value: NetworkService.hasWiredConnection
-                ? NetworkService.wiredDeviceName
-                : NetworkService.wifiDeviceName
+            value: root.activeInterface
+                ? root.activeInterface.name
+                : (NetworkService.hasWiredConnection
+                    ? NetworkService.wiredDeviceName
+                    : NetworkService.wifiDeviceName)
         }
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.detailed && NetworkService.hasWiredConnection && NetworkService.wiredAddress !== ""
+            visible: root.detailed && !!root.activeInterface && root.activeInterface.mac !== ""
+            iconName: "network-server-symbolic"
+            label: qsTr("Interface MAC")
+            value: root.activeInterface ? root.activeInterface.mac : ""
+        }
+
+        InfoRow {
+            Layout.fillWidth: true
+            visible: root.detailed && !!root.activeInterface
             iconName: "network-server-symbolic"
             label: qsTr("IPv4")
-            value: NetworkService.wiredAddress
+            value: root.activeInterface
+                ? NetworkInterfaces.formatAddresses(root.activeInterface.ipv4)
+                : qsTr("Unavailable")
         }
 
         InfoRow {
             Layout.fillWidth: true
             visible: root.detailed && !NetworkService.hasWiredConnection && NetworkService.connectedAddress !== ""
             iconName: "network-wireless-symbolic"
-            label: qsTr("Access point MAC")
+            label: qsTr("Access point BSSID")
             value: NetworkService.connectedAddress
         }
 
