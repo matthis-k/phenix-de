@@ -11,13 +11,17 @@ FocusScope {
     property Component headerAccessory: null
     property var tabSwipeTarget: null
     property var modeController: null
-    property string presentationMode: "overview"
+    property string globalPresentationMode: "overview"
     property bool showModeSwitch: true
     property bool scrollable: false
     property bool fillHeight: false
     property int pagePadding: Config.spacing.md
     property int sectionSpacing: Config.spacing.md
-    readonly property bool detailed: presentationMode === "detailed"
+
+    readonly property bool globalDetailed: globalPresentationMode === "detailed"
+    readonly property bool detailed: globalDetailed
+    readonly property string presentationMode: globalPresentationMode
+
     default property alias content: body.data
 
     property bool _vimChordPending: false
@@ -26,6 +30,8 @@ FocusScope {
     implicitHeight: column.implicitHeight + pagePadding * 2
     focus: visible
 
+    Accessible.description: root.subtitle
+
     function requestPresentationMode(mode) {
         const normalized = String(mode || "").toLowerCase() === "detailed"
             ? "detailed"
@@ -33,14 +39,14 @@ FocusScope {
         if (root.modeController && root.modeController.setPresentationMode)
             root.modeController.setPresentationMode(normalized);
         else
-            root.presentationMode = normalized;
+            root.globalPresentationMode = normalized;
     }
 
     function togglePresentationMode() {
         if (root.modeController && root.modeController.togglePresentationMode)
             root.modeController.togglePresentationMode();
         else
-            root.requestPresentationMode(root.detailed ? "overview" : "detailed");
+            root.requestPresentationMode(root.globalDetailed ? "overview" : "detailed");
     }
 
     function focusedItem() {
@@ -152,9 +158,10 @@ FocusScope {
                 DashboardPageHeader {
                     id: header
                     Layout.fillWidth: true
-                    visible: root.title !== "" || root.subtitle !== "" || root.headerAccessory !== null || root.showModeSwitch
+                    visible: root.title !== ""
+                        || root.headerAccessory !== null
+                        || root.showModeSwitch
                     title: root.title
-                    subtitle: root.subtitle
                     accessory: composedHeaderAccessory
                 }
 
@@ -190,7 +197,7 @@ FocusScope {
 
             DashboardModeSwitch {
                 visible: root.showModeSwitch
-                mode: root.presentationMode
+                mode: root.globalPresentationMode
                 onModeRequested: mode => root.requestPresentationMode(mode)
                 Layout.alignment: Qt.AlignVCenter
             }

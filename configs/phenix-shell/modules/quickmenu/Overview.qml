@@ -103,11 +103,13 @@ DashboardPage {
     }
 
     DashboardSection {
+        id: audioSection
         Layout.fillWidth: true
         title: qsTr("Audio")
         iconName: AudioService.outputIconName
         iconColor: AudioService.outputMuted ? Config.styling.critical : AudioService.outputIconColor
         titleColor: AudioService.outputMuted ? Config.styling.critical : AudioService.outputIconColor
+        showDetailToggle: !!AudioService.defaultSource
 
         AudioDeviceCard {
             title: AudioService.outputDeviceName
@@ -125,7 +127,7 @@ DashboardPage {
         }
 
         AudioDeviceCard {
-            visible: root.detailed
+            visible: audioSection.detailed
             title: AudioService.inputDeviceName
             iconName: AudioService.inputIconName
             iconColor: AudioService.inputIconColor
@@ -163,6 +165,7 @@ DashboardPage {
     }
 
     NavigableSectionHeader {
+        id: networkSection
         Layout.fillWidth: true
         title: qsTr("Network")
         iconName: NetworkService.hasWiredConnection
@@ -174,6 +177,7 @@ DashboardPage {
         titleColor: iconColor
         screenState: root.screenState
         targetTab: "wifi"
+        showDetailToggle: true
 
         DashboardSwitchRow {
             Layout.fillWidth: true
@@ -192,7 +196,7 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.detailed && NetworkService.connected
+            visible: networkSection.detailed && NetworkService.connected
             iconName: NetworkService.hasWiredConnection ? "network-wired-symbolic" : "network-wireless-symbolic"
             iconColor: Config.colors.green
             labelColor: Config.colors.green
@@ -207,7 +211,7 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.detailed && !!root.activeInterface && root.activeInterface.mac !== ""
+            visible: networkSection.detailed && !!root.activeInterface && root.activeInterface.mac !== ""
             iconName: "network-server-symbolic"
             iconColor: Config.colors.blue
             labelColor: Config.colors.blue
@@ -218,7 +222,7 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.detailed && !!root.activeInterface
+            visible: networkSection.detailed && !!root.activeInterface
             iconName: "network-server-symbolic"
             iconColor: Config.colors.mauve
             labelColor: Config.colors.mauve
@@ -231,7 +235,7 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.detailed && !NetworkService.hasWiredConnection && NetworkService.connectedAddress !== ""
+            visible: networkSection.detailed && !NetworkService.hasWiredConnection && NetworkService.connectedAddress !== ""
             iconName: "network-wireless-symbolic"
             iconColor: Config.colors.peach
             labelColor: Config.colors.peach
@@ -242,7 +246,7 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.detailed
+            visible: networkSection.detailed
             iconName: "network-transmit-receive-symbolic"
             iconColor: Config.colors.green
             labelColor: Config.colors.green
@@ -253,6 +257,7 @@ DashboardPage {
     }
 
     NavigableSectionHeader {
+        id: bluetoothSection
         Layout.fillWidth: true
         title: qsTr("Bluetooth")
         iconName: BluetoothService.enabled ? "bluetooth-symbolic" : "bluetooth-disabled-symbolic"
@@ -260,6 +265,7 @@ DashboardPage {
         titleColor: iconColor
         screenState: root.screenState
         targetTab: "bluetooth"
+        showDetailToggle: BluetoothService.available
 
         DashboardSwitchRow {
             Layout.fillWidth: true
@@ -276,7 +282,7 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.detailed && BluetoothService.available
+            visible: bluetoothSection.detailed && BluetoothService.available
             iconName: "bluetooth-active-symbolic"
             iconColor: Config.styling.bluetooth
             labelColor: Config.styling.bluetooth
@@ -287,17 +293,19 @@ DashboardPage {
     }
 
     DashboardSection {
+        id: batterySection
         Layout.fillWidth: true
         title: qsTr("Battery and power")
         iconName: PowerService.iconName
         iconColor: PowerService.iconColor
         titleColor: iconColor
         visible: PowerService.hasBattery
+        showDetailToggle: true
 
         Battery {
             id: batteryContent
             Layout.fillWidth: true
-            showGraph: root.detailed
+            showGraph: batterySection.detailed
         }
     }
 
@@ -335,9 +343,10 @@ DashboardPage {
         titleColor: iconColor
         screenState: root.screenState
         targetTab: "stats"
+        showDetailToggle: true
 
         MetricGrid {
-            visible: !root.detailed
+            visible: !statsSection.detailed
 
             RadialMetric {
                 Layout.fillWidth: true
@@ -439,7 +448,7 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.detailed
+            visible: statsSection.detailed
             iconName: "processor-symbolic"
             iconColor: root.percentColor(Stats.cpuPercent, Config.colors.blue, 75, 90)
             labelColor: iconColor
@@ -449,7 +458,7 @@ DashboardPage {
         }
 
         Repeater {
-            model: root.detailed ? cpuObservation.promotedRows : []
+            model: statsSection.detailed ? cpuObservation.promotedRows : []
 
             InfoRow {
                 required property var modelData
@@ -467,7 +476,7 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.detailed
+            visible: statsSection.detailed
             iconName: "computer-symbolic"
             iconColor: root.percentColor(Stats.memoryPercent, Config.colors.blue, 85, 90)
             labelColor: iconColor
@@ -478,7 +487,7 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.detailed && Stats.swapTotalMiB > 0
+            visible: statsSection.detailed && Stats.swapTotalMiB > 0
             iconName: "drive-harddisk-symbolic"
             iconColor: root.percentColor(Stats.swapPercent, Config.colors.mauve, 85, 90)
             labelColor: iconColor
@@ -489,7 +498,7 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.detailed
+            visible: statsSection.detailed
             iconName: "drive-harddisk-symbolic"
             iconColor: root.percentColor(Stats.rootDiskPercent, Config.colors.peach, 75, 90)
             labelColor: iconColor
@@ -500,7 +509,7 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.detailed && Stats.gpuAvailable
+            visible: statsSection.detailed && Stats.gpuAvailable
             iconName: "video-display-symbolic"
             iconColor: root.observationColor(gpuObservation, Config.colors.green)
             labelColor: iconColor
@@ -511,7 +520,7 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.detailed && Stats.primaryInterface !== ""
+            visible: statsSection.detailed && Stats.primaryInterface !== ""
             iconName: "network-transmit-receive-symbolic"
             iconColor: Config.colors.green
             labelColor: Config.colors.green

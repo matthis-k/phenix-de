@@ -15,11 +15,14 @@ Rectangle {
     property real gaugeSize: 64
 
     implicitWidth: 108
-    implicitHeight: detail === "" ? 116 : 132
+    implicitHeight: 116
     color: Config.styling.bg2
     radius: Config.styling.radius
     border.width: emphasized ? 2 : 1
     border.color: emphasized ? accentColor : Config.styling.bg3
+
+    Accessible.name: root.label
+    Accessible.description: root.detail
 
     ColumnLayout {
         anchors.fill: parent
@@ -70,17 +73,6 @@ Rectangle {
                 font.bold: true
                 font.family: "monospace"
             }
-        }
-
-        Text {
-            visible: root.detail !== ""
-            Layout.fillWidth: true
-            text: root.detail
-            color: root.emphasized ? root.accentColor : Config.styling.text1
-            font.pixelSize: 11
-            font.bold: root.emphasized
-            horizontalAlignment: Text.AlignHCenter
-            elide: Text.ElideRight
         }
     }
 }

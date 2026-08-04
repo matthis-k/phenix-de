@@ -10,7 +10,8 @@ Item {
 
     required property var device
     property QtObject interactionState: null
-    property bool detailed: false
+    property bool inheritedDetailed: false
+    property bool localDetailed: false
     property int contentWidth: 320
     property int itemSpacing: 3
     property int rowHeight: 36
@@ -24,8 +25,11 @@ Item {
 
     readonly property bool hasDevice: !!root.device
     readonly property string rowKey: root.interactionState && root.device ? String(root.interactionState.deviceKey(root.device) || "") : ""
-    readonly property bool expanded: root.interactionState && root.rowKey !== "" ? root.interactionState.interactiveDeviceKey === root.rowKey : false
-    readonly property bool showAdvanced: root.detailed && root.expanded && root.interactionState ? !!root.interactionState.interactiveShowAdvanced : false
+    readonly property bool interactionExpanded: root.interactionState && root.rowKey !== "" ? root.interactionState.interactiveDeviceKey === root.rowKey : false
+    readonly property bool forcedDetailed: DashboardPresentation.detailed || root.inheritedDetailed
+    readonly property bool detailed: root.forcedDetailed || root.localDetailed
+    readonly property bool detailExpanded: root.interactionExpanded || root.detailed
+    readonly property bool showAdvanced: root.interactionExpanded && root.interactionState ? !!root.interactionState.interactiveShowAdvanced : false
     readonly property bool isConnecting: root.hasDevice && BluetoothService.deviceStatusLabel(root.device) === "Connecting"
     readonly property bool isDisconnecting: root.hasDevice && BluetoothService.deviceStatusLabel(root.device) === "Disconnecting"
     readonly property bool isPairing: root.hasDevice && !!root.device.pairing
@@ -35,8 +39,14 @@ Item {
     height: implicitHeight
 
     onHasDeviceChanged: {
-        if (!root.hasDevice && root.expanded && root.interactionState)
+        if (!root.hasDevice && root.interactionExpanded && root.interactionState)
             root.interactionState.unlockInteraction();
+    }
+
+    function toggleLocalDetails() {
+        if (root.forcedDetailed)
+            return;
+        root.localDetailed = !root.localDetailed;
     }
 
     ColumnLayout {
@@ -85,9 +95,20 @@ Item {
             horizontalPadding: root.horizontalPadding
             verticalPadding: root.verticalPadding
             contentSpacing: root.iconTextGap
+            accessory: Component {
+                DashboardDetailToggle {
+                    detailed: root.detailed
+                    forcedDetailed: root.forcedDetailed
+                    localDetailed: root.localDetailed
+                    subject: root.hasDevice
+                        ? BluetoothService.displayName(root.device)
+                        : qsTr("Bluetooth device")
+                    onToggleRequested: root.toggleLocalDetails()
+                }
+            }
 
             onClicked: {
-                if (root.expanded && root.interactionState)
+                if (root.interactionExpanded && root.interactionState)
                     root.interactionState.unlockInteraction();
                 else if (root.hasDevice && root.interactionState)
                     root.interactionState.lockInteractionFor(root.device);
@@ -97,7 +118,7 @@ Item {
         Expander {
             id: details
             Layout.fillWidth: true
-            expanded: root.expanded
+            expanded: root.detailExpanded
             slideDistance: Config.spacing.sm
 
             Rectangle {
@@ -114,7 +135,6 @@ Item {
 
                     Text {
                         Layout.fillWidth: true
-                        visible: root.detailed
                         text: root.hasDevice
                             ? `State: ${BluetoothService.deviceStatusLabel(root.device)} | Adapter: ${root.device.adapter ? root.device.adapter.adapterId : "unknown"}`
                             : "Device unavailable"
@@ -123,10 +143,20 @@ Item {
                         wrapMode: Text.Wrap
                     }
 
+                    Text {
+                        Layout.fillWidth: true
+                        visible: root.detailed
+                        text: root.hasDevice ? BluetoothService.advancedDeviceInfo(root.device) : ""
+                        color: Config.styling.text2
+                        font.pixelSize: 12
+                        wrapMode: Text.Wrap
+                    }
+
                     RowLayout {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 28
-                        implicitHeight: 28
+                        Layout.preferredHeight: visible ? 28 : 0
+                        implicitHeight: visible ? 28 : 0
+                        visible: root.interactionExpanded
                         spacing: root.itemSpacing
 
                         SmallButton {
@@ -178,7 +208,7 @@ Item {
                         }
 
                         SmallButton {
-                            visible: root.detailed
+                            visible: !root.detailed
                             text: root.showAdvanced ? "Hide Advanced" : "Show Advanced"
                             onClicked: {
                                 if (root.interactionState)
@@ -189,7 +219,7 @@ Item {
 
                     Text {
                         Layout.fillWidth: true
-                        visible: root.showAdvanced
+                        visible: root.showAdvanced && !root.detailed
                         text: BluetoothService.advancedDeviceInfo(root.device)
                         color: Config.styling.text2
                         font.pixelSize: 12

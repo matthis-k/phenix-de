@@ -27,8 +27,10 @@ ColumnLayout {
     spacing: 0
 
     DashboardSection {
+        id: connectedSection
         Layout.fillWidth: true
         title: connectedNetworks.length === 1 ? "Connected network" : "Connected networks"
+        showDetailToggle: connectedNetworks.length > 0
 
         Repeater {
             model: connectedNetworks
@@ -38,6 +40,7 @@ ColumnLayout {
                 Layout.fillWidth: true
                 network: modelData
                 interactionState: root.interactionState
+                inheritedDetailed: connectedSection.detailed
                 contentWidth: root.contentWidth
                 itemSpacing: root.itemSpacing
                 rowHeight: root.rowHeight
@@ -60,11 +63,13 @@ ColumnLayout {
     }
 
     DashboardSection {
+        id: availableSection
         Layout.fillWidth: true
         Layout.fillHeight: true
         Layout.minimumHeight: 120
         Layout.preferredHeight: 0
         title: "Available networks"
+        showDetailToggle: disconnectedNetworks.length > 0
         headerAccessory: Component {
             DashboardIconButton {
                 enabled: NetworkService.wifiEnabled
@@ -88,6 +93,7 @@ ColumnLayout {
                     Layout.fillWidth: true
                     network: modelData
                     interactionState: root.interactionState
+                    inheritedDetailed: availableSection.detailed
                     contentWidth: root.contentWidth
                     itemSpacing: root.itemSpacing
                     rowHeight: root.rowHeight

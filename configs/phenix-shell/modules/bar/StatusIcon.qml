@@ -29,7 +29,6 @@ ActionButton {
 
     accessibleName: root.label || root.tabName
     accessibleDescription: root.label === "" ? "" : qsTr("Open %1").arg(root.label)
-    toolTipText: root.label
 
     active: screenState ? screenState.isIndicatorActive(tabName) : false
     scaleIcon: true

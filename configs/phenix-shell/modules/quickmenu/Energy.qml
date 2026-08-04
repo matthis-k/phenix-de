@@ -18,16 +18,18 @@ DashboardPage {
     visible: PowerService.hasBattery
 
     DashboardSection {
+        id: batterySection
         Layout.fillWidth: true
         title: "Battery and power"
         visible: PowerService.hasBattery
+        showDetailToggle: true
 
         Battery {
             id: batteryContent
             Layout.fillWidth: true
             graphActive: root.visible
             powerModesFirst: true
-            showGraph: root.detailed
+            showGraph: batterySection.detailed
         }
     }
 

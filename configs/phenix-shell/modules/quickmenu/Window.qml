@@ -11,6 +11,7 @@ PanelWindow {
     property var shellScreenState
     readonly property string presentationMode: DashboardPresentation.mode
     readonly property bool detailed: DashboardPresentation.detailed
+    readonly property var dashboardTabs: DashboardPresentation.tabOrder
     readonly property bool dashboardVisible: !!shellScreenState && shellScreenState.dashboardPhase !== "closed"
     property real tabSwipeAccumulator: 0
     readonly property real tabSwipeThreshold: Config.spacing.xxl
@@ -22,6 +23,22 @@ PanelWindow {
 
     function togglePresentationMode() {
         DashboardPresentation.toggle();
+    }
+
+    function tabIndex(tabName) {
+        const index = root.dashboardTabs.indexOf(String(tabName || ""));
+        return index >= 0 ? index : root.dashboardTabs.indexOf("overview");
+    }
+
+    function stepDashboardTab(offset) {
+        if (!root.shellScreenState || !root.shellScreenState.dashboardOpen)
+            return false;
+        const currentIndex = root.tabIndex(root.shellScreenState.activeTab);
+        const nextTab = root.dashboardTabs[currentIndex + offset];
+        if (!nextTab)
+            return false;
+        root.shellScreenState.openDashboard(nextTab);
+        return true;
     }
 
     function resetTabSwipe() {
@@ -37,7 +54,7 @@ PanelWindow {
         if (Math.abs(tabSwipeAccumulator) < tabSwipeThreshold)
             return;
 
-        shellScreenState.stepDashboardTab(tabSwipeAccumulator < 0 ? 1 : -1);
+        root.stepDashboardTab(tabSwipeAccumulator < 0 ? 1 : -1);
         resetTabSwipe();
     }
 
@@ -54,7 +71,7 @@ PanelWindow {
         if (!shellScreenState)
             return;
 
-        const targetIndex = shellScreenState.tabIndex(shellScreenState.activeTab);
+        const targetIndex = root.tabIndex(shellScreenState.activeTab);
         if (selection.currentIndex !== targetIndex)
             selection.setCurrentIndex(targetIndex);
     }
@@ -90,8 +107,8 @@ PanelWindow {
             loader.item.tabSwipeTarget = root;
         if (loader.item.modeController !== undefined)
             loader.item.modeController = root;
-        if (loader.item.presentationMode !== undefined)
-            loader.item.presentationMode = Qt.binding(function() { return root.presentationMode; });
+        if (loader.item.globalPresentationMode !== undefined)
+            loader.item.globalPresentationMode = Qt.binding(function() { return root.presentationMode; });
     }
 
     anchors {
@@ -173,13 +190,13 @@ PanelWindow {
     Shortcut {
         sequence: "Alt+H"
         enabled: root.dashboardVisible && !!root.shellScreenState
-        onActivated: root.shellScreenState.stepDashboardTab(-1)
+        onActivated: root.stepDashboardTab(-1)
     }
 
     Shortcut {
         sequence: "Alt+L"
         enabled: root.dashboardVisible && !!root.shellScreenState
-        onActivated: root.shellScreenState.stepDashboardTab(1)
+        onActivated: root.stepDashboardTab(1)
     }
 
     Shortcut {
@@ -262,7 +279,7 @@ PanelWindow {
                 }
 
                 Repeater {
-                    model: root.shellScreenState ? root.shellScreenState.dashboardTabs : []
+                    model: root.dashboardTabs
 
                     Loader {
                         id: pageLoader

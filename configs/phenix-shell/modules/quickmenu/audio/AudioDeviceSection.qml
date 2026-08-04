@@ -26,6 +26,7 @@ DashboardSection {
     property int sliderHeight: 24
     property int sliderWidth: 100
 
+    showDetailToggle: true
     Layout.fillWidth: true
     Layout.fillHeight: true
 

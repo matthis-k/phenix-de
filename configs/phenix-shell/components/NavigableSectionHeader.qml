@@ -16,12 +16,30 @@ Rectangle {
     property var screenState: null
     property string targetTab: ""
     property bool navigable: targetTab !== "" && screenState !== null
+    property bool showDetailToggle: false
+    property bool inheritedDetailed: false
+    property bool localDetailed: false
     property int sectionPadding: Config.spacing.xs
     property int contentSpacing: Config.spacing.xs
+
+    readonly property bool globalDetailed: DashboardPresentation.detailed
+    readonly property bool forcedDetailed: globalDetailed || inheritedDetailed
+    readonly property bool detailed: forcedDetailed || localDetailed
+    readonly property string presentationMode: detailed
+        ? DashboardPresentation.detailedMode
+        : DashboardPresentation.overviewMode
+
     default property alias content: body.data
 
     signal headerClicked
 
+    function toggleLocalDetails() {
+        if (!root.showDetailToggle || root.forcedDetailed)
+            return;
+        root.localDetailed = !root.localDetailed;
+    }
+
+    Accessible.description: root.subtitle
     color: Config.styling.bg1
     radius: Config.styling.radius
     clip: true
@@ -88,7 +106,17 @@ Rectangle {
                 sourceComponent: root.accessory
                 Layout.preferredWidth: item ? item.implicitWidth : 0
                 Layout.preferredHeight: item ? item.implicitHeight : 0
-                Layout.alignment: Qt.AlignTop
+                Layout.alignment: Qt.AlignVCenter
+            }
+
+            DashboardDetailToggle {
+                visible: root.showDetailToggle
+                Layout.alignment: Qt.AlignVCenter
+                detailed: root.detailed
+                forcedDetailed: root.forcedDetailed
+                localDetailed: root.localDetailed
+                subject: root.title
+                onToggleRequested: root.toggleLocalDetails()
             }
         }
 
