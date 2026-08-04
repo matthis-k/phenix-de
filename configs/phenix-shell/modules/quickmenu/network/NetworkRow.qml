@@ -127,27 +127,14 @@ Item {
             verticalPadding: verticalPadding
             contentSpacing: iconTextGap
             accessory: Component {
-                DashboardIconButton {
-                    enabled: !rowRoot.forcedDetailed
-                    opacity: enabled ? 1 : 0.5
-                    implicitWidth: 24
-                    implicitHeight: 24
-                    iconName: rowRoot.detailed ? "go-down-symbolic" : "go-next-symbolic"
-                    fallbackIconName: iconName
-                    iconColor: rowRoot.localDetailed
-                        ? Config.styling.primaryAccent
-                        : (hovered && enabled ? Config.styling.text0 : Config.styling.text2)
-                    backgroundColor: hovered && enabled ? Config.styling.bg3 : "transparent"
-                    fillOnHover: true
-                    indicatorOnHover: false
-                    active: false
-                    accessibleName: rowRoot.localDetailed
-                        ? qsTr("Hide network information")
-                        : qsTr("Show network information")
-                    toolTipText: rowRoot.forcedDetailed
-                        ? qsTr("Network information is expanded by a parent or global toggle")
-                        : accessibleName
-                    onClicked: rowRoot.toggleLocalDetails()
+                DashboardDetailToggle {
+                    detailed: rowRoot.detailed
+                    forcedDetailed: rowRoot.forcedDetailed
+                    localDetailed: rowRoot.localDetailed
+                    subject: rowRoot.hasNetwork
+                        ? (rowRoot.network.ssid || qsTr("network"))
+                        : qsTr("network")
+                    onToggleRequested: rowRoot.toggleLocalDetails()
                 }
             }
 
