@@ -32,6 +32,7 @@
           gawk
           gnugrep
           gnused
+          iproute2
           networkmanager
           quickshell
           systemd
@@ -51,6 +52,7 @@
         "fd"
         "grimblast"
         "head"
+        "ip"
         "loginctl"
         "mkdir"
         "nmcli"
