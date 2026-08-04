@@ -50,6 +50,7 @@ Item {
     property bool _renderQueued: false
     property bool _renderPending: false
     property bool _visibilityChangedInBatch: false
+    property bool _destroying: false
     property var _dirtyReasons: ({})
     property var _connectedGraphs: []
     property var _connectedCollectors: []
@@ -67,6 +68,8 @@ Item {
         })
 
     function _handleGraphChanged() {
+        if (!root || root._destroying)
+            return;
         root.requestRender("", "graph");
     }
 
@@ -78,23 +81,35 @@ Item {
         const graphs = root._connectedGraphs.slice();
         for (let i = 0; i < graphs.length; i++) {
             const graph = graphs[i];
-            if (graph.dataChanged)
-                graph.dataChanged.disconnect(root._handleGraphChanged);
-            if (graph.configChanged)
-                graph.configChanged.disconnect(root._handleGraphChanged);
+            try {
+                if (graph && graph.dataChanged)
+                    graph.dataChanged.disconnect(root._handleGraphChanged);
+                if (graph && graph.configChanged)
+                    graph.configChanged.disconnect(root._handleGraphChanged);
+            } catch (error) {
+                // The graph may already be in QObject teardown. The owner is
+                // being destroyed, so there is no remaining callback to keep.
+            }
         }
         root._connectedGraphs = [];
 
         const collectors = root._connectedCollectors.slice();
         for (let i = 0; i < collectors.length; i++) {
             const collector = collectors[i];
-            if (collector && collector.collected)
-                collector.collected.disconnect(root._handleGraphChanged);
+            try {
+                if (collector && collector.collected)
+                    collector.collected.disconnect(root._handleGraphChanged);
+            } catch (error) {
+                // See graph teardown above.
+            }
         }
         root._connectedCollectors = [];
     }
 
     function _connectGraphs() {
+        if (root._destroying)
+            return;
+
         root._disconnectGraphs();
 
         const graphs = root._graphs();
@@ -183,6 +198,9 @@ Item {
     }
 
     function requestRender(graphName, reason) {
+        if (root._destroying)
+            return;
+
         const key = graphName || "view";
         const next = Object.assign({}, root._dirtyReasons);
         next[key] = reason || true;
@@ -200,6 +218,8 @@ Item {
     }
 
     function notifyVisibilityChanged() {
+        if (root._destroying)
+            return;
         root.visibilityRevision = (root.visibilityRevision || 0) + 1;
         root.visibilityChanged();
     }
@@ -433,6 +453,8 @@ Item {
     }
 
     onGraphsChanged: {
+        if (root._destroying)
+            return;
         root._applyVisibleOverrides();
         root._connectGraphs();
         root.requestRender("", "graphs");
@@ -445,12 +467,25 @@ Item {
     onShowYAxisChanged: root.requestRender("", "axis")
     onShowLabelsChanged: root.requestRender("", "labels")
 
+    Component.onDestruction: {
+        root._destroying = true;
+        renderScheduler.stop();
+        visibilityNotifier.stop();
+        root._disconnectGraphs();
+        root._renderQueued = false;
+        root._renderPending = false;
+        root._dirtyReasons = ({});
+    }
+
     Canvas {
         id: canvas
         anchors.fill: parent
         anchors.margins: 4
 
         onPaint: {
+            if (root._destroying)
+                return;
+
             const ctx = getContext("2d");
             ctx.reset();
 
@@ -647,7 +682,8 @@ Item {
         repeat: false
         onTriggered: {
             root._renderQueued = false;
-            canvas.requestPaint();
+            if (!root._destroying)
+                canvas.requestPaint();
         }
     }
 
