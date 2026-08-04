@@ -10,14 +10,19 @@ DashboardSection {
     property Component detailedDelegate: null
     property bool domainVisible: true
 
+    showDetailToggle: root.detailedDelegate !== null
+
     readonly property Component activeDelegate: {
-        switch (root.observation.exposure) {
-        case DashboardObservation.Detailed:
+        if (root.detailed)
             return root.detailedDelegate || root.promotedDelegate || root.overviewDelegate;
+
+        switch (root.observation.exposure) {
         case DashboardObservation.Promoted:
             return root.promotedDelegate || root.overviewDelegate;
         case DashboardObservation.Summary:
             return root.overviewDelegate;
+        case DashboardObservation.Detailed:
+            return root.detailedDelegate || root.promotedDelegate || root.overviewDelegate;
         case DashboardObservation.Hidden:
         default:
             return null;
