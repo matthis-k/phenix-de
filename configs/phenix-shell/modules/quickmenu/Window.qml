@@ -1,20 +1,25 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
+
 import qs.animations as Animations
 import qs.services
 import qs.components
 
 PanelWindow {
     id: root
+
     property var shellScreenState
     readonly property string presentationMode: DashboardPresentation.mode
     readonly property bool detailed: DashboardPresentation.detailed
     readonly property var dashboardTabs: DashboardPresentation.tabOrder
-    readonly property bool dashboardVisible: !!shellScreenState && shellScreenState.dashboardPhase !== "closed"
+    readonly property bool dashboardVisible: !!shellScreenState
+        && shellScreenState.dashboardPhase !== "closed"
     property real tabSwipeAccumulator: 0
     readonly property real tabSwipeThreshold: Config.spacing.xxl
+
     focusable: true
 
     function setPresentationMode(mode) {
@@ -50,7 +55,6 @@ PanelWindow {
             return;
 
         tabSwipeAccumulator += delta;
-
         if (Math.abs(tabSwipeAccumulator) < tabSwipeThreshold)
             return;
 
@@ -59,7 +63,9 @@ PanelWindow {
     }
 
     function queueTabSwipeFromWheelEvent(event) {
-        const delta = event.pixelDelta.x !== 0 ? event.pixelDelta.x : event.angleDelta.x / 4;
+        const delta = event.pixelDelta.x !== 0
+            ? event.pixelDelta.x
+            : event.angleDelta.x / 4;
         if (delta === 0)
             return false;
 
@@ -108,7 +114,7 @@ PanelWindow {
         if (loader.item.modeController !== undefined)
             loader.item.modeController = root;
         if (loader.item.globalPresentationMode !== undefined)
-            loader.item.globalPresentationMode = Qt.binding(function() { return root.presentationMode; });
+            loader.item.globalPresentationMode = Qt.binding(() => root.presentationMode);
     }
 
     anchors {
@@ -117,6 +123,7 @@ PanelWindow {
         bottom: true
         left: true
     }
+
     Component.onCompleted: {
         if (WlrLayershell)
             WlrLayershell.layer = WlrLayer.Overlay;
@@ -128,14 +135,15 @@ PanelWindow {
     readonly property real targetHeight: screen ? screen.height : 720
     readonly property real targetWidth: shellScreenState ? shellScreenState.dashboardWidth : 392
     readonly property real panelProgress: {
-        if (!shellScreenState) return 0;
+        if (!shellScreenState)
+            return 0;
         switch (shellScreenState.dashboardPhase) {
-            case "opening":
-            case "open":
-            case "switching":
-                return 1;
-            default:
-                return 0;
+        case "opening":
+        case "open":
+        case "switching":
+            return 1;
+        default:
+            return 0;
         }
     }
     readonly property real backdropOpacity: root.panelProgress * 0.22
@@ -212,7 +220,9 @@ PanelWindow {
             top: parent.top
             bottom: parent.bottom
         }
-        enabled: root.visible && !!root.shellScreenState && root.shellScreenState.dashboardPhase === "open"
+        enabled: root.visible
+            && !!root.shellScreenState
+            && root.shellScreenState.dashboardPhase === "open"
         onClicked: {
             if (!(selection.currentItem?.item?.popupOpen || selection.currentItem?.popupOpen))
                 root.shellScreenState?.closeDashboard();
@@ -224,8 +234,7 @@ PanelWindow {
         color: Config.colorWithOpacity(Config.styling.bg0, 1)
         opacity: root.backdropOpacity
 
-        Animations.PanelBehavior on opacity {
-        }
+        Animations.PanelBehavior on opacity {}
     }
 
     Item {
@@ -246,11 +255,8 @@ PanelWindow {
             x: (1 - root.panelProgress) * Config.spacing.lg
             opacity: root.panelProgress
 
-            Animations.PanelBehavior on x {
-            }
-
-            Animations.PanelBehavior on opacity {
-            }
+            Animations.PanelBehavior on x {}
+            Animations.PanelBehavior on opacity {}
 
             Rectangle {
                 anchors.fill: parent
@@ -258,9 +264,55 @@ PanelWindow {
                 radius: Config.styling.radius
             }
 
+            Rectangle {
+                id: globalToolbar
+                z: 2
+                anchors {
+                    top: parent.top
+                    left: parent.left
+                    right: parent.right
+                }
+                height: 36
+                color: Config.styling.bg1
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: Config.spacing.md
+                    anchors.rightMargin: Config.spacing.md
+                    spacing: Config.spacing.xs
+
+                    Item { Layout.fillWidth: true }
+
+                    Text {
+                        text: qsTr("Details")
+                        color: Config.styling.text2
+                        font.pixelSize: 12
+                        font.bold: true
+                    }
+
+                    DashboardModeSwitch {
+                        mode: root.presentationMode
+                        onModeRequested: mode => root.setPresentationMode(mode)
+                    }
+                }
+
+                Rectangle {
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        bottom: parent.bottom
+                    }
+                    height: 1
+                    color: Config.styling.bg3
+                }
+            }
+
             SwipeView {
                 id: selection
-                anchors.fill: parent
+                anchors {
+                    fill: parent
+                    topMargin: globalToolbar.height
+                }
                 interactive: false
                 clip: true
                 Component.onCompleted: root.syncCurrentTab()
