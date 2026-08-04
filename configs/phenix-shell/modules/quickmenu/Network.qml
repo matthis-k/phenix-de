@@ -35,6 +35,10 @@ DashboardPage {
     readonly property int horizontalPadding: 8
     readonly property int verticalPadding: 4
     readonly property var connectedWifi: NetworkService.connectedNetwork
+    readonly property var activeInterface: {
+        const _ = NetworkInterfaces.revision;
+        return NetworkInterfaces.activeInterface();
+    }
 
     NetworkInteractionState {
         id: interactionState
@@ -97,30 +101,62 @@ DashboardPage {
                 ? "network-wired-symbolic"
                 : "network-wireless-symbolic"
             label: "Interface"
-            value: NetworkService.hasWiredConnection
-                ? NetworkService.wiredDeviceName
-                : NetworkService.wifiDeviceName
+            value: root.activeInterface
+                ? root.activeInterface.name
+                : (NetworkService.hasWiredConnection
+                    ? NetworkService.wiredDeviceName
+                    : NetworkService.wifiDeviceName)
         }
 
         InfoRow {
             Layout.fillWidth: true
-            visible: NetworkService.hasWiredConnection && NetworkService.wiredAddress !== ""
+            visible: !!root.activeInterface && root.activeInterface.mac !== ""
+            iconName: "network-server-symbolic"
+            label: "Interface MAC"
+            value: root.activeInterface ? root.activeInterface.mac : ""
+        }
+
+        InfoRow {
+            Layout.fillWidth: true
+            visible: !!root.activeInterface
             iconName: "network-server-symbolic"
             label: "IPv4"
-            value: NetworkService.wiredAddress
+            value: root.activeInterface
+                ? NetworkInterfaces.formatAddresses(root.activeInterface.ipv4)
+                : qsTr("Unavailable")
+        }
+
+        InfoRow {
+            Layout.fillWidth: true
+            visible: !!root.activeInterface && root.activeInterface.ipv6.length > 0
+            iconName: "network-server-symbolic"
+            label: "IPv6"
+            value: root.activeInterface
+                ? NetworkInterfaces.formatAddresses(root.activeInterface.ipv6)
+                : qsTr("Unavailable")
+        }
+
+        InfoRow {
+            Layout.fillWidth: true
+            visible: !!root.activeInterface
+            iconName: "dialog-information-symbolic"
+            label: "Link state / MTU"
+            value: root.activeInterface
+                ? `${root.activeInterface.state} · ${root.activeInterface.mtu}`
+                : ""
         }
 
         InfoRow {
             Layout.fillWidth: true
             visible: !NetworkService.hasWiredConnection && NetworkService.connectedAddress !== ""
             iconName: "network-wireless-symbolic"
-            label: "Access point MAC"
+            label: "Access point BSSID"
             value: NetworkService.connectedAddress
         }
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.connectedWifi !== null
+            visible: !!root.connectedWifi
             iconName: "dialog-information-symbolic"
             label: "Radio link"
             value: root.connectedWifi
@@ -130,7 +166,7 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.connectedWifi !== null
+            visible: !!root.connectedWifi
             iconName: "changes-prevent-symbolic"
             label: "Security"
             value: root.connectedWifi
@@ -140,7 +176,7 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.connectedWifi !== null
+            visible: !!root.connectedWifi
             iconName: "network-wireless-signal-excellent-symbolic"
             label: "Signal"
             value: root.connectedWifi
@@ -167,6 +203,15 @@ DashboardPage {
             iconName: "go-up-symbolic"
             label: "Upload"
             value: Stats.formatRate(Stats.txBytesPerSecond)
+        }
+
+        InfoRow {
+            Layout.fillWidth: true
+            visible: NetworkInterfaces.lastError !== ""
+            iconName: "dialog-warning-symbolic"
+            label: "Diagnostics"
+            value: NetworkInterfaces.lastError
+            valueColor: Config.styling.warning
         }
     }
 
@@ -238,7 +283,9 @@ DashboardPage {
 
                     Text {
                         visible: root.detailed && text !== ""
-                        text: NetworkService.wiredAddress || ""
+                        text: root.activeInterface
+                            ? NetworkInterfaces.formatAddresses(root.activeInterface.ipv4)
+                            : (NetworkService.wiredAddress || "")
                         color: Config.styling.text2
                         font.pixelSize: 12
                     }
