@@ -1,28 +1,41 @@
 import QtQuick
 import QtQuick.Layouts
+
 import qs.services
 
-Item {
+ActionButton {
     id: root
 
     property var graphView: null
     property string seriesName: ""
     property var seriesFilter: null
+    property string accessibleLabel: ""
     required property color color
 
     default property alias content: contentRow.children
 
     property bool checked: true
     readonly property bool effectiveChecked: checked === undefined ? true : checked
-    readonly property var visibilityRevision: graphView && graphView.visibilityRevision !== undefined ? graphView.visibilityRevision : 0
+    readonly property var visibilityRevision: graphView && graphView.visibilityRevision !== undefined
+        ? graphView.visibilityRevision
+        : 0
 
-    implicitHeight: 20
+    implicitHeight: 28
+    active: root.effectiveChecked
+    accentColor: root.color
+    backgroundColor: root.effectiveChecked ? root.color : Config.styling.bg3
+    borderWidth: root.visualFocus ? 2 : 1
+    borderColor: root.visualFocus ? Config.styling.primaryAccent : root.color
+    fillOpacity: root.effectiveChecked ? 0.22 : 0.08
+    accessibleName: root.accessibleLabel || root.seriesName || qsTr("Graph series")
+    Accessible.role: Accessible.CheckBox
+    Accessible.checked: root.effectiveChecked
 
     function seriesNames() {
         if (!graphView)
             return [];
         if (seriesFilter)
-            return graphView.seriesNames().filter(n => seriesFilter(graphView.series(n)));
+            return graphView.seriesNames().filter(name => seriesFilter(graphView.series(name)));
         return seriesName ? [seriesName] : [];
     }
 
@@ -34,47 +47,36 @@ Item {
         if (names.length === 0)
             return;
 
-        root.checked = names.some(n => graphView.isSeriesVisible(n) === true);
+        root.checked = names.some(name => graphView.isSeriesVisible(name) === true);
+    }
+
+    function toggleVisibility() {
+        if (!graphView)
+            return;
+        const names = root.seriesNames();
+        if (names.length === 0)
+            return;
+        const currentlyVisible = names.some(name => graphView.isSeriesVisible(name) === true);
+        const target = !currentlyVisible;
+        graphView.batch(() => {
+            names.forEach(name => graphView.setSeriesVisible(name, target));
+        });
     }
 
     Component.onCompleted: Qt.callLater(root.refreshChecked)
-
     onGraphViewChanged: Qt.callLater(root.refreshChecked)
     onVisibilityRevisionChanged: Qt.callLater(root.refreshChecked)
     onSeriesNameChanged: Qt.callLater(root.refreshChecked)
     onSeriesFilterChanged: Qt.callLater(root.refreshChecked)
+    onClicked: root.toggleVisibility()
 
-    Rectangle {
-        anchors.fill: parent
-        anchors.topMargin: 2
-        anchors.bottomMargin: 2
-        radius: 3
-        color: root.color
-        opacity: root.effectiveChecked ? 1.0 : 0.5
-    }
-
-    MouseArea {
-        anchors.fill: parent
-        cursorShape: Qt.PointingHandCursor
-        onClicked: {
-            const names = root.seriesNames();
-            if (names.length === 0)
-                return;
-            const currentlyVisible = names.some(n => graphView.isSeriesVisible(n) === true);
-            const target = !currentlyVisible;
-            graphView.batch(() => {
-                names.forEach(n => graphView.setSeriesVisible(n, target));
-            });
-        }
-    }
-
-    RowLayout {
+    contentItem: RowLayout {
         id: contentRow
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.leftMargin: 8
-        anchors.rightMargin: 8
-        spacing: 4
+
+        anchors.fill: parent
+        anchors.leftMargin: Config.spacing.xs
+        anchors.rightMargin: Config.spacing.xs
+        spacing: Config.spacing.xxs
+        opacity: root.effectiveChecked ? 1 : 0.62
     }
 }
