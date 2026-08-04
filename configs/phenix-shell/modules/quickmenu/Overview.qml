@@ -9,8 +9,20 @@ DashboardPage {
     id: root
 
     title: qsTr("Quick Settings")
+    subtitle: root.detailed
+        ? qsTr("Complete device state and system telemetry")
+        : qsTr("Primary controls with exceptional states promoted")
 
     property var screenState: null
+
+    PresentationPolicy {
+        id: presentationPolicy
+    }
+
+    readonly property var cpuOutliers: {
+        const _ = Stats.graphRevision;
+        return presentationPolicy.cpuCoreOutliers(Stats.cpuCorePercents, Stats.cpuPercent, 4);
+    }
 
     readonly property string connectionSummary: {
         if (NetworkService.hasWiredConnection)
@@ -49,6 +61,7 @@ DashboardPage {
         }
 
         AudioDeviceCard {
+            visible: root.detailed
             title: AudioService.inputDeviceName
             iconName: AudioService.inputIconName
             iconColor: AudioService.inputIconColor
@@ -100,6 +113,40 @@ DashboardPage {
                 NetworkService.setWifiEnabled(checked);
             }
         }
+
+        InfoRow {
+            Layout.fillWidth: true
+            visible: root.detailed && NetworkService.connected
+            iconName: NetworkService.hasWiredConnection ? "network-wired-symbolic" : "network-wireless-symbolic"
+            label: qsTr("Interface")
+            value: NetworkService.hasWiredConnection
+                ? NetworkService.wiredDeviceName
+                : NetworkService.wifiDeviceName
+        }
+
+        InfoRow {
+            Layout.fillWidth: true
+            visible: root.detailed && NetworkService.hasWiredConnection && NetworkService.wiredAddress !== ""
+            iconName: "network-server-symbolic"
+            label: qsTr("IPv4")
+            value: NetworkService.wiredAddress
+        }
+
+        InfoRow {
+            Layout.fillWidth: true
+            visible: root.detailed && !NetworkService.hasWiredConnection && NetworkService.connectedAddress !== ""
+            iconName: "network-wireless-symbolic"
+            label: qsTr("Access point MAC")
+            value: NetworkService.connectedAddress
+        }
+
+        InfoRow {
+            Layout.fillWidth: true
+            visible: root.detailed
+            iconName: "network-transmit-receive-symbolic"
+            label: qsTr("Connectivity")
+            value: NetworkService.connectivity
+        }
     }
 
     NavigableSectionHeader {
@@ -120,6 +167,14 @@ DashboardPage {
                 BluetoothService.setEnabled(checked);
             }
         }
+
+        InfoRow {
+            Layout.fillWidth: true
+            visible: root.detailed && BluetoothService.available
+            iconName: "bluetooth-active-symbolic"
+            label: qsTr("Connected devices")
+            value: String(BluetoothService.connectedCount)
+        }
     }
 
     DashboardSection {
@@ -130,7 +185,7 @@ DashboardPage {
         Battery {
             id: batteryContent
             Layout.fillWidth: true
-            showGraph: false
+            showGraph: root.detailed
         }
     }
 
@@ -159,9 +214,24 @@ DashboardPage {
         InfoRow {
             Layout.fillWidth: true
             iconName: "processor-symbolic"
-            label: qsTr("CPU")
+            label: qsTr("CPU average")
             value: `${Math.round(Stats.cpuPercent)}%`
             valueColor: Stats.cpuPercent >= 90 ? Config.styling.critical : (Stats.cpuPercent >= 70 ? Config.styling.warning : Config.styling.text0)
+        }
+
+        Repeater {
+            model: root.cpuOutliers
+
+            InfoRow {
+                required property var modelData
+                Layout.fillWidth: true
+                iconName: "processor-symbolic"
+                label: qsTr("Core %1 outlier").arg(modelData.index)
+                value: `${Math.round(modelData.percent)}%`
+                valueColor: modelData.severity === "critical"
+                    ? Config.styling.critical
+                    : Config.styling.warning
+            }
         }
 
         InfoRow {
@@ -169,6 +239,52 @@ DashboardPage {
             iconName: "computer-symbolic"
             label: qsTr("Memory")
             value: `${Stats.memoryUsedMiB}/${Stats.memoryTotalMiB} MiB`
+            valueColor: Stats.memoryPercent >= 90
+                ? Config.styling.critical
+                : (Stats.memoryPercent >= 75 ? Config.styling.warning : Config.styling.text0)
+        }
+
+        InfoRow {
+            Layout.fillWidth: true
+            visible: root.detailed || Stats.swapPercent >= 85
+            iconName: "drive-harddisk-symbolic"
+            label: qsTr("Swap")
+            value: Stats.swapTotalMiB > 0
+                ? `${Stats.swapUsedMiB}/${Stats.swapTotalMiB} MiB`
+                : qsTr("Disabled")
+            valueColor: Stats.swapPercent >= 90
+                ? Config.styling.critical
+                : (Stats.swapPercent >= 75 ? Config.styling.warning : Config.styling.text0)
+        }
+
+        InfoRow {
+            Layout.fillWidth: true
+            visible: root.detailed || Stats.rootDiskPercent >= 85
+            iconName: "drive-harddisk-symbolic"
+            label: qsTr("Root filesystem")
+            value: `${Math.round(Stats.rootDiskPercent)}%`
+            valueColor: Stats.rootDiskPercent >= 90
+                ? Config.styling.critical
+                : (Stats.rootDiskPercent >= 75 ? Config.styling.warning : Config.styling.text0)
+        }
+
+        InfoRow {
+            Layout.fillWidth: true
+            visible: Stats.gpuAvailable && (root.detailed || Stats.gpuUtilPercent >= 85 || Stats.gpuVramPercent >= 85)
+            iconName: "video-display-symbolic"
+            label: qsTr("GPU / VRAM")
+            value: `${Math.round(Stats.gpuUtilPercent)}% / ${Math.round(Stats.gpuVramPercent)}%`
+            valueColor: Math.max(Stats.gpuUtilPercent, Stats.gpuVramPercent) >= 90
+                ? Config.styling.critical
+                : Config.styling.warning
+        }
+
+        InfoRow {
+            Layout.fillWidth: true
+            visible: root.detailed && Stats.primaryInterface !== ""
+            iconName: "network-transmit-receive-symbolic"
+            label: qsTr("Network I/O")
+            value: `↓ ${Stats.formatRate(Stats.rxBytesPerSecond)} · ↑ ${Stats.formatRate(Stats.txBytesPerSecond)}`
         }
     }
 
