@@ -9,6 +9,9 @@ DashboardPage {
     id: root
 
     title: "Audio"
+    subtitle: root.detailed
+        ? qsTr("All PipeWire devices and active streams")
+        : qsTr("Primary devices; active and exceptional devices are promoted")
     fillHeight: true
 
     readonly property int contentWidth: width > 0 ? width : 360
@@ -26,9 +29,22 @@ DashboardPage {
     readonly property int sliderHeight: 24
     readonly property int sliderWidth: 100
 
+    PresentationPolicy {
+        id: presentationPolicy
+    }
+
+    readonly property var visibleOutputEntries: presentationPolicy.audioEntries(
+        AudioService.outputEntries,
+        root.presentationMode
+    )
+    readonly property var visibleInputEntries: presentationPolicy.audioEntries(
+        AudioService.inputEntries,
+        root.presentationMode
+    )
+
     AudioDeviceSection {
-        title: "Output devices"
-        entries: AudioService.outputEntries
+        title: root.detailed ? "Output devices" : "Output"
+        entries: root.visibleOutputEntries
         sinks: AudioService.outputEntries
         emptyText: "No output devices found"
         tabSwipeTarget: root.tabSwipeTarget
@@ -48,8 +64,8 @@ DashboardPage {
     }
 
     AudioDeviceSection {
-        title: "Input devices"
-        entries: AudioService.inputEntries
+        title: root.detailed ? "Input devices" : "Input"
+        entries: root.visibleInputEntries
         sinks: AudioService.outputEntries
         isInput: true
         emptyText: "No input devices found"
