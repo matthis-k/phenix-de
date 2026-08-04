@@ -522,14 +522,14 @@ DashboardPage {
         color: root.cpuCoreColors[coreIndex % root.cpuCoreColors.length]
 
         Text {
-            text: `core${parent.coreIndex}`
+            text: `core${coreIndex}`
             font.pixelSize: 13
             color: Config.colors.base
         }
         Item { Layout.fillWidth: true }
 
         UsagePie {
-            percent: Number(parent.modelData.percent || 0)
+            percent: Number(modelData.percent || 0)
             fillColor: Config.colors.base
         }
     }
