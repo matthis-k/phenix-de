@@ -17,10 +17,9 @@ ColumnLayout {
     property bool subtitleBold: false
 
     readonly property int titlePixelSize: level === 1 ? 22 : 16
-    readonly property int subtitlePixelSize: level === 1 ? 13 : 12
-    readonly property int headerSpacing: level === 1 ? Config.spacing.xs : 2
 
-    spacing: root.headerSpacing
+    spacing: 0
+    Accessible.description: root.subtitle
 
     RowLayout {
         visible: root.title !== "" || root.iconName !== ""
@@ -45,15 +44,5 @@ ColumnLayout {
             font.bold: root.titleBold
             elide: Text.ElideRight
         }
-    }
-
-    Text {
-        visible: text !== ""
-        text: root.subtitle
-        color: root.subtitleColor
-        font.pixelSize: root.subtitlePixelSize
-        font.bold: root.subtitleBold
-        wrapMode: Text.WordWrap
-        Layout.fillWidth: true
     }
 }
