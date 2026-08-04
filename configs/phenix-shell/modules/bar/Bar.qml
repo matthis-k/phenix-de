@@ -55,6 +55,7 @@ Rectangle {
         }
 
         NetworkIcon      { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
+        BluetoothIcon    { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
         AudioIcon        { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
         NotificationIcon { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
         EnergyIcon       { screenState: root.screenState; Layout.fillWidth: root.rightExpanded }
