@@ -7,6 +7,12 @@ Item {
 
     property string title: ""
     property string subtitle: ""
+    property string iconName: ""
+    property color iconColor: Config.styling.text1
+    property color titleColor: Config.styling.text0
+    property color subtitleColor: Config.styling.text2
+    property bool titleBold: true
+    property bool subtitleBold: false
     property Component accessory: null
 
     implicitWidth: row.implicitWidth
@@ -22,6 +28,12 @@ Item {
             level: 2
             title: root.title
             subtitle: root.subtitle
+            iconName: root.iconName
+            iconColor: root.iconColor
+            titleColor: root.titleColor
+            subtitleColor: root.subtitleColor
+            titleBold: root.titleBold
+            subtitleBold: root.subtitleBold
         }
 
         Loader {

@@ -21,7 +21,7 @@ QtObject {
     property bool debugEnabled: false
 
     readonly property var model: transitionCoordinator.model
-    readonly property var coordinator: transitionCoordinator
+    readonly property TransitionListCoordinator coordinator: transitionCoordinator
     readonly property int revision: projection.revision
     readonly property var snapshot: projection.snapshot
     readonly property var changes: projection.changes
@@ -32,21 +32,18 @@ QtObject {
 
     signal snapshotApplied(var changes)
 
-    ChangeBatch {
-        id: invalidations
+    readonly property ChangeBatch invalidations: ChangeBatch {
         onCommitted: function(revision, reasons) {
             root.applyNow(reasons);
         }
     }
 
-    SnapshotProjection {
-        id: projection
+    readonly property SnapshotProjection projection: SnapshotProjection {
         keyOf: root.keyOf
         equals: root.equals
     }
 
-    TransitionListCoordinator {
-        id: transitionCoordinator
+    readonly property TransitionListCoordinator transitionCoordinator: TransitionListCoordinator {
         estimatedRowHeight: root.estimatedRowHeight
         hardReplaceSnapshots: root.hardReplaceSnapshots
         debugEnabled: root.debugEnabled
