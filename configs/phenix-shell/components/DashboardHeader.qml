@@ -14,6 +14,7 @@ ColumnLayout {
     property color titleColor: Config.styling.text0
     property color subtitleColor: Config.styling.text2
     property bool titleBold: true
+    property bool subtitleBold: false
 
     readonly property int titlePixelSize: level === 1 ? 22 : 16
     readonly property int subtitlePixelSize: level === 1 ? 13 : 12
@@ -51,7 +52,7 @@ ColumnLayout {
         text: root.subtitle
         color: root.subtitleColor
         font.pixelSize: root.subtitlePixelSize
-        font.bold: root.subtitleColor !== Config.styling.text2
+        font.bold: root.subtitleBold
         wrapMode: Text.WordWrap
         Layout.fillWidth: true
     }
