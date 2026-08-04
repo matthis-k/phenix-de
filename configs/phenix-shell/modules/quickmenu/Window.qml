@@ -188,6 +188,12 @@ PanelWindow {
         onActivated: root.shellScreenState.stepDashboardTab(1)
     }
 
+    Shortcut {
+        sequence: "Escape"
+        enabled: root.dashboardVisible && !!root.shellScreenState
+        onActivated: root.shellScreenState.closeDashboard()
+    }
+
     MouseArea {
         width: panelCard.x
         anchors {
@@ -290,11 +296,5 @@ PanelWindow {
                     root.resetTabSwipe();
             }
         }
-    }
-
-    Item {
-        focus: visible
-
-        Keys.onEscapePressed: root.shellScreenState?.closeDashboard()
     }
 }
