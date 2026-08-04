@@ -8,11 +8,17 @@ Rectangle {
 
     property string title: ""
     property string subtitle: ""
+    property string iconName: ""
+    property color iconColor: Config.styling.text1
+    property color titleColor: Config.styling.text0
+    property color subtitleColor: Config.styling.text2
+    property bool titleBold: true
+    property bool subtitleBold: false
     property bool collapsible: false
     property bool collapsed: false
     property Component summary: null
     property Component headerAccessory: null
-    property bool showHeader: title !== "" || subtitle !== "" || summary !== null || headerAccessory !== null || collapsible
+    property bool showHeader: title !== "" || subtitle !== "" || iconName !== "" || summary !== null || headerAccessory !== null || collapsible
     property int sectionPadding: Config.spacing.xs
     property int contentSpacing: Config.spacing.xs
     readonly property real bodyHeight: bodyClip.implicitHeight
@@ -41,6 +47,12 @@ Rectangle {
         visible: root.showHeader
         title: root.title
         subtitle: root.subtitle
+        iconName: root.iconName
+        iconColor: root.iconColor
+        titleColor: root.titleColor
+        subtitleColor: root.subtitleColor
+        titleBold: root.titleBold
+        subtitleBold: root.subtitleBold
         accessory: headerAccessoryComponent
     }
 
