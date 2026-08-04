@@ -9,7 +9,7 @@ DashboardIconButton {
     required property bool localDetailed
     property string subject: qsTr("component")
 
-    signal toggleRequested
+    signal toggleRequested()
 
     enabled: !root.forcedDetailed
     opacity: enabled ? 1 : 0.5
