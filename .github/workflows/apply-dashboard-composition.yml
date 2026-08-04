@@ -1,11 +1,13 @@
 name: Apply dashboard composition changes
 
 on:
-  push:
+  pull_request:
     branches:
-      - feat/dashboard-composition-audit-fixes
-    paths:
-      - .github/workflows/apply-dashboard-composition.yml
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
 
 permissions:
   contents: write
