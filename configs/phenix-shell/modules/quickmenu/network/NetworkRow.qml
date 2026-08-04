@@ -12,6 +12,8 @@ Item {
 
     required property var network
     property var interactionState: null
+    property bool inheritedDetailed: false
+    property bool localDetailed: false
     property int contentWidth: 320
     property int itemSpacing: 3
     property int rowHeight: 36
@@ -25,11 +27,14 @@ Item {
 
     readonly property bool hasNetwork: !!network
     readonly property string rowKey: rowRoot.interactionState && rowRoot.network ? String(rowRoot.interactionState.networkKey(rowRoot.network) || "") : ""
-    readonly property bool expanded: rowRoot.interactionState && rowRoot.rowKey !== "" ? rowRoot.interactionState.interactiveNetworkKey === rowRoot.rowKey : false
-    readonly property bool showAdvanced: rowRoot.expanded && rowRoot.interactionState ? !!rowRoot.interactionState.interactiveShowAdvanced : false
-    readonly property bool showPasswordInput: rowRoot.expanded && rowRoot.interactionState ? !!rowRoot.interactionState.interactiveShowPasswordInput : false
-    readonly property string passwordText: rowRoot.expanded && rowRoot.interactionState ? String(rowRoot.interactionState.interactivePasswordText || "") : ""
-    readonly property string errorText: rowRoot.expanded && rowRoot.interactionState ? String(rowRoot.interactionState.interactiveErrorText || "") : ""
+    readonly property bool interactionExpanded: rowRoot.interactionState && rowRoot.rowKey !== "" ? rowRoot.interactionState.interactiveNetworkKey === rowRoot.rowKey : false
+    readonly property bool forcedDetailed: DashboardPresentation.detailed || rowRoot.inheritedDetailed
+    readonly property bool detailed: rowRoot.forcedDetailed || rowRoot.localDetailed
+    readonly property bool detailExpanded: rowRoot.interactionExpanded || rowRoot.detailed
+    readonly property bool showAdvanced: rowRoot.interactionExpanded && rowRoot.interactionState ? !!rowRoot.interactionState.interactiveShowAdvanced : false
+    readonly property bool showPasswordInput: rowRoot.interactionExpanded && rowRoot.interactionState ? !!rowRoot.interactionState.interactiveShowPasswordInput : false
+    readonly property string passwordText: rowRoot.interactionExpanded && rowRoot.interactionState ? String(rowRoot.interactionState.interactivePasswordText || "") : ""
+    readonly property string errorText: rowRoot.interactionExpanded && rowRoot.interactionState ? String(rowRoot.interactionState.interactiveErrorText || "") : ""
     readonly property bool needsPskPrompt: hasNetwork && !network.connected && !NetworkService.isOpenNetwork(network) && NetworkService.securityNeedsPsk(network.security)
 
     implicitWidth: contentWidth
@@ -37,8 +42,14 @@ Item {
     height: implicitHeight
 
     onHasNetworkChanged: {
-        if (!hasNetwork && expanded && interactionState)
+        if (!hasNetwork && interactionExpanded && interactionState)
             interactionState.unlockInteraction();
+    }
+
+    function toggleLocalDetails() {
+        if (rowRoot.forcedDetailed)
+            return;
+        rowRoot.localDetailed = !rowRoot.localDetailed;
     }
 
     function attemptConnect() {
@@ -76,7 +87,7 @@ Item {
         target: NetworkService
 
         function onConnectedSsidChanged() {
-            if (rowRoot.expanded && rowRoot.hasNetwork && NetworkService.connectedSsid === rowRoot.network.ssid && rowRoot.interactionState) {
+            if (rowRoot.interactionExpanded && rowRoot.hasNetwork && NetworkService.connectedSsid === rowRoot.network.ssid && rowRoot.interactionState) {
                 rowRoot.interactionState.interactiveErrorText = "";
                 rowRoot.interactionState.interactivePasswordText = "";
                 rowRoot.interactionState.interactiveShowPasswordInput = false;
@@ -115,12 +126,36 @@ Item {
             horizontalPadding: horizontalPadding
             verticalPadding: verticalPadding
             contentSpacing: iconTextGap
+            accessory: Component {
+                DashboardIconButton {
+                    enabled: !rowRoot.forcedDetailed
+                    opacity: enabled ? 1 : 0.5
+                    implicitWidth: 24
+                    implicitHeight: 24
+                    iconName: rowRoot.detailed ? "go-down-symbolic" : "go-next-symbolic"
+                    fallbackIconName: iconName
+                    iconColor: rowRoot.localDetailed
+                        ? Config.styling.primaryAccent
+                        : (hovered && enabled ? Config.styling.text0 : Config.styling.text2)
+                    backgroundColor: hovered && enabled ? Config.styling.bg3 : "transparent"
+                    fillOnHover: true
+                    indicatorOnHover: false
+                    active: false
+                    accessibleName: rowRoot.localDetailed
+                        ? qsTr("Hide network information")
+                        : qsTr("Show network information")
+                    toolTipText: rowRoot.forcedDetailed
+                        ? qsTr("Network information is expanded by a parent or global toggle")
+                        : accessibleName
+                    onClicked: rowRoot.toggleLocalDetails()
+                }
+            }
 
             onClicked: {
-                    if (rowRoot.expanded && rowRoot.interactionState)
-                        rowRoot.interactionState.unlockInteraction();
-                    else if (rowRoot.hasNetwork && rowRoot.interactionState)
-                        rowRoot.interactionState.lockInteractionFor(rowRoot.network);
+                if (rowRoot.interactionExpanded && rowRoot.interactionState)
+                    rowRoot.interactionState.unlockInteraction();
+                else if (rowRoot.hasNetwork && rowRoot.interactionState)
+                    rowRoot.interactionState.lockInteractionFor(rowRoot.network);
             }
         }
 
@@ -128,7 +163,7 @@ Item {
             id: details
 
             Layout.fillWidth: true
-            expanded: rowRoot.expanded
+            expanded: rowRoot.detailExpanded
             slideDistance: Config.spacing.sm
 
             Rectangle {
@@ -147,6 +182,15 @@ Item {
                         Layout.fillWidth: true
                         text: NetworkService.primaryNetworkInfo(rowRoot.network)
                         color: Config.styling.text1
+                        font.pixelSize: 12
+                        wrapMode: Text.Wrap
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        visible: rowRoot.detailed
+                        text: NetworkService.advancedNetworkInfo(rowRoot.network)
+                        color: Config.styling.text2
                         font.pixelSize: 12
                         wrapMode: Text.Wrap
                     }
@@ -186,8 +230,9 @@ Item {
 
                     RowLayout {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 28
-                        implicitHeight: 28
+                        Layout.preferredHeight: visible ? 28 : 0
+                        implicitHeight: visible ? 28 : 0
+                        visible: rowRoot.interactionExpanded
                         spacing: itemSpacing
 
                         SmallButton {
@@ -200,15 +245,15 @@ Item {
                                     return;
                                 }
 
-                                if (rowRoot.network.connected) {
+                                if (rowRoot.network.connected)
                                     NetworkService.disconnectWifi();
-                                } else {
+                                else
                                     rowRoot.attemptConnect();
-                                }
                             }
                         }
 
                         SmallButton {
+                            visible: !rowRoot.detailed
                             text: rowRoot.showAdvanced ? "Hide Advanced" : "Show Advanced"
                             onClicked: {
                                 if (rowRoot.interactionState)
@@ -219,7 +264,7 @@ Item {
 
                     Text {
                         Layout.fillWidth: true
-                        visible: rowRoot.showAdvanced
+                        visible: rowRoot.showAdvanced && !rowRoot.detailed
                         text: NetworkService.advancedNetworkInfo(rowRoot.network)
                         color: Config.styling.text2
                         font.pixelSize: 12
