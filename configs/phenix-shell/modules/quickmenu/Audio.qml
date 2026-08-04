@@ -29,22 +29,23 @@ DashboardPage {
     readonly property int sliderHeight: 24
     readonly property int sliderWidth: 100
 
-    PresentationPolicy {
-        id: presentationPolicy
+    AudioDashboardObservation {
+        id: outputObservation
+        key: "audio-output"
+        presentationMode: root.presentationMode
+        entries: AudioService.outputEntries
     }
 
-    readonly property var visibleOutputEntries: presentationPolicy.audioEntries(
-        AudioService.outputEntries,
-        root.presentationMode
-    )
-    readonly property var visibleInputEntries: presentationPolicy.audioEntries(
-        AudioService.inputEntries,
-        root.presentationMode
-    )
+    AudioDashboardObservation {
+        id: inputObservation
+        key: "audio-input"
+        presentationMode: root.presentationMode
+        entries: AudioService.inputEntries
+    }
 
     AudioDeviceSection {
         title: root.detailed ? "Output devices" : "Output"
-        entries: root.visibleOutputEntries
+        entries: outputObservation.visibleEntries
         sinks: AudioService.outputEntries
         emptyText: "No output devices found"
         tabSwipeTarget: root.tabSwipeTarget
@@ -65,7 +66,7 @@ DashboardPage {
 
     AudioDeviceSection {
         title: root.detailed ? "Input devices" : "Input"
-        entries: root.visibleInputEntries
+        entries: inputObservation.visibleEntries
         sinks: AudioService.outputEntries
         isInput: true
         emptyText: "No input devices found"
