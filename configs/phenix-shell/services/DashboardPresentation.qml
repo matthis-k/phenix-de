@@ -8,6 +8,16 @@ Singleton {
 
     readonly property string overviewMode: "overview"
     readonly property string detailedMode: "detailed"
+    readonly property var tabOrder: [
+        "wifi",
+        "bluetooth",
+        "audio",
+        "notifications",
+        "energy",
+        "stats",
+        "overview"
+    ]
+
     property string mode: overviewMode
     readonly property bool detailed: mode === detailedMode
 
