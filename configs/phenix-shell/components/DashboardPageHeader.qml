@@ -14,7 +14,7 @@ ColumnLayout {
 
     RowLayout {
         Layout.fillWidth: true
-        visible: root.title !== "" || root.accessory !== null
+        visible: root.title !== "" || root.subtitle !== "" || root.accessory !== null
         spacing: Config.spacing.sm
 
         ColumnLayout {
