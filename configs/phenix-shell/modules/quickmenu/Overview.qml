@@ -15,13 +15,44 @@ DashboardPage {
 
     property var screenState: null
 
-    PresentationPolicy {
-        id: presentationPolicy
+    CpuDashboardObservation {
+        id: cpuObservation
+        presentationMode: root.presentationMode
+        average: Stats.cpuPercent
+        cores: Stats.cpuCorePercents
+        revision: Stats.graphRevision
     }
 
-    readonly property var cpuOutliers: {
-        const _ = Stats.graphRevision;
-        return presentationPolicy.cpuCoreOutliers(Stats.cpuCorePercents, Stats.cpuPercent, 4);
+    UsageDashboardObservation {
+        id: memoryObservation
+        key: "overview-memory"
+        presentationMode: root.presentationMode
+        primaryLabel: qsTr("RAM")
+        secondaryLabel: qsTr("Swap")
+        primaryPercent: Stats.memoryPercent
+        secondaryPercent: Stats.swapPercent
+        secondaryEnabled: Stats.swapTotalMiB > 0
+        warningThreshold: 85
+        criticalThreshold: 90
+    }
+
+    UsageDashboardObservation {
+        id: gpuObservation
+        key: "overview-gpu"
+        presentationMode: root.presentationMode
+        available: Stats.gpuAvailable
+        primaryLabel: qsTr("GPU compute")
+        secondaryLabel: qsTr("VRAM")
+        primaryPercent: Stats.gpuUtilPercent
+        secondaryPercent: Stats.gpuVramPercent
+        warningThreshold: 85
+        criticalThreshold: 90
+    }
+
+    StorageDashboardObservation {
+        id: storageObservation
+        presentationMode: root.presentationMode
+        partitions: Stats.diskPartitions
     }
 
     readonly property var activeInterface: {
@@ -237,7 +268,7 @@ DashboardPage {
         }
 
         Repeater {
-            model: root.cpuOutliers
+            model: cpuObservation.promotedRows
 
             InfoRow {
                 required property var modelData
@@ -245,7 +276,7 @@ DashboardPage {
                 iconName: "processor-symbolic"
                 label: qsTr("Core %1 outlier").arg(modelData.index)
                 value: `${Math.round(modelData.percent)}%`
-                valueColor: modelData.severity === "critical"
+                valueColor: modelData.severity === DashboardObservation.Critical
                     ? Config.styling.critical
                     : Config.styling.warning
             }
@@ -263,7 +294,7 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.detailed || Stats.swapPercent >= 85
+            visible: memoryObservation.detailed || Stats.swapPercent >= memoryObservation.warningThreshold
             iconName: "drive-harddisk-symbolic"
             label: qsTr("Swap")
             value: Stats.swapTotalMiB > 0
@@ -276,7 +307,7 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: root.detailed || Stats.rootDiskPercent >= 85
+            visible: storageObservation.detailed || Stats.rootDiskPercent >= storageObservation.warningThreshold
             iconName: "drive-harddisk-symbolic"
             label: qsTr("Root filesystem")
             value: `${Math.round(Stats.rootDiskPercent)}%`
@@ -287,11 +318,11 @@ DashboardPage {
 
         InfoRow {
             Layout.fillWidth: true
-            visible: Stats.gpuAvailable && (root.detailed || Stats.gpuUtilPercent >= 85 || Stats.gpuVramPercent >= 85)
+            visible: gpuObservation.shown && (gpuObservation.detailed || gpuObservation.promoted)
             iconName: "video-display-symbolic"
             label: qsTr("GPU / VRAM")
             value: `${Math.round(Stats.gpuUtilPercent)}% / ${Math.round(Stats.gpuVramPercent)}%`
-            valueColor: Math.max(Stats.gpuUtilPercent, Stats.gpuVramPercent) >= 90
+            valueColor: gpuObservation.severity === DashboardObservation.Critical
                 ? Config.styling.critical
                 : Config.styling.warning
         }
