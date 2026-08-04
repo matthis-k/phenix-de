@@ -44,8 +44,11 @@ DashboardPage {
     }
 
     AudioDeviceSection {
-        title: root.detailed ? "Output devices" : "Output"
-        entries: outputObservation.visibleEntries
+        id: outputSection
+        title: outputSection.detailed ? "Output devices" : "Output"
+        entries: outputSection.detailed
+            ? outputObservation.allEntries
+            : outputObservation.visibleEntries
         sinks: AudioService.outputEntries
         emptyText: "No output devices found"
         tabSwipeTarget: root.tabSwipeTarget
@@ -65,8 +68,11 @@ DashboardPage {
     }
 
     AudioDeviceSection {
-        title: root.detailed ? "Input devices" : "Input"
-        entries: inputObservation.visibleEntries
+        id: inputSection
+        title: inputSection.detailed ? "Input devices" : "Input"
+        entries: inputSection.detailed
+            ? inputObservation.allEntries
+            : inputObservation.visibleEntries
         sinks: AudioService.outputEntries
         isInput: true
         emptyText: "No input devices found"
