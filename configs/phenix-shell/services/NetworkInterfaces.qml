@@ -52,16 +52,30 @@ Singleton {
         });
     }
 
+    function acceptParseResult(result) {
+        switch (String(result?.kind || "")) {
+        case "success":
+            root.interfaces = Array.isArray(result.interfaces) ? result.interfaces : [];
+            root.revision += 1;
+            root.lastError = "";
+            return;
+        case "error":
+            root.lastError = String(result.message || qsTr("Interface diagnostics could not be parsed"));
+            return;
+        default:
+            root.lastError = qsTr("Interface diagnostics returned an invalid parser result");
+            root.tracer.error("invalidParserResult", function() {
+                return { kind: result?.kind };
+            });
+        }
+    }
+
     Process {
         id: collector
 
         stdout: StdioCollector {
             waitForEnd: true
-            onStreamFinished: {
-                root.interfaces = root.parser.parse(text);
-                root.revision += 1;
-                root.lastError = "";
-            }
+            onStreamFinished: root.acceptParseResult(root.parser.parse(text))
         }
 
         function onExited(exitCode) {
