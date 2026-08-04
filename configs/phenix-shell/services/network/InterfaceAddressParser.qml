@@ -6,21 +6,36 @@ QtObject {
 
     readonly property var tracer: Logger.scope("network.interfaceParser", { category: "network" })
 
+    function success(interfaces) {
+        return {
+            kind: "success",
+            interfaces: interfaces
+        };
+    }
+
+    function failure(message) {
+        return {
+            kind: "error",
+            message: String(message || "Interface diagnostics could not be parsed")
+        };
+    }
+
     function parse(output) {
         let values;
         try {
             values = JSON.parse(output || "[]");
         } catch (error) {
+            const message = String(error);
             root.tracer.warn("invalidJson", function() {
-                return { message: String(error) };
+                return { message: message };
             });
-            return [];
+            return root.failure(message);
         }
 
         if (!Array.isArray(values))
-            return [];
+            return root.failure("Interface diagnostics did not return an array");
 
-        return values.filter(function(value) {
+        const interfaces = values.filter(function(value) {
             return value && value.ifname && value.ifname !== "lo";
         }).map(function(value) {
             const addressInfo = Array.isArray(value.addr_info) ? value.addr_info : [];
@@ -49,5 +64,7 @@ QtObject {
                 ipv6: ipv6
             };
         });
+
+        return root.success(interfaces);
     }
 }
