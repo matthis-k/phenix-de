@@ -9,10 +9,20 @@ import qs.components
 PanelWindow {
     id: root
     property var shellScreenState
+    readonly property string presentationMode: DashboardPresentation.mode
+    readonly property bool detailed: DashboardPresentation.detailed
     readonly property bool dashboardVisible: !!shellScreenState && shellScreenState.dashboardPhase !== "closed"
     property real tabSwipeAccumulator: 0
     readonly property real tabSwipeThreshold: Config.spacing.xxl
     focusable: true
+
+    function setPresentationMode(mode) {
+        DashboardPresentation.setMode(mode);
+    }
+
+    function togglePresentationMode() {
+        DashboardPresentation.toggle();
+    }
 
     function resetTabSwipe() {
         tabSwipeAccumulator = 0;
@@ -78,6 +88,10 @@ PanelWindow {
             loader.item.screenState = root.shellScreenState;
         if (loader.item.tabSwipeTarget !== undefined)
             loader.item.tabSwipeTarget = root;
+        if (loader.item.modeController !== undefined)
+            loader.item.modeController = root;
+        if (loader.item.presentationMode !== undefined)
+            loader.item.presentationMode = Qt.binding(function() { return root.presentationMode; });
     }
 
     anchors {
@@ -142,6 +156,36 @@ PanelWindow {
     Component {
         id: statsPageComponent
         SystemStats {}
+    }
+
+    Shortcut {
+        sequence: "Ctrl+D"
+        enabled: root.dashboardVisible
+        onActivated: root.togglePresentationMode()
+    }
+
+    Shortcut {
+        sequence: "F2"
+        enabled: root.dashboardVisible
+        onActivated: root.togglePresentationMode()
+    }
+
+    Shortcut {
+        sequence: "Alt+H"
+        enabled: root.dashboardVisible && !!root.shellScreenState
+        onActivated: root.shellScreenState.stepDashboardTab(-1)
+    }
+
+    Shortcut {
+        sequence: "Alt+L"
+        enabled: root.dashboardVisible && !!root.shellScreenState
+        onActivated: root.shellScreenState.stepDashboardTab(1)
+    }
+
+    Shortcut {
+        sequence: "Escape"
+        enabled: root.dashboardVisible && !!root.shellScreenState
+        onActivated: root.shellScreenState.closeDashboard()
     }
 
     MouseArea {
@@ -246,11 +290,5 @@ PanelWindow {
                     root.resetTabSwipe();
             }
         }
-    }
-
-    Item {
-        focus: visible
-
-        Keys.onEscapePressed: root.shellScreenState?.closeDashboard()
     }
 }

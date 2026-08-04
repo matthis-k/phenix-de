@@ -12,6 +12,7 @@ DashboardSection {
     property QtObject interactionState: null
     property string emptyText: "No Bluetooth devices"
     property var tabSwipeTarget: null
+    property bool detailed: false
     property int contentWidth: 320
     property int itemSpacing: 3
     property int rowHeight: 36
@@ -86,6 +87,7 @@ DashboardSection {
                         width: parent.width
                         device: animatedRow.payload
                         interactionState: root.interactionState
+                        detailed: root.detailed
                         contentWidth: root.contentWidth
                         itemSpacing: root.itemSpacing
                         rowHeight: root.rowHeight

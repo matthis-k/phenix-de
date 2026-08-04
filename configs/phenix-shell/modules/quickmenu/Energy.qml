@@ -11,6 +11,9 @@ DashboardPage {
     id: root
 
     title: "Battery"
+    subtitle: root.detailed
+        ? qsTr("Charge history, power profile, and display controls")
+        : qsTr("Current charge, power profile, and brightness")
     scrollable: true
     visible: PowerService.hasBattery
 
@@ -24,6 +27,7 @@ DashboardPage {
             Layout.fillWidth: true
             graphActive: root.visible
             powerModesFirst: true
+            showGraph: root.detailed
         }
     }
 
