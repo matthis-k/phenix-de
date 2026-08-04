@@ -96,27 +96,14 @@ Item {
             verticalPadding: root.verticalPadding
             contentSpacing: root.iconTextGap
             accessory: Component {
-                DashboardIconButton {
-                    enabled: !root.forcedDetailed
-                    opacity: enabled ? 1 : 0.5
-                    implicitWidth: 24
-                    implicitHeight: 24
-                    iconName: root.detailed ? "go-down-symbolic" : "go-next-symbolic"
-                    fallbackIconName: iconName
-                    iconColor: root.localDetailed
-                        ? Config.styling.primaryAccent
-                        : (hovered && enabled ? Config.styling.text0 : Config.styling.text2)
-                    backgroundColor: hovered && enabled ? Config.styling.bg3 : "transparent"
-                    fillOnHover: true
-                    indicatorOnHover: false
-                    active: false
-                    accessibleName: root.localDetailed
-                        ? qsTr("Hide Bluetooth device information")
-                        : qsTr("Show Bluetooth device information")
-                    toolTipText: root.forcedDetailed
-                        ? qsTr("Device information is expanded by a parent or global toggle")
-                        : accessibleName
-                    onClicked: root.toggleLocalDetails()
+                DashboardDetailToggle {
+                    detailed: root.detailed
+                    forcedDetailed: root.forcedDetailed
+                    localDetailed: root.localDetailed
+                    subject: root.hasDevice
+                        ? BluetoothService.displayName(root.device)
+                        : qsTr("Bluetooth device")
+                    onToggleRequested: root.toggleLocalDetails()
                 }
             }
 
