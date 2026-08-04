@@ -15,6 +15,7 @@ ActionButton {
     property color titleColor: Config.styling.text0
     property color subtitleColor: Config.styling.text2
     property color statusColor: Config.styling.text1
+    property Component accessory: null
     property int iconSlotWidth: 28
     property int iconSize: 22
     property int titleSize: 16
@@ -27,6 +28,7 @@ ActionButton {
     property int statusAlignment: Qt.AlignVCenter
     readonly property bool hasIcon: iconName !== ""
     readonly property bool hasStatus: status !== ""
+    readonly property bool hasAccessory: accessory !== null
 
     Layout.fillWidth: true
     horizontalPadding: Config.spacing.xs
@@ -66,12 +68,12 @@ ActionButton {
                     sourceComponent: Icon {
                         iconName: root.iconName
                         fallbackIconName: root.fallbackIconName
-                    color: root.iconColor
-                    implicitSize: root.iconSize
+                        color: root.iconColor
+                        implicitSize: root.iconSize
 
-                    Animations.StateColorBehavior on color {
+                        Animations.StateColorBehavior on color {
+                        }
                     }
-                }
                 }
             }
 
@@ -94,6 +96,7 @@ ActionButton {
 
                 Text {
                     Layout.fillWidth: true
+                    visible: text !== ""
                     text: root.subtitle
                     color: root.subtitleColor
                     font.pixelSize: root.subtitleSize
@@ -114,6 +117,14 @@ ActionButton {
 
                 Animations.StateColorBehavior on color {
                 }
+            }
+
+            Loader {
+                active: root.hasAccessory
+                sourceComponent: root.accessory
+                Layout.preferredWidth: item ? item.implicitWidth : 0
+                Layout.preferredHeight: item ? item.implicitHeight : 0
+                Layout.alignment: Qt.AlignVCenter
             }
         }
     }
