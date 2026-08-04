@@ -159,9 +159,11 @@ FocusScope {
                     id: header
                     Layout.fillWidth: true
                     visible: root.title !== ""
+                        || root.subtitle !== ""
                         || root.headerAccessory !== null
                         || root.showModeSwitch
                     title: root.title
+                    subtitle: root.subtitle
                     accessory: composedHeaderAccessory
                 }
 
