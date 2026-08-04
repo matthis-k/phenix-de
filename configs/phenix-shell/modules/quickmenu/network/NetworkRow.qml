@@ -35,6 +35,10 @@ Item {
     readonly property bool forcedDetailed: DashboardPresentation.detailed || rowRoot.inheritedDetailed
     readonly property bool detailed: rowRoot.forcedDetailed || rowRoot.localDetailed
     readonly property bool detailExpanded: rowRoot.interactionExpanded || rowRoot.detailed
+    readonly property var activeInterface: {
+        const _ = NetworkInterfaces.revision;
+        return NetworkInterfaces.activeInterface();
+    }
     readonly property bool showPasswordInput: rowRoot.interactionExpanded && rowRoot.interactionState
         ? !!rowRoot.interactionState.interactiveShowPasswordInput
         : false
@@ -193,6 +197,73 @@ Item {
                         color: Config.styling.text1
                         font.pixelSize: 12
                         wrapMode: Text.Wrap
+                    }
+
+                    InfoRow {
+                        Layout.fillWidth: true
+                        visible: rowRoot.detailed && rowRoot.network.connected && !!rowRoot.activeInterface
+                        iconName: "network-server-symbolic"
+                        label: qsTr("Interface")
+                        value: rowRoot.activeInterface ? rowRoot.activeInterface.name : ""
+                    }
+
+                    InfoRow {
+                        Layout.fillWidth: true
+                        visible: rowRoot.detailed && rowRoot.network.connected
+                            && !!rowRoot.activeInterface && rowRoot.activeInterface.mac !== ""
+                        iconName: "network-server-symbolic"
+                        label: qsTr("Interface MAC")
+                        value: rowRoot.activeInterface ? rowRoot.activeInterface.mac : ""
+                    }
+
+                    InfoRow {
+                        Layout.fillWidth: true
+                        visible: rowRoot.detailed && rowRoot.network.connected && !!rowRoot.activeInterface
+                        iconName: "dialog-information-symbolic"
+                        label: qsTr("Link state / MTU")
+                        value: rowRoot.activeInterface
+                            ? `${rowRoot.activeInterface.state} · ${rowRoot.activeInterface.mtu}`
+                            : ""
+                    }
+
+                    InfoRow {
+                        Layout.fillWidth: true
+                        visible: rowRoot.detailed && rowRoot.network.connected
+                            && !!rowRoot.activeInterface && rowRoot.activeInterface.ipv4.length > 0
+                        iconName: "network-server-symbolic"
+                        label: qsTr("IPv4")
+                        value: rowRoot.activeInterface
+                            ? NetworkInterfaces.formatAddresses(rowRoot.activeInterface.ipv4)
+                            : ""
+                    }
+
+                    InfoRow {
+                        Layout.fillWidth: true
+                        visible: rowRoot.detailed && rowRoot.network.connected
+                            && !!rowRoot.activeInterface && rowRoot.activeInterface.ipv6.length > 0
+                        iconName: "network-server-symbolic"
+                        label: qsTr("IPv6")
+                        value: rowRoot.activeInterface
+                            ? NetworkInterfaces.formatAddresses(rowRoot.activeInterface.ipv6)
+                            : ""
+                    }
+
+                    InfoRow {
+                        Layout.fillWidth: true
+                        visible: rowRoot.detailed && rowRoot.network.connected
+                        iconName: "network-transmit-receive-symbolic"
+                        label: qsTr("Connectivity")
+                        value: NetworkService.connectivity
+                    }
+
+                    InfoRow {
+                        Layout.fillWidth: true
+                        visible: rowRoot.detailed && rowRoot.network.connected
+                            && NetworkInterfaces.lastError !== ""
+                        iconName: "dialog-warning-symbolic"
+                        label: qsTr("Diagnostics")
+                        value: NetworkInterfaces.lastError
+                        valueColor: Config.styling.warning
                     }
 
                     Text {

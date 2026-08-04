@@ -31,11 +31,14 @@ Singleton {
     property real rootDiskPercent: 0
     property real rxBytesPerSecond: 0
     property real txBytesPerSecond: 0
+    property real vpnRxBytesPerSecond: 0
+    property real vpnTxBytesPerSecond: 0
     property int memoryUsedMiB: 0
     property int memoryTotalMiB: 0
     property int swapUsedMiB: 0
     property int swapTotalMiB: 0
     property string primaryInterface: ""
+    property string vpnInterface: ""
     property var diskPartitions: []
     property int graphRevision: 0
     property var cpuCorePercents: []
@@ -339,6 +342,11 @@ Singleton {
     property real _lastRxBytes: 0
     property real _lastTxBytes: 0
     property double _lastSampleMs: 0
+    property real _lastVpnRxBytes: 0
+    property real _lastVpnTxBytes: 0
+    property double _lastVpnSampleMs: 0
+    property string _lastPrimaryInterface: ""
+    property string _lastVpnInterface: ""
     property var _lastCpuCoreTotals: []
     property var _lastCpuCoreIdles: []
 
@@ -595,24 +603,57 @@ Singleton {
         const lines = (text || "").trim().split(/\n+/);
         for (const line of lines) {
             const parts = line.trim().split(/\s+/);
-            if (parts.length >= 3) {
-                const iface = parts[0];
-                const rxBytes = parseFloat(parts[1]);
-                const txBytes = parseFloat(parts[2]);
-                const elapsedSeconds = _lastSampleMs > 0 ? Math.max((sampleTime - _lastSampleMs) / 1000, 0.001) : 0;
+            if (parts.length < 4)
+                continue;
 
-                primaryInterface = iface === "none" ? "" : iface;
+            const kind = parts[0];
+            const iface = parts[1] === "none" ? "" : parts[1];
+            const rxBytes = parseFloat(parts[2]);
+            const txBytes = parseFloat(parts[3]);
+            if (isNaN(rxBytes) || isNaN(txBytes))
+                continue;
 
-                if (!isNaN(rxBytes) && !isNaN(txBytes)) {
-                    if (_lastSampleMs > 0) {
-                        rxBytesPerSecond = Math.max(0, (rxBytes - _lastRxBytes) / elapsedSeconds);
-                        txBytesPerSecond = Math.max(0, (txBytes - _lastTxBytes) / elapsedSeconds);
-                    }
-                    _lastRxBytes = rxBytes;
-                    _lastTxBytes = txBytes;
-                    _lastSampleMs = sampleTime;
-                }
+            if (kind === "physical") {
+                const sameInterface = iface !== "" && iface === root._lastPrimaryInterface;
+                const elapsedSeconds = sameInterface && root._lastSampleMs > 0
+                    ? Math.max((sampleTime - root._lastSampleMs) / 1000, 0.001)
+                    : 0;
+                root.primaryInterface = iface;
+                root.rxBytesPerSecond = elapsedSeconds > 0
+                    ? Math.max(0, (rxBytes - root._lastRxBytes) / elapsedSeconds)
+                    : 0;
+                root.txBytesPerSecond = elapsedSeconds > 0
+                    ? Math.max(0, (txBytes - root._lastTxBytes) / elapsedSeconds)
+                    : 0;
+                root._lastPrimaryInterface = iface;
+                root._lastRxBytes = rxBytes;
+                root._lastTxBytes = txBytes;
+                root._lastSampleMs = sampleTime;
+            } else if (kind === "vpn") {
+                const sameInterface = iface !== "" && iface === root._lastVpnInterface;
+                const elapsedSeconds = sameInterface && root._lastVpnSampleMs > 0
+                    ? Math.max((sampleTime - root._lastVpnSampleMs) / 1000, 0.001)
+                    : 0;
+                root.vpnInterface = iface;
+                root.vpnRxBytesPerSecond = elapsedSeconds > 0
+                    ? Math.max(0, (rxBytes - root._lastVpnRxBytes) / elapsedSeconds)
+                    : 0;
+                root.vpnTxBytesPerSecond = elapsedSeconds > 0
+                    ? Math.max(0, (txBytes - root._lastVpnTxBytes) / elapsedSeconds)
+                    : 0;
+                root._lastVpnInterface = iface;
+                root._lastVpnRxBytes = rxBytes;
+                root._lastVpnTxBytes = txBytes;
+                root._lastVpnSampleMs = sampleTime;
             }
+        }
+
+        if (!lines.some(line => line.startsWith("vpn "))) {
+            root.vpnInterface = "";
+            root.vpnRxBytesPerSecond = 0;
+            root.vpnTxBytesPerSecond = 0;
+            root._lastVpnInterface = "";
+            root._lastVpnSampleMs = 0;
         }
     }
 
@@ -654,8 +695,11 @@ Singleton {
     }
 
     function refreshNetwork() {
+        const preferredInterface = NetworkService.hasWiredConnection
+            ? NetworkService.wiredDeviceName
+            : NetworkService.wifiDeviceName;
         networkCollectorProcess.exec({
-            command: ["sh", "-c", "iface=$(awk -F: '$1 !~ /lo/ {gsub(/ /, \"\", $1); print $1; exit}' /proc/net/dev); if [ -n \"$iface\" ]; then set -- $(awk -F'[: ]+' -v iface=\"$iface\" '$1 == iface {print $3, $11}' /proc/net/dev); rx=$1; tx=$2; else iface=none; rx=0; tx=0; fi; echo \"$iface $rx $tx\""]
+            command: ["sh", "-c", "physical=$1; vpn=; if [ -n \"$physical\" ] && [ ! -d \"/sys/class/net/$physical\" ]; then physical=; fi; for path in /sys/class/net/*; do iface=${path##*/}; [ \"$iface\" = lo ] && continue; [ \"$(cat \"$path/operstate\" 2>/dev/null)\" = up ] || continue; case \"$iface\" in nordlynx|wg*|tun*|tap*|vpn*) [ -z \"$vpn\" ] && vpn=$iface ;; *) if [ -e \"$path/device\" ] && [ -z \"$physical\" ]; then physical=$iface; fi ;; esac; done; if [ -z \"$physical\" ]; then physical=$(awk -F: '$1 !~ /lo|nordlynx|wg[0-9]*|tun[0-9]*|tap[0-9]*|vpn/ {gsub(/ /, \"\", $1); print $1; exit}' /proc/net/dev); fi; sample() { kind=$1; iface=$2; if [ -n \"$iface\" ]; then set -- $(awk -F'[: ]+' -v iface=\"$iface\" '$1 == iface {print $3, $11}' /proc/net/dev); printf '%s %s %s %s\\n' \"$kind\" \"$iface\" \"${1:-0}\" \"${2:-0}\"; else printf '%s none 0 0\\n' \"$kind\"; fi; }; sample physical \"$physical\"; [ -n \"$vpn\" ] && sample vpn \"$vpn\"", "sh", preferredInterface]
         });
     }
 
