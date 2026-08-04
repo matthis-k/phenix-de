@@ -15,8 +15,7 @@ QtObject {
     readonly property var snapshotChanges: resultProjection.changes
     readonly property var snapshotChangeSummary: resultProjection.changeSummary
 
-    SnapshotProjection {
-        id: resultProjection
+    readonly property SnapshotProjection resultProjection: SnapshotProjection {
         keyOf: function(item) { return item ? item.key || "" : ""; }
         equals: function(previous, next) {
             if (previous === next)
