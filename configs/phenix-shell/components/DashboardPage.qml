@@ -12,7 +12,7 @@ FocusScope {
     property var tabSwipeTarget: null
     property var modeController: null
     property string globalPresentationMode: "overview"
-    property bool showModeSwitch: true
+    property bool showModeSwitch: false
     property bool scrollable: false
     property bool fillHeight: false
     property int pagePadding: Config.spacing.md
