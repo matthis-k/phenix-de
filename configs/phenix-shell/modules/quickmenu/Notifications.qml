@@ -7,39 +7,63 @@ import qs.components
 DashboardPage {
     id: root
 
-    title: "Notifications"
+    title: qsTr("Notifications")
     subtitle: NotificationCenter.doNotDisturbEnabled
-        ? "Toasts paused"
-        : (root.detailed
-            ? "Tracked notification history, metadata, and actions"
-            : "Notification inbox and primary actions")
-    headerAccessory: Component {
-        DashboardToggleSwitch {
-            checked: NotificationCenter.toastsEnabled
-            onToggled: NotificationCenter.toastsEnabled = checked
-        }
-    }
+        ? qsTr("Toasts paused")
+        : qsTr("Notification inbox and primary actions")
     fillHeight: true
+    headerAccessory: Component {
+        RowLayout {
+            spacing: Config.spacing.xs
 
-    DashboardSection {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-        title: "Inbox"
-        subtitle: root.detailed
-            ? qsTr("Full retained notification history")
-            : qsTr("Current notifications")
-        headerAccessory: Component {
-            SmallButton {
-                enabled: NotificationCenter.count > 0
-                accentColor: Config.styling.good
-                text: "Clear all"
-                onClicked: NotificationCenter.clearAll()
+            Text {
+                text: qsTr("Toasts")
+                color: Config.styling.text1
+                font.pixelSize: 12
+                font.bold: true
+            }
+
+            DashboardToggleSwitch {
+                Accessible.name: qsTr("Notification toasts")
+                checked: NotificationCenter.toastsEnabled
+                onToggled: NotificationCenter.toastsEnabled = checked
             }
         }
+    }
 
-        NotificationFeed {
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: Config.spacing.xs
+
+        InfoRow {
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            iconName: NotificationCenter.doNotDisturbEnabled
+                ? "notifications-disabled-symbolic"
+                : "bell-symbolic"
+            iconColor: NotificationCenter.doNotDisturbEnabled
+                ? Config.colors.mauve
+                : (NotificationCenter.count > 0
+                    ? Config.colors.yellow
+                    : Config.styling.text1)
+            labelColor: iconColor
+            label: NotificationCenter.doNotDisturbEnabled
+                ? qsTr("Do Not Disturb")
+                : qsTr("Current notifications")
+            value: String(NotificationCenter.count)
+            valueColor: iconColor
         }
+
+        ConfirmSmallButton {
+            enabled: NotificationCenter.count > 0
+            text: qsTr("Clear all")
+            confirmText: qsTr("Confirm clear")
+            onConfirmed: NotificationCenter.clearAll()
+        }
+    }
+
+    NotificationFeed {
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        detailed: root.detailed
     }
 }
