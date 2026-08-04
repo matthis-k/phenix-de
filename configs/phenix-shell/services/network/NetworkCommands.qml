@@ -14,7 +14,6 @@ QtObject {
     signal networkingOutput(string text)
     signal generalOutput(string text)
     signal wiredOutput(string text)
-    signal interfacesOutput(string text)
     signal operationFinished(string kind, bool success, string message)
     signal scanResult(bool success)
 
@@ -36,13 +35,6 @@ QtObject {
         stdout: StdioCollector {
             waitForEnd: true
             onStreamFinished: root.generalOutput(text)
-        }
-    }
-
-    property Process interfaceDetailsProcess: Process {
-        stdout: StdioCollector {
-            waitForEnd: true
-            onStreamFinished: root.interfacesOutput(text)
         }
     }
 
@@ -120,9 +112,6 @@ QtObject {
         root.getNetworksProcess.exec({
             command: ["nmcli", "-g", "ACTIVE,SIGNAL,FREQ,SSID,BSSID,SECURITY", "d", "wifi"]
         });
-        root.interfaceDetailsProcess.exec({
-            command: ["ip", "-j", "address", "show"]
-        });
         root._checkWiredConnection();
     }
 
@@ -135,7 +124,7 @@ QtObject {
 
     function setNetworkingEnabled(value) {
         const cmd = value ? "on" : "off";
-        root.tracer.info("setNetworkingEnabled", function() { return { enabled: value }; });
+        root.tracer.info("setNetworkingEnabled", function() { return { enabled: value } });
         root.nmcliNetworkingProcess.exec({
             command: ["nmcli", "networking", cmd]
         });
@@ -143,7 +132,7 @@ QtObject {
 
     function setWifiEnabled(enabled) {
         const cmd = enabled ? "on" : "off";
-        root.tracer.info("setWifiEnabled", function() { return { enabled: enabled }; });
+        root.tracer.info("setWifiEnabled", function() { return { enabled: enabled } });
         root.wifiToggleProcess.exec({
             command: ["nmcli", "radio", "wifi", cmd]
         });
@@ -153,7 +142,7 @@ QtObject {
         const args = ["nmcli", "dev", "wifi", "connect", ssid];
         if (password)
             args.push("password", password);
-        root.tracer.info("connectToNetwork", function() { return { ssid: ssid, hasPassword: !!password }; });
+        root.tracer.info("connectToNetwork", function() { return { ssid: ssid, hasPassword: !!password } });
         root.connectProcess.exec({
             command: args
         });
@@ -164,7 +153,7 @@ QtObject {
             root.tracer.warn("disconnectDevice.noDeviceName");
             return;
         }
-        root.tracer.info("disconnectDevice", function() { return { device: deviceName }; });
+        root.tracer.info("disconnectDevice", function() { return { device: deviceName } });
         root.disconnectProcess.exec({
             command: ["nmcli", "dev", "disconnect", deviceName]
         });
@@ -175,7 +164,7 @@ QtObject {
             root.tracer.warn("forgetNetwork.noUuid");
             return;
         }
-        root.tracer.info("forgetNetwork", function() { return { uuid: uuid }; });
+        root.tracer.info("forgetNetwork", function() { return { uuid: uuid } });
         root.forgetProcess.exec({
             command: ["nmcli", "con", "delete", "uuid", uuid]
         });
@@ -189,7 +178,7 @@ QtObject {
     }
 
     function _onOperationExited(exitCode, kind, failMsg) {
-        root.tracer.debug("operationExited", function() { return { kind: kind, exitCode: exitCode }; });
+        root.tracer.debug("operationExited", function() { return { kind: kind, exitCode: exitCode } });
         root.operationFinished(kind, exitCode === 0, exitCode === 0 ? "" : `${failMsg} (${exitCode})`);
     }
 }
