@@ -11,6 +11,9 @@ DashboardPage {
     id: root
 
     title: "System stats"
+    subtitle: root.detailed
+        ? qsTr("Per-core, memory, GPU, storage, and network telemetry")
+        : qsTr("Aggregate telemetry with abnormal cores and devices promoted")
     scrollable: true
 
     readonly property var cpuCoreColors: [Config.colors.green, Config.colors.yellow, Config.colors.red, Config.colors.maroon, Config.colors.peach, Config.colors.mauve, Config.colors.pink, Config.colors.flamingo, Config.colors.rosewater]
@@ -19,17 +22,52 @@ DashboardPage {
     readonly property color gpuUsageColor: Config.colors.blue
     readonly property color gpuVramColor: Config.colors.mauve
 
+    PresentationPolicy {
+        id: presentationPolicy
+    }
+
+    readonly property var cpuOutliers: {
+        const _ = Services.Stats.graphRevision;
+        return presentationPolicy.cpuCoreOutliers(
+            Services.Stats.cpuCorePercents,
+            Services.Stats.cpuPercent,
+            4
+        );
+    }
+
+    readonly property var visibleCpuRows: {
+        const _ = Services.Stats.graphRevision;
+        return presentationPolicy.cpuRows(
+            Services.Stats.cpuCorePercents,
+            Services.Stats.cpuPercent,
+            root.presentationMode
+        );
+    }
+
+    readonly property var cpuOutlierKeys: {
+        const result = {};
+        for (const row of root.cpuOutliers)
+            result[row.key] = true;
+        return result;
+    }
+
+    readonly property var visiblePartitions: presentationPolicy.partitionRows(
+        Services.Stats.diskPartitions,
+        root.presentationMode
+    )
+
+    readonly property bool memoryOutlier: Services.Stats.memoryPercent >= 85
+        || Services.Stats.swapPercent >= 85
+    readonly property bool gpuOutlier: Services.Stats.gpuUtilPercent >= 85
+        || Services.Stats.gpuVramPercent >= 85
+
     function cpuGraphSeries() {
         const _ = Services.Stats.graphRevision;
         return Services.Stats.calculateCpuGraphSeries().map(series => Object.assign({}, series, {
                 color: series.name === "avg" ? Config.colors.blue : root.cpuCoreColors[parseInt(String(series.name).replace("core", "")) % root.cpuCoreColors.length],
-                lineWidth: series.name === "avg" ? 2.5 : 1.2
+                lineWidth: series.name === "avg" ? 2.5 : 1.2,
+                visible: series.name === "avg" || root.detailed || root.cpuOutlierKeys[series.name] === true
             }));
-    }
-
-    readonly property int _coreCount: {
-        const _ = Services.Stats.graphRevision;
-        return Services.Stats.cpuCorePercents.length;
     }
 
     function memoryGraphSeries() {
@@ -49,6 +87,11 @@ DashboardPage {
 
     DashboardSection {
         title: "CPU Usage"
+        subtitle: root.detailed
+            ? qsTr("Average and every logical core")
+            : (root.cpuOutliers.length > 0
+                ? qsTr("Average plus %1 promoted core outlier(s)").arg(root.cpuOutliers.length)
+                : qsTr("Average; no per-core outliers"))
         collapsible: true
         summary: Component {
             HeaderMetric {
@@ -103,7 +146,8 @@ DashboardPage {
                     }
                 }
                 LegendButton {
-                    Layout.preferredWidth: 100
+                    visible: root.detailed
+                    Layout.preferredWidth: visible ? 100 : 0
                     Layout.alignment: Qt.AlignHCenter
                     graphView: cpuGraph
                     seriesFilter: (s) => s.name.startsWith("core")
@@ -122,7 +166,17 @@ DashboardPage {
                 }
             }
 
+            Text {
+                visible: !root.detailed && root.visibleCpuRows.length === 0
+                Layout.fillWidth: true
+                text: qsTr("No core is above 90% or materially above the CPU average.")
+                color: Config.styling.text2
+                font.pixelSize: 12
+                wrapMode: Text.WordWrap
+            }
+
             GridLayout {
+                visible: root.visibleCpuRows.length > 0
                 Layout.fillWidth: true
                 columns: 4
                 rowSpacing: 2
@@ -130,7 +184,7 @@ DashboardPage {
                 uniformCellWidths: true
 
                 Repeater {
-                    model: root._coreCount
+                    model: root.visibleCpuRows
                     CpuLegendDelegate {}
                 }
             }
@@ -139,6 +193,9 @@ DashboardPage {
 
     DashboardSection {
         title: "Memory"
+        subtitle: root.detailed
+            ? qsTr("Usage history and exact allocation")
+            : qsTr("Aggregate RAM and swap usage")
         collapsible: true
         summary: Component {
             RowLayout {
@@ -175,22 +232,26 @@ DashboardPage {
                 Layout.minimumHeight: 120
             }
 
-            StatTableHeader {}
+            StatTableHeader {
+                visible: root.detailed || root.memoryOutlier
+            }
 
             StatTableRow {
+                visible: root.detailed || Services.Stats.memoryPercent >= 85
                 label: "RAM"
                 valueText: `${Services.Stats.memoryUsedMiB} / ${Services.Stats.memoryTotalMiB} MiB`
                 percent: Services.Stats.memoryPercent
                 rowColor: root.ramColor
-                percentColor: root.ramColor
+                percentColor: Services.Stats.memoryPercent >= 90 ? Config.styling.critical : root.ramColor
             }
 
             StatTableRow {
+                visible: root.detailed || Services.Stats.swapPercent >= 85
                 label: "Swap"
                 valueText: Services.Stats.swapTotalMiB > 0 ? `${Services.Stats.swapUsedMiB} / ${Services.Stats.swapTotalMiB} MiB` : "Disabled"
                 percent: Services.Stats.swapTotalMiB > 0 ? Services.Stats.swapPercent : -1
                 rowColor: root.swapColor
-                percentColor: root.swapColor
+                percentColor: Services.Stats.swapPercent >= 90 ? Config.styling.critical : root.swapColor
             }
         }
     }
@@ -221,6 +282,7 @@ DashboardPage {
             spacing: Config.spacing.xs
 
             Text {
+                visible: root.detailed || root.gpuOutlier
                 text: Services.Stats.gpuName
                 color: Config.styling.text0
                 font.pixelSize: 13
@@ -230,7 +292,8 @@ DashboardPage {
 
             GraphView {
                 id: gpuGraph
-                active: root.visible
+                visible: root.detailed || root.gpuOutlier
+                active: root.visible && visible
                 yMin: 0
                 yMax: 100
                 xWindow: 120000
@@ -238,11 +301,12 @@ DashboardPage {
                 xMarkerLabel: (x, view) => x < view.maxX ? qsTr("%1m").arg(Math.round((view.maxX - x) / 60000)) : ""
                 graphs: root.gpuGraphSeries()
                 Layout.fillWidth: true
-                Layout.preferredHeight: 180
-                Layout.minimumHeight: 140
+                Layout.preferredHeight: visible ? 180 : 0
+                Layout.minimumHeight: visible ? 140 : 0
             }
 
             RowLayout {
+                visible: root.detailed || root.gpuOutlier
                 Layout.fillWidth: true
                 spacing: 8
                 Item {
@@ -291,14 +355,17 @@ DashboardPage {
                 }
             }
 
-            StatTableHeader {}
+            StatTableHeader {
+                visible: root.detailed || Services.Stats.gpuVramPercent >= 85
+            }
 
             StatTableRow {
+                visible: root.detailed || Services.Stats.gpuVramPercent >= 85
                 label: "VRAM"
                 valueText: `${Services.Stats.gpuVramUsedMiB} / ${Services.Stats.gpuVramTotalMiB} MiB`
                 percent: Services.Stats.gpuVramPercent
                 rowColor: root.gpuVramColor
-                percentColor: root.gpuVramColor
+                percentColor: Services.Stats.gpuVramPercent >= 90 ? Config.styling.critical : root.gpuVramColor
             }
         }
     }
@@ -323,7 +390,7 @@ DashboardPage {
             StatTableHeader {}
 
             Repeater {
-                model: Services.Stats.diskPartitions
+                model: root.visiblePartitions
 
                 PartitionRow {}
             }
@@ -354,6 +421,7 @@ DashboardPage {
         Layout.fillWidth: true
 
         InfoRow {
+            visible: root.detailed
             iconName: "go-down-symbolic"
             label: "Download"
             value: Services.Stats.formatRate(Services.Stats.rxBytesPerSecond)
@@ -361,6 +429,7 @@ DashboardPage {
         }
 
         InfoRow {
+            visible: root.detailed
             iconName: "go-up-symbolic"
             label: "Upload"
             value: Services.Stats.formatRate(Services.Stats.txBytesPerSecond)
@@ -443,25 +512,24 @@ DashboardPage {
     }
 
     component CpuLegendDelegate: LegendButton {
-        required property int index
+        required property var modelData
+
+        readonly property int coreIndex: Number(modelData.index || 0)
 
         Layout.fillWidth: true
         graphView: cpuGraph
-        seriesName: `core${index}`
-        color: root.cpuCoreColors[index % root.cpuCoreColors.length]
+        seriesName: `core${coreIndex}`
+        color: root.cpuCoreColors[coreIndex % root.cpuCoreColors.length]
 
         Text {
-            text: `core${index}`
+            text: `core${parent.coreIndex}`
             font.pixelSize: 13
             color: Config.colors.base
         }
         Item { Layout.fillWidth: true }
 
         UsagePie {
-            percent: {
-                const _ = Services.Stats.graphRevision;
-                return Services.Stats.cpuCorePercents[index] || 0;
-            }
+            percent: Number(parent.modelData.percent || 0)
             fillColor: Config.colors.base
         }
     }
