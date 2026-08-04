@@ -27,13 +27,11 @@ QtObject {
 
     signal snapshotApplied(var changes)
 
-    ChangeBatch {
-        id: invalidations
+    readonly property ChangeBatch invalidations: ChangeBatch {
         onCommitted: root.applyNow()
     }
 
-    SnapshotProjection {
-        id: projection
+    readonly property SnapshotProjection projection: SnapshotProjection {
         keyOf: root.keyOf
         equals: root.equals
     }
