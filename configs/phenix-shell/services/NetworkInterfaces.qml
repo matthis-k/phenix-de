@@ -14,7 +14,7 @@ Singleton {
     readonly property var tracer: Logger.scope("network.interfaces", { category: "network" })
     readonly property var backend: root
 
-    readonly property NmcliParser parser: NmcliParser {}
+    readonly property InterfaceAddressParser parser: InterfaceAddressParser {}
 
     property var interfaces: []
     property int revision: 0
@@ -58,7 +58,7 @@ Singleton {
         stdout: StdioCollector {
             waitForEnd: true
             onStreamFinished: {
-                root.interfaces = root.parser.parseInterfaceAddresses(text);
+                root.interfaces = root.parser.parse(text);
                 root.revision += 1;
                 root.lastError = "";
             }
