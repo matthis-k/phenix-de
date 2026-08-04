@@ -12,17 +12,15 @@ FocusScope {
     property var tabSwipeTarget: null
     property var modeController: null
     property string globalPresentationMode: "overview"
-    property bool localDetailed: false
     property bool showModeSwitch: true
-    property bool showLocalDetailToggle: true
     property bool scrollable: false
     property bool fillHeight: false
     property int pagePadding: Config.spacing.md
     property int sectionSpacing: Config.spacing.md
 
     readonly property bool globalDetailed: globalPresentationMode === "detailed"
-    readonly property bool detailed: globalDetailed || localDetailed
-    readonly property string presentationMode: detailed ? "detailed" : "overview"
+    readonly property bool detailed: globalDetailed
+    readonly property string presentationMode: globalPresentationMode
 
     default property alias content: body.data
 
@@ -49,12 +47,6 @@ FocusScope {
             root.modeController.togglePresentationMode();
         else
             root.requestPresentationMode(root.globalDetailed ? "overview" : "detailed");
-    }
-
-    function toggleLocalDetails() {
-        if (root.globalDetailed)
-            return;
-        root.localDetailed = !root.localDetailed;
     }
 
     function focusedItem() {
@@ -168,7 +160,6 @@ FocusScope {
                     Layout.fillWidth: true
                     visible: root.title !== ""
                         || root.headerAccessory !== null
-                        || root.showLocalDetailToggle
                         || root.showModeSwitch
                     title: root.title
                     accessory: composedHeaderAccessory
@@ -202,31 +193,6 @@ FocusScope {
                 Layout.preferredWidth: item ? item.implicitWidth : 0
                 Layout.preferredHeight: item ? item.implicitHeight : 0
                 Layout.alignment: Qt.AlignVCenter
-            }
-
-            DashboardIconButton {
-                visible: root.showLocalDetailToggle
-                enabled: !root.globalDetailed
-                opacity: enabled ? 1 : 0.5
-                Layout.preferredWidth: 24
-                Layout.preferredHeight: 24
-                Layout.alignment: Qt.AlignVCenter
-                iconName: root.detailed ? "go-down-symbolic" : "go-next-symbolic"
-                fallbackIconName: iconName
-                iconColor: root.localDetailed
-                    ? Config.styling.primaryAccent
-                    : (hovered && enabled ? Config.styling.text0 : Config.styling.text2)
-                backgroundColor: hovered && enabled ? Config.styling.bg3 : "transparent"
-                fillOnHover: true
-                indicatorOnHover: false
-                active: false
-                accessibleName: root.localDetailed
-                    ? qsTr("Collapse this page")
-                    : qsTr("Expand this page")
-                toolTipText: root.globalDetailed
-                    ? qsTr("Expanded by the global detail toggle")
-                    : accessibleName
-                onClicked: root.toggleLocalDetails()
             }
 
             DashboardModeSwitch {
