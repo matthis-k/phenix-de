@@ -8,7 +8,11 @@ DashboardPage {
     id: root
 
     title: "Notifications"
-    subtitle: NotificationCenter.doNotDisturbEnabled ? "Toasts paused" : "Tracked notification history and actions"
+    subtitle: NotificationCenter.doNotDisturbEnabled
+        ? "Toasts paused"
+        : (root.detailed
+            ? "Tracked notification history, metadata, and actions"
+            : "Notification inbox and primary actions")
     headerAccessory: Component {
         DashboardToggleSwitch {
             checked: NotificationCenter.toastsEnabled
@@ -21,6 +25,9 @@ DashboardPage {
         Layout.fillWidth: true
         Layout.fillHeight: true
         title: "Inbox"
+        subtitle: root.detailed
+            ? qsTr("Full retained notification history")
+            : qsTr("Current notifications")
         headerAccessory: Component {
             SmallButton {
                 enabled: NotificationCenter.count > 0
