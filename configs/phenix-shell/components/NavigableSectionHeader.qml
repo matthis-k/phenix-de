@@ -9,6 +9,9 @@ Rectangle {
 
     property string title: ""
     property string subtitle: ""
+    property string iconName: ""
+    property color iconColor: Config.styling.primaryAccent
+    property color titleColor: Config.styling.primaryAccent
     property Component accessory: null
     property var screenState: null
     property string targetTab: ""
@@ -30,14 +33,23 @@ Rectangle {
 
         RowLayout {
             Layout.fillWidth: true
-            spacing: Config.spacing.sm
+            spacing: Config.spacing.xs
+
+            Icon {
+                visible: root.iconName !== ""
+                iconName: root.iconName
+                fallbackIconName: root.iconName
+                color: root.iconColor
+                implicitSize: 18
+                Layout.alignment: Qt.AlignVCenter
+            }
 
             Text {
                 Layout.fillWidth: true
                 text: root.title
                 color: root.navigable
-                    ? (hoverHighlight ? Config.styling.secondaryAccent : Config.styling.primaryAccent)
-                    : Config.styling.text0
+                    ? (hoverHighlight ? Config.styling.secondaryAccent : root.titleColor)
+                    : root.titleColor
                 font.pixelSize: 16
                 font.bold: true
                 elide: Text.ElideRight
