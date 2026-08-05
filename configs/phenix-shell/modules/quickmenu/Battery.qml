@@ -13,6 +13,7 @@ ColumnLayout {
     property bool showPowerModes: true
     property bool showGraph: true
     property bool graphActive: true
+    property bool compact: false
     readonly property bool hasBattery: PowerService.hasBattery
     readonly property color stateColor: PowerService.iconColor
 
@@ -101,33 +102,59 @@ ColumnLayout {
             font.bold: true
         }
 
-        RowLayout {
+        ProfileButtons {
             Layout.fillWidth: true
-            spacing: Config.spacing.xxs
+        }
+    }
 
-            Repeater {
-                model: PowerService.profiles
+    component ProfileButtons: RowLayout {
+        id: profileButtons
 
-                delegate: ActionButton {
-                    required property var modelData
-                    readonly property bool selected: String(modelData) === String(PowerService.profile)
+        property bool iconsOnly: false
 
-                    Layout.fillWidth: true
-                    Layout.minimumHeight: 36
-                    active: selected
-                    accentColor: PowerService.profileColor(modelData)
-                    backgroundColor: selected
-                        ? PowerService.profileColor(modelData)
-                        : Config.styling.bg3
-                    accessibleName: qsTr("Use %1 power profile").arg(PowerService.profileLabel(modelData))
-                    onClicked: {
-                        if (!selected)
-                            PowerService.setProfile(modelData);
+        spacing: Config.spacing.xxs
+
+        Repeater {
+            model: PowerService.profiles
+
+            delegate: ActionButton {
+                id: profileButton
+
+                required property var modelData
+                readonly property bool selected: String(modelData) === String(PowerService.profile)
+
+                Layout.fillWidth: true
+                Layout.minimumWidth: profileButtons.iconsOnly ? 32 : 0
+                Layout.maximumWidth: profileButtons.iconsOnly ? 38 : 16777215
+                Layout.minimumHeight: profileButtons.iconsOnly ? 32 : 36
+                active: selected
+                accentColor: PowerService.profileColor(modelData)
+                backgroundColor: selected
+                    ? PowerService.profileColor(modelData)
+                    : Config.styling.bg3
+                accessibleName: qsTr("Use %1 power profile").arg(PowerService.profileLabel(modelData))
+                onClicked: {
+                    if (!selected)
+                        PowerService.setProfile(modelData);
+                }
+
+                contentItem: Item {
+                    Icon {
+                        visible: profileButtons.iconsOnly
+                        anchors.centerIn: parent
+                        iconName: PowerService.profileIconName(profileButton.modelData)
+                        fallbackIconName: iconName
+                        color: profileButton.selected
+                            ? Config.styling.textOnAccent
+                            : PowerService.profileColor(profileButton.modelData)
+                        implicitSize: 17
                     }
 
-                    contentItem: Text {
-                        text: PowerService.profileLabel(parent.modelData)
-                        color: parent.selected
+                    Text {
+                        visible: !profileButtons.iconsOnly
+                        anchors.fill: parent
+                        text: PowerService.profileLabel(profileButton.modelData)
+                        color: profileButton.selected
                             ? Config.styling.textOnAccent
                             : Config.styling.text0
                         font.pixelSize: 12
@@ -141,33 +168,80 @@ ColumnLayout {
         }
     }
 
+    component CompactBlock: RowLayout {
+        Layout.fillWidth: true
+        spacing: Config.spacing.xs
+
+        Icon {
+            iconName: PowerService.iconName
+            fallbackIconName: "battery-missing-symbolic"
+            color: root.stateColor
+            implicitSize: 20
+            Layout.alignment: Qt.AlignVCenter
+        }
+
+        ColumnLayout {
+            Layout.fillWidth: true
+            spacing: 0
+
+            Text {
+                Layout.fillWidth: true
+                text: qsTr("Battery %1%").arg(PowerService.batteryPercent)
+                color: root.stateColor
+                font.pixelSize: 14
+                font.bold: true
+                elide: Text.ElideRight
+            }
+
+            Text {
+                Layout.fillWidth: true
+                visible: root.batteryDetail !== ""
+                text: root.batteryDetail
+                color: Config.styling.text2
+                font.pixelSize: 11
+                elide: Text.ElideRight
+            }
+        }
+
+        ProfileButtons {
+            visible: root.showPowerModes
+            iconsOnly: true
+            Layout.alignment: Qt.AlignVCenter
+        }
+    }
+
+    CompactBlock {
+        Layout.fillWidth: true
+        visible: root.compact && root.hasBattery
+    }
+
     SummaryBlock {
         Layout.fillWidth: true
-        visible: root.hasBattery
+        visible: !root.compact && root.hasBattery
     }
 
     Rectangle {
         Layout.fillWidth: true
-        visible: root.showPowerModes && root.hasBattery
+        visible: !root.compact && root.showPowerModes && root.hasBattery
         implicitHeight: 1
         color: Config.styling.bg3
     }
 
     PowerModesBlock {
         Layout.fillWidth: true
-        visible: root.showPowerModes && root.hasBattery
+        visible: !root.compact && root.showPowerModes && root.hasBattery
     }
 
     Rectangle {
         Layout.fillWidth: true
-        visible: root.showGraph && root.hasBattery
+        visible: !root.compact && root.showGraph && root.hasBattery
         implicitHeight: 1
         color: Config.styling.bg3
     }
 
     ColumnLayout {
         Layout.fillWidth: true
-        visible: root.showGraph && root.hasBattery
+        visible: !root.compact && root.showGraph && root.hasBattery
         spacing: Config.spacing.xs
 
         Text {

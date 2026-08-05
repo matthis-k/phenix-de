@@ -34,7 +34,7 @@ DashboardPage {
         presentationMode: root.presentationMode
         average: Services.Stats.cpuPercent
         cores: Services.Stats.cpuCorePercents
-        revision: Services.Stats.graphRevision
+        revision: Services.Stats.cpuRevision
     }
 
     UsageDashboardObservation {
@@ -149,6 +149,7 @@ DashboardPage {
 
     AdaptiveDashboardSection {
         observation: cpuObservation
+        localDetailed: true
         title: qsTr("CPU usage")
         subtitle: cpuObservation.detailed
             ? qsTr("Average and every logical core over time")
@@ -176,6 +177,7 @@ DashboardPage {
 
     AdaptiveDashboardSection {
         observation: memoryObservation
+        localDetailed: true
         title: qsTr("Memory")
         subtitle: memoryObservation.detailed
             ? qsTr("Allocation and usage history")
@@ -214,6 +216,7 @@ DashboardPage {
 
     AdaptiveDashboardSection {
         observation: gpuObservation
+        localDetailed: true
         domainVisible: Services.Stats.gpuAvailable
         title: qsTr("GPU")
         subtitle: gpuObservation.detailed
@@ -252,6 +255,7 @@ DashboardPage {
 
     AdaptiveDashboardSection {
         observation: storageObservation
+        localDetailed: true
         title: qsTr("Storage")
         subtitle: storageObservation.detailed
             ? qsTr("Every mounted filesystem")
@@ -275,7 +279,7 @@ DashboardPage {
             StorageOverview { rows: storageObservation.exceptionalRows }
         }
         detailedDelegate: Component {
-            StorageTable { rows: storageObservation.visibleRows }
+            StorageOverview { rows: storageObservation.visibleRows }
         }
         Layout.fillWidth: true
         Layout.row: root.metricSectionRank("storage")
@@ -327,7 +331,7 @@ DashboardPage {
             delegate: RadialMetric {
                 required property var modelData
                 Layout.fillWidth: true
-                label: qsTr("Core %1").arg(modelData.index)
+                label: qsTr("Core %1").arg(Number(modelData.index || 0) + 1)
                 iconName: "utilities-system-monitor-symbolic"
                 percent: Number(modelData.percent || 0)
                 accentColor: modelData.severity === DashboardObservation.Critical
@@ -420,8 +424,8 @@ DashboardPage {
                 : ""
             graphs: root.cpuGraphSeries()
             Layout.fillWidth: true
-            Layout.preferredHeight: 180
-            Layout.minimumHeight: 140
+            Layout.preferredHeight: 220
+            Layout.minimumHeight: 180
         }
 
         RowLayout {
@@ -429,6 +433,8 @@ DashboardPage {
             spacing: Config.spacing.xs
 
             LegendButton {
+                id: averageLegend
+
                 Layout.fillWidth: true
                 graphView: cpuGraph
                 seriesName: "avg"
@@ -439,11 +445,13 @@ DashboardPage {
                     text: qsTr("Average")
                     font.pixelSize: 13
                     font.bold: true
-                    color: Config.colors.base
+                    color: averageLegend.contentColor
                 }
             }
 
             LegendButton {
+                id: coresLegend
+
                 Layout.fillWidth: true
                 graphView: cpuGraph
                 seriesFilter: series => series.name.startsWith("core")
@@ -454,7 +462,7 @@ DashboardPage {
                     text: qsTr("Cores")
                     font.pixelSize: 13
                     font.bold: true
-                    color: Config.colors.base
+                    color: coresLegend.contentColor
                 }
             }
         }
@@ -467,26 +475,32 @@ DashboardPage {
             uniformCellWidths: true
 
             Repeater {
-                model: cpuObservation.visibleRows
+                model: Services.Stats.cpuCorePercents.length
 
                 delegate: LegendButton {
                     id: coreLegend
 
-                    required property var modelData
-                    readonly property int coreIndex: Number(modelData.index || 0)
-                    readonly property real corePercent: Number(modelData.percent || 0)
+                    required property int index
+                    readonly property int coreIndex: index
+                    readonly property real corePercent: {
+                        const _ = Services.Stats.cpuRevision;
+                        const values = Services.Stats.cpuCorePercents;
+                        return Array.isArray(values) && coreLegend.coreIndex < values.length
+                            ? Number(values[coreLegend.coreIndex] || 0)
+                            : 0;
+                    }
 
                     Layout.fillWidth: true
                     graphView: cpuGraph
                     seriesName: `core${coreIndex}`
-                    accessibleLabel: qsTr("Toggle CPU core %1 graph").arg(coreIndex)
+                    accessibleLabel: qsTr("Toggle CPU core %1 graph").arg(coreIndex + 1)
                     color: root.cpuCoreColors[coreIndex % root.cpuCoreColors.length]
 
                     Text {
-                        text: `${coreLegend.coreIndex}`
-                        font.pixelSize: 12
+                        text: qsTr("Core %1").arg(coreLegend.coreIndex + 1)
+                        font.pixelSize: 11
                         font.bold: true
-                        color: Config.colors.base
+                        color: coreLegend.contentColor
                     }
 
                     Item { Layout.fillWidth: true }
@@ -494,7 +508,7 @@ DashboardPage {
                     Text {
                         text: `${Math.round(coreLegend.corePercent)}%`
                         font.pixelSize: 11
-                        color: Config.colors.base
+                        color: coreLegend.contentColor
                     }
                 }
             }
@@ -516,8 +530,8 @@ DashboardPage {
                 : ""
             graphs: root.memoryGraphSeries()
             Layout.fillWidth: true
-            Layout.preferredHeight: 160
-            Layout.minimumHeight: 120
+            Layout.preferredHeight: 200
+            Layout.minimumHeight: 160
         }
 
         StatTableRow {
@@ -562,8 +576,8 @@ DashboardPage {
                 : ""
             graphs: root.gpuGraphSeries()
             Layout.fillWidth: true
-            Layout.preferredHeight: 180
-            Layout.minimumHeight: 140
+            Layout.preferredHeight: 220
+            Layout.minimumHeight: 180
         }
 
         StatTableRow {
@@ -580,18 +594,6 @@ DashboardPage {
             percent: Services.Stats.gpuVramPercent
             rowColor: root.gpuVramColor
             percentColor: root.percentColor(percent, root.gpuVramColor, 85, 90)
-        }
-    }
-
-    component StorageTable: ColumnLayout {
-        required property var rows
-
-        Layout.fillWidth: true
-        spacing: Config.spacing.xxs
-
-        Repeater {
-            model: parent.rows
-            delegate: PartitionRow {}
         }
     }
 
@@ -665,23 +667,16 @@ DashboardPage {
             }
 
             Text {
-                anchors.centerIn: parent
+                anchors.fill: parent
                 text: `${Math.round(headerMetric.value)}%`
                 color: headerMetric.metricColor
                 font.pixelSize: 12
                 font.bold: true
                 font.family: "monospace"
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
             }
         }
     }
 
-    component PartitionRow: StatTableRow {
-        required property var modelData
-
-        label: modelData.mount || modelData.device || qsTr("Filesystem")
-        valueText: `${modelData.usedGiB || 0} / ${modelData.totalGiB || 0} GiB`
-        percent: modelData.percent !== undefined ? modelData.percent : -1
-        rowColor: Config.colors.peach
-        percentColor: root.percentColor(percent, Config.colors.peach, 75, 90)
-    }
 }

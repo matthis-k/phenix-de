@@ -151,9 +151,9 @@ Item {
                     Text {
                         Layout.fillWidth: true
                         text: root.hasDevice
-                            ? qsTr("State: %1 | Adapter: %2").arg(
-                                BluetoothService.deviceStatusLabel(root.device),
-                                root.device.adapter ? root.device.adapter.adapterId : qsTr("unknown"))
+                            ? qsTr("State: %1 | Adapter: %2")
+                                .arg(BluetoothService.deviceStatusLabel(root.device))
+                                .arg(root.device.adapter ? root.device.adapter.adapterId : qsTr("unknown"))
                             : qsTr("Device unavailable")
                         color: Config.styling.text1
                         font.pixelSize: 12

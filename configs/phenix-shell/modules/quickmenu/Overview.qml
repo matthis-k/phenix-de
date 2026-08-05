@@ -17,7 +17,7 @@ DashboardPage {
         presentationMode: root.presentationMode
         average: Stats.cpuPercent
         cores: Stats.cpuCorePercents
-        revision: Stats.graphRevision
+        revision: Stats.cpuRevision
     }
 
     UsageDashboardObservation {
@@ -67,6 +67,16 @@ DashboardPage {
             return qsTr("Bluetooth disabled");
         const count = BluetoothService.connectedCount;
         return count > 0 ? qsTr("%1 connected").arg(count) : qsTr("Ready to connect");
+    }
+
+    readonly property string vpnSummary: {
+        if (!VpnService.available)
+            return qsTr("Unavailable");
+        if (VpnService.connecting)
+            return qsTr("Connecting");
+        if (VpnService.connected)
+            return VpnService.location || qsTr("Connected");
+        return qsTr("Disconnected");
     }
 
     function percentColor(percent, normalColor, warningThreshold, criticalThreshold) {
@@ -161,21 +171,9 @@ DashboardPage {
         }
     }
 
-    NavigableSectionHeader {
-        id: networkSection
+    DashboardSection {
         Layout.fillWidth: true
-        title: qsTr("Network")
-        iconName: NetworkService.hasWiredConnection
-            ? "network-wired-symbolic"
-            : (NetworkService.wifiEnabled
-                ? "network-wireless-symbolic"
-                : "network-wireless-offline-symbolic")
-        iconColor: NetworkService.connected
-            ? Config.colors.green
-            : (NetworkService.wifiEnabled ? Config.styling.warning : Config.styling.text1)
-        titleColor: iconColor
-        screenState: root.screenState
-        targetTab: "wifi"
+        contentSpacing: 3
 
         DashboardSwitchRow {
             Layout.fillWidth: true
@@ -189,24 +187,29 @@ DashboardPage {
                 : (NetworkService.wifiEnabled ? Config.styling.warning : Config.styling.text1)
             enabled: NetworkService.wifiHardwareEnabled
             checked: NetworkService.wifiEnabled
+            navigationEnabled: true
+            navigationLabel: qsTr("Open network details")
             onToggled: checked => NetworkService.setWifiEnabled(checked)
+            onNavigationRequested: {
+                if (root.screenState)
+                    root.screenState.openDashboard("wifi");
+            }
         }
 
+        DashboardSwitchRow {
+            Layout.fillWidth: true
+            label: qsTr("VPN")
+            subtitle: root.vpnSummary
+            iconName: VpnService.iconName
+            iconColor: VpnService.iconColor
+            enabled: VpnService.available && !VpnService.connecting
+            checked: VpnService.connected || VpnService.connecting
+            onToggled: checked => checked ? VpnService.connect(null) : VpnService.disconnect()
+        }
     }
 
-    NavigableSectionHeader {
-        id: bluetoothSection
+    DashboardSection {
         Layout.fillWidth: true
-        title: qsTr("Bluetooth")
-        iconName: BluetoothService.enabled
-            ? "bluetooth-symbolic"
-            : "bluetooth-disabled-symbolic"
-        iconColor: BluetoothService.enabled
-            ? Config.styling.bluetooth
-            : Config.styling.text1
-        titleColor: iconColor
-        screenState: root.screenState
-        targetTab: "bluetooth"
 
         DashboardSwitchRow {
             Layout.fillWidth: true
@@ -220,25 +223,25 @@ DashboardPage {
                 : Config.styling.text1
             enabled: BluetoothService.available
             checked: BluetoothService.enabled
+            navigationEnabled: true
+            navigationLabel: qsTr("Open Bluetooth details")
             onToggled: checked => BluetoothService.setEnabled(checked)
+            onNavigationRequested: {
+                if (root.screenState)
+                    root.screenState.openDashboard("bluetooth");
+            }
         }
-
     }
 
     DashboardSection {
-        id: batterySection
         Layout.fillWidth: true
-        title: qsTr("Battery and power")
-        iconName: PowerService.iconName
-        iconColor: PowerService.iconColor
-        titleColor: iconColor
         visible: PowerService.hasBattery
-        showDetailToggle: true
 
         Battery {
             Layout.fillWidth: true
+            compact: true
             showGraph: false
-            showPowerModes: batterySection.detailed
+            showPowerModes: true
         }
     }
 
@@ -272,7 +275,6 @@ DashboardPage {
     }
 
     NavigableSectionHeader {
-        id: statsSection
         Layout.fillWidth: true
         title: qsTr("System health")
         iconName: "utilities-system-monitor-symbolic"
@@ -280,112 +282,40 @@ DashboardPage {
         titleColor: iconColor
         screenState: root.screenState
         targetTab: "stats"
-        showDetailToggle: true
 
-        MetricGrid {
-            Repeater {
-                model: cpuObservation.promotedRows
-
-                delegate: RadialMetric {
-                    required property var modelData
-                    Layout.fillWidth: true
-                    label: qsTr("Core %1").arg(modelData.index)
-                    iconName: "utilities-system-monitor-symbolic"
-                    percent: Number(modelData.percent || 0)
-                    accentColor: modelData.severity === DashboardObservation.Critical
-                        ? Config.styling.critical
-                        : Config.styling.warning
-                    detail: qsTr("outlier")
-                    emphasized: true
-                }
-            }
-
-            Repeater {
-                model: storageObservation.exceptionalRows.filter(row => String(row?.mount || "") !== "/")
-
-                delegate: RadialMetric {
-                    required property var modelData
-                    Layout.fillWidth: true
-                    label: modelData.mount || modelData.device || qsTr("Disk")
-                    iconName: "drive-harddisk-symbolic"
-                    percent: Number(modelData.percent || 0)
-                    accentColor: root.percentColor(percent, Config.colors.peach, 75, 90)
-                    detail: qsTr("filesystem")
-                    emphasized: true
-                }
-            }
+        GridLayout {
+            Layout.fillWidth: true
+            columns: 3
+            columnSpacing: Config.spacing.xs
+            rowSpacing: 0
+            uniformCellWidths: true
 
             RadialMetric {
                 Layout.fillWidth: true
-                label: qsTr("CPU")
-                iconName: "utilities-system-monitor-symbolic"
-                percent: Stats.cpuPercent
-                accentColor: root.percentColor(Stats.cpuPercent, Config.colors.blue, 75, 90)
-                detail: qsTr("average")
-                emphasized: cpuObservation.promoted
-            }
-
-            RadialMetric {
-                Layout.fillWidth: true
+                compact: true
                 label: qsTr("RAM")
-                iconName: "computer-symbolic"
                 percent: Stats.memoryPercent
                 accentColor: root.percentColor(Stats.memoryPercent, Config.colors.blue, 85, 90)
-                detail: `${Stats.memoryUsedMiB}/${Stats.memoryTotalMiB} MiB`
                 emphasized: Stats.memoryPercent >= memoryObservation.warningThreshold
             }
 
             RadialMetric {
                 Layout.fillWidth: true
-                label: qsTr("Root")
-                iconName: "drive-harddisk-symbolic"
+                compact: true
+                label: qsTr("CPU")
+                percent: Stats.cpuPercent
+                accentColor: root.percentColor(Stats.cpuPercent, Config.colors.blue, 75, 90)
+                emphasized: cpuObservation.promoted
+            }
+
+            RadialMetric {
+                Layout.fillWidth: true
+                compact: true
+                label: qsTr("Storage")
                 percent: Stats.rootDiskPercent
                 accentColor: root.percentColor(Stats.rootDiskPercent, Config.colors.peach, 75, 90)
-                detail: qsTr("filesystem")
                 emphasized: Stats.rootDiskPercent >= storageObservation.warningThreshold
             }
-
-            RadialMetric {
-                visible: statsSection.detailed && Stats.swapTotalMiB > 0
-                Layout.fillWidth: true
-                label: qsTr("Swap")
-                iconName: "drive-harddisk-symbolic"
-                percent: Stats.swapPercent
-                accentColor: root.percentColor(Stats.swapPercent, Config.colors.mauve, 85, 90)
-                detail: `${Stats.swapUsedMiB}/${Stats.swapTotalMiB} MiB`
-            }
-
-            RadialMetric {
-                visible: statsSection.detailed && Stats.gpuAvailable
-                Layout.fillWidth: true
-                label: qsTr("GPU")
-                iconName: "video-display-symbolic"
-                percent: Stats.gpuUtilPercent
-                accentColor: root.percentColor(Stats.gpuUtilPercent, Config.colors.green, 85, 90)
-                detail: qsTr("compute")
-            }
-
-            RadialMetric {
-                visible: statsSection.detailed && Stats.gpuAvailable
-                Layout.fillWidth: true
-                label: qsTr("VRAM")
-                iconName: "video-display-symbolic"
-                percent: Stats.gpuVramPercent
-                accentColor: root.percentColor(Stats.gpuVramPercent, Config.colors.mauve, 85, 90)
-                detail: `${Stats.gpuVramUsedMiB}/${Stats.gpuVramTotalMiB} MiB`
-            }
-
-        }
-
-        InfoRow {
-            Layout.fillWidth: true
-            visible: statsSection.detailed && Stats.primaryInterface !== ""
-            iconName: "network-transmit-receive-symbolic"
-            iconColor: Config.colors.green
-            labelColor: Config.colors.green
-            label: qsTr("Network I/O")
-            value: `↓ ${Stats.formatRate(Stats.rxBytesPerSecond)} · ↑ ${Stats.formatRate(Stats.txBytesPerSecond)}`
-            valueColor: Config.colors.green
         }
     }
 
@@ -401,11 +331,4 @@ DashboardPage {
         }
     }
 
-    component MetricGrid: GridLayout {
-        Layout.fillWidth: true
-        columns: Math.max(1, Math.floor((width + columnSpacing) / (108 + columnSpacing)))
-        columnSpacing: Config.spacing.xs
-        rowSpacing: Config.spacing.xs
-        uniformCellWidths: true
-    }
 }
