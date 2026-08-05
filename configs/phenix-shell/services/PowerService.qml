@@ -18,6 +18,7 @@ Singleton {
     readonly property bool available: hasBattery || true
     readonly property bool hasBattery: battery?.isLaptopBattery === true
     readonly property real batteryPercent: hasBattery ? Math.round((battery.percentage || 0) * 100) : 0
+    readonly property bool onBattery: hasBattery && UPower.onBattery
     readonly property bool charging: hasBattery && battery.state === UPowerDeviceState.Charging
     readonly property int timeToFull: hasBattery ? (battery.timeToFull || 0) : 0
     readonly property int timeToEmpty: hasBattery ? (battery.timeToEmpty || 0) : 0
@@ -203,7 +204,7 @@ Singleton {
         if (!battery || !hasBattery)
             return "No battery";
         const pct = `${Math.floor((battery.percentage || 0) * 100)}%`;
-        if (battery.state === UPowerDeviceState.Charging) {
+        if (!root.onBattery) {
             const duration = formatDuration(battery.timeToFull, "Full in ");
             return duration ? `${pct} • ${duration}` : pct;
         }

@@ -46,6 +46,7 @@ Item {
     signal visibilityChanged
 
     property var _visibleOverrides: ({})
+    property string _visibilitySignature: ""
     property int _batchDepth: 0
     property bool _renderQueued: false
     property bool _renderPending: false
@@ -146,8 +147,20 @@ Item {
     function notifyVisibilityChanged() {
         if (root._destroying)
             return;
+        root._visibilitySignature = root._currentVisibilitySignature();
         root.visibilityRevision = (root.visibilityRevision || 0) + 1;
         root.visibilityChanged();
+    }
+
+    function _currentVisibilitySignature() {
+        return root.seriesNames()
+            .map(name => `${name}:${root.isSeriesVisible(name) ? 1 : 0}`)
+            .join("|");
+    }
+
+    function _notifyIfVisibilityChanged() {
+        if (root._currentVisibilitySignature() !== root._visibilitySignature)
+            root.notifyVisibilityChanged();
     }
 
     function batch(fn) {
@@ -383,7 +396,7 @@ Item {
             return;
         root._applyVisibleOverrides();
         root.requestRender("", "graphs");
-        visibilityNotifier.restart();
+        root._notifyIfVisibilityChanged();
     }
     onMarkersChanged: root.requestRender("", "markers")
     onViewportChanged: root.requestRender("", "viewport")
@@ -395,7 +408,6 @@ Item {
     Component.onDestruction: {
         root._destroying = true;
         renderScheduler.stop();
-        visibilityNotifier.stop();
         root._renderQueued = false;
         root._renderPending = false;
         root._dirtyReasons = ({});
@@ -609,13 +621,6 @@ Item {
             if (!root._destroying)
                 canvas.requestPaint();
         }
-    }
-
-    Timer {
-        id: visibilityNotifier
-        interval: 0
-        repeat: false
-        onTriggered: root.notifyVisibilityChanged()
     }
 
     onActiveChanged: root.requestRender("", "active")

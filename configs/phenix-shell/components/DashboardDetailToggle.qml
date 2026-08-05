@@ -15,7 +15,7 @@ DashboardIconButton {
     opacity: enabled ? 1 : 0.5
     implicitWidth: 24
     implicitHeight: 24
-    iconName: root.detailed ? "go-down-symbolic" : "go-next-symbolic"
+    iconName: root.detailed ? "list-remove-symbolic" : "list-add-symbolic"
     fallbackIconName: iconName
     iconColor: root.localDetailed
         ? Config.styling.primaryAccent

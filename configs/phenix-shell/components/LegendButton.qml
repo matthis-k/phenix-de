@@ -10,6 +10,7 @@ ActionButton {
     property string seriesName: ""
     property var seriesFilter: null
     property string accessibleLabel: ""
+    property int horizontalPadding: Config.spacing.xs
     required property color color
 
     default property alias content: contentRow.children
@@ -17,20 +18,18 @@ ActionButton {
     checkable: true
     checked: true
     readonly property bool effectiveChecked: root.checked
-    readonly property color contentColor: root.effectiveChecked
-        ? Config.styling.textOnAccent
-        : root.color
+    readonly property color contentColor: Config.styling.textOnAccent
     readonly property var visibilityRevision: graphView && graphView.visibilityRevision !== undefined
         ? graphView.visibilityRevision
         : 0
 
     implicitHeight: 28
-    active: root.effectiveChecked
+    active: false
     accentColor: root.color
-    backgroundColor: root.effectiveChecked ? root.color : Config.styling.bg3
+    backgroundColor: root.color
     borderWidth: root.visualFocus ? 2 : 1
     borderColor: root.visualFocus ? Config.styling.primaryAccent : root.color
-    fillOpacity: root.effectiveChecked ? 0.22 : 0.08
+    fillOpacity: 0
     accessibleName: root.accessibleLabel || root.seriesName || qsTr("Graph series")
     Accessible.role: Accessible.CheckBox
     Accessible.checked: root.effectiveChecked
@@ -74,13 +73,22 @@ ActionButton {
     onSeriesFilterChanged: Qt.callLater(root.refreshChecked)
     onClicked: root.toggleVisibility()
 
+    Rectangle {
+        anchors.fill: parent
+        z: -0.5
+        visible: !root.effectiveChecked
+        color: Config.styling.bg0
+        opacity: 0.38
+        radius: Config.styling.radius
+    }
+
     contentItem: RowLayout {
         id: contentRow
 
         anchors.fill: parent
-        anchors.leftMargin: Config.spacing.xs
-        anchors.rightMargin: Config.spacing.xs
+        anchors.leftMargin: root.horizontalPadding
+        anchors.rightMargin: root.horizontalPadding
         spacing: Config.spacing.xxs
-        opacity: root.effectiveChecked ? 1 : 0.78
+        opacity: root.effectiveChecked ? 1 : 0.8
     }
 }

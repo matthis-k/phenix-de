@@ -105,7 +105,6 @@ DashboardPage {
     }
 
     NavigableSectionHeader {
-        id: audioControlsSection
         Layout.fillWidth: true
         title: qsTr("Audio")
         iconName: AudioService.outputIconName
@@ -115,7 +114,6 @@ DashboardPage {
         titleColor: iconColor
         screenState: root.screenState
         targetTab: "audio"
-        showDetailToggle: !!AudioService.defaultSource
 
         AudioDeviceCard {
             title: AudioService.outputDeviceName
@@ -133,22 +131,6 @@ DashboardPage {
             onValueModified: value => AudioService.setOutputVolume(value)
         }
 
-        AudioDeviceCard {
-            visible: audioControlsSection.detailed || AudioService.inputMuted
-            title: AudioService.inputDeviceName
-            iconName: AudioService.inputIconName
-            iconColor: AudioService.inputIconColor
-            valueText: AudioService.defaultSource ? `${AudioService.inputVolume}%` : ""
-            from: 0
-            to: 100
-            value: AudioService.inputVolume
-            stepSize: 1
-            iconEnabled: !!AudioService.defaultSource
-            sliderEnabled: !!AudioService.defaultSource && !AudioService.inputMuted
-            accentColor: AudioService.inputMuted ? Config.styling.critical : Config.colors.blue
-            onIconClicked: AudioService.toggleInputMute()
-            onValueModified: value => AudioService.setInputVolume(value)
-        }
     }
 
     DashboardSection {
@@ -158,6 +140,19 @@ DashboardPage {
         iconName: Brightness.iconName
         iconColor: Config.colors.yellow
         titleColor: iconColor
+        headerAccessory: Component {
+            DashboardIconButton {
+                iconName: "go-next-symbolic"
+                fallbackIconName: iconName
+                iconColor: hovered ? Config.styling.secondaryAccent : Config.styling.text1
+                backgroundColor: hovered ? Config.styling.bg3 : "transparent"
+                accessibleName: qsTr("Open power and display details")
+                onClicked: {
+                    if (root.screenState)
+                        root.screenState.openDashboard("energy");
+                }
+            }
+        }
 
         LabeledSlider {
             Layout.fillWidth: true
@@ -173,6 +168,7 @@ DashboardPage {
 
     DashboardSection {
         Layout.fillWidth: true
+        sectionPadding: 0
         contentSpacing: 3
 
         DashboardSwitchRow {
@@ -210,6 +206,7 @@ DashboardPage {
 
     DashboardSection {
         Layout.fillWidth: true
+        sectionPadding: 0
 
         DashboardSwitchRow {
             Layout.fillWidth: true
@@ -242,6 +239,11 @@ DashboardPage {
             compact: true
             showGraph: false
             showPowerModes: true
+            navigationEnabled: true
+            onNavigationRequested: {
+                if (root.screenState)
+                    root.screenState.openDashboard("energy");
+            }
         }
     }
 
