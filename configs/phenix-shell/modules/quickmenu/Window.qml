@@ -73,13 +73,28 @@ PanelWindow {
         return true;
     }
 
-    function syncCurrentTab() {
+    function syncCurrentTab(animate) {
         if (!shellScreenState)
             return;
 
         const targetIndex = root.tabIndex(shellScreenState.activeTab);
-        if (selection.currentIndex !== targetIndex)
+        if (selection.currentIndex === targetIndex)
+            return;
+
+        const contentView = selection.contentItem;
+        const canPositionInstantly = contentView
+            && contentView.highlightMoveDuration !== undefined
+            && contentView.positionViewAtIndex;
+        if (animate !== false || !canPositionInstantly) {
             selection.setCurrentIndex(targetIndex);
+            return;
+        }
+
+        const previousDuration = contentView.highlightMoveDuration;
+        contentView.highlightMoveDuration = 0;
+        selection.setCurrentIndex(targetIndex);
+        contentView.positionViewAtIndex(targetIndex, ListView.Beginning);
+        contentView.highlightMoveDuration = previousDuration;
     }
 
     function componentForPage(pageId) {
@@ -131,6 +146,9 @@ PanelWindow {
 
     visible: root.dashboardVisible
     color: "transparent"
+    mask: Region {
+        item: inputSurface
+    }
 
     readonly property real targetHeight: screen ? screen.height : 720
     readonly property real targetWidth: shellScreenState ? shellScreenState.dashboardWidth : 392
@@ -213,19 +231,31 @@ PanelWindow {
         onActivated: root.shellScreenState.closeDashboard()
     }
 
+    Item {
+        id: inputSurface
+
+        anchors.fill: parent
+    }
+
     MouseArea {
-        width: panelCard.x
-        anchors {
-            left: parent.left
-            top: parent.top
-            bottom: parent.bottom
-        }
-        enabled: root.visible
-            && !!root.shellScreenState
-            && root.shellScreenState.dashboardPhase === "open"
-        onClicked: {
+        id: inputShield
+
+        anchors.fill: inputSurface
+        z: 0
+        enabled: root.dashboardVisible
+        acceptedButtons: Qt.AllButtons
+        preventStealing: true
+        onPressed: mouse => mouse.accepted = true
+        onReleased: mouse => mouse.accepted = true
+        onWheel: wheel => wheel.accepted = true
+        onClicked: mouse => {
+            mouse.accepted = true;
+            if (mouse.x >= panelCard.x
+                    || !root.shellScreenState
+                    || root.shellScreenState.dashboardPhase !== "open")
+                return;
             if (!(selection.currentItem?.item?.popupOpen || selection.currentItem?.popupOpen))
-                root.shellScreenState?.closeDashboard();
+                root.shellScreenState.closeDashboard();
         }
     }
 
@@ -315,7 +345,7 @@ PanelWindow {
                 }
                 interactive: false
                 clip: true
-                Component.onCompleted: root.syncCurrentTab()
+                Component.onCompleted: root.syncCurrentTab(false)
 
                 WheelHandler {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
@@ -350,8 +380,10 @@ PanelWindow {
             enabled: root.shellScreenState !== null
 
             function onActiveTabChanged() {
+                const animate = root.shellScreenState.dashboardPhase !== "closed"
+                    && root.shellScreenState.dashboardPhase !== "opening";
                 root.resetTabSwipe();
-                root.syncCurrentTab();
+                root.syncCurrentTab(animate);
             }
 
             function onDashboardPhaseChanged() {
