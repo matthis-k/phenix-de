@@ -12,10 +12,13 @@ Rectangle {
     property real percent: 0
     property color accentColor: Config.styling.primaryAccent
     property bool emphasized: false
-    property real gaugeSize: 64
+    property bool compact: false
+    property real gaugeSize: root.compact ? 48 : 64
 
-    implicitWidth: 108
-    implicitHeight: root.detail !== "" ? 136 : 116
+    implicitWidth: root.compact ? 76 : 108
+    implicitHeight: root.compact
+        ? 82
+        : (root.detail !== "" ? 136 : 116)
     color: Config.styling.bg2
     radius: Config.styling.radius
     border.width: emphasized ? 2 : 1
@@ -26,8 +29,8 @@ Rectangle {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: Config.spacing.xs
-        spacing: 3
+        anchors.margins: root.compact ? Config.spacing.xxs : Config.spacing.xs
+        spacing: root.compact ? 1 : 3
 
         RowLayout {
             Layout.fillWidth: true
@@ -48,6 +51,7 @@ Rectangle {
                 color: root.accentColor
                 font.pixelSize: 12
                 font.bold: true
+                horizontalAlignment: root.compact ? Text.AlignHCenter : Text.AlignLeft
                 elide: Text.ElideRight
             }
         }
@@ -66,12 +70,16 @@ Rectangle {
             }
 
             Text {
-                anchors.centerIn: parent
+                anchors.fill: parent
                 text: root.valueText
                 color: root.accentColor
-                font.pixelSize: root.valueText.length > 5 ? 13 : 16
+                font.pixelSize: root.compact
+                    ? (root.valueText.length > 5 ? 11 : 13)
+                    : (root.valueText.length > 5 ? 13 : 16)
                 font.bold: true
                 font.family: "monospace"
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
             }
         }
 

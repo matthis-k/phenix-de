@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQml
 
 DashboardSection {
     id: root
@@ -30,6 +31,13 @@ DashboardSection {
     }
 
     visible: root.domainVisible && root.observation.shown
+
+    Binding {
+        target: root.observation
+        property: "presentationMode"
+        value: root.presentationMode
+        restoreMode: Binding.RestoreBinding
+    }
 
     Loader {
         active: root.activeDelegate !== null

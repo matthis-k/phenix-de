@@ -41,6 +41,7 @@ Singleton {
     property string vpnInterface: ""
     property var diskPartitions: []
     property int graphRevision: 0
+    property int cpuRevision: 0
     property var cpuCorePercents: []
     property real gpuVramUsedMiB: 0
     property real gpuVramTotalMiB: 0
@@ -500,6 +501,10 @@ Singleton {
     function applyCpuSample(text) {
         const sampleTime = Date.now();
         const lines = (text || "").trim().split(/\n+/);
+        const nextCorePercents = Array.isArray(cpuCorePercents)
+            ? cpuCorePercents.slice()
+            : [];
+        let coresUpdated = false;
 
         for (const line of lines) {
             const parts = line.trim().split(/\s+/);
@@ -535,9 +540,10 @@ Singleton {
                         const totalDelta = coreTotal - _lastCpuCoreTotals[coreIndex];
                         const idleDelta = coreIdle - _lastCpuCoreIdles[coreIndex];
                         const corePercent = totalDelta > 0 ? Math.max(0, Math.min(100, ((totalDelta - idleDelta) / totalDelta) * 100)) : 0;
-                        while (cpuCorePercents.length <= coreIndex)
-                            cpuCorePercents.push(0);
-                        cpuCorePercents[coreIndex] = corePercent;
+                        while (nextCorePercents.length <= coreIndex)
+                            nextCorePercents.push(0);
+                        nextCorePercents[coreIndex] = corePercent;
+                        coresUpdated = true;
                     }
 
                     _lastCpuCoreTotals[coreIndex] = coreTotal;
@@ -545,6 +551,10 @@ Singleton {
                 }
             }
         }
+
+        if (coresUpdated)
+            cpuCorePercents = nextCorePercents;
+        cpuRevision++;
     }
 
     function applyMemorySample(text) {

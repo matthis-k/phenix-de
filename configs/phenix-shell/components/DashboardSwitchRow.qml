@@ -12,8 +12,11 @@ Item {
     property color iconColor: Config.styling.text0
     property bool checked: false
     property int switchSlotWidth: 58
+    property bool navigationEnabled: false
+    property string navigationLabel: qsTr("Open %1 details").arg(root.label)
 
     signal toggled(bool checked)
+    signal navigationRequested
 
     implicitWidth: row.implicitWidth
     implicitHeight: Math.max(44, row.implicitHeight + Config.spacing.xs * 2)
@@ -52,6 +55,7 @@ Item {
     MouseArea {
         id: rowMouse
         anchors.fill: parent
+        anchors.rightMargin: root.navigationEnabled ? 36 : 0
         z: 2
         enabled: root.enabled
         hoverEnabled: root.enabled
@@ -112,6 +116,23 @@ Item {
                 }
                 onToggled: root.toggled(checked)
             }
+        }
+
+        DashboardIconButton {
+            visible: root.navigationEnabled
+            z: 3
+            Layout.preferredWidth: 28
+            Layout.preferredHeight: 28
+            Layout.alignment: Qt.AlignVCenter
+            iconName: "go-next-symbolic"
+            fallbackIconName: "go-next-symbolic"
+            iconColor: hovered ? Config.styling.secondaryAccent : Config.styling.text1
+            backgroundColor: hovered ? Config.styling.bg4 : "transparent"
+            active: hovered
+            fillOnHover: true
+            indicatorOnHover: false
+            accessibleName: root.navigationLabel
+            onClicked: root.navigationRequested()
         }
     }
 }

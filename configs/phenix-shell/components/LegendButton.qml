@@ -17,6 +17,9 @@ ActionButton {
     checkable: true
     checked: true
     readonly property bool effectiveChecked: root.checked
+    readonly property color contentColor: root.effectiveChecked
+        ? Config.styling.textOnAccent
+        : root.color
     readonly property var visibilityRevision: graphView && graphView.visibilityRevision !== undefined
         ? graphView.visibilityRevision
         : 0
@@ -78,6 +81,6 @@ ActionButton {
         anchors.leftMargin: Config.spacing.xs
         anchors.rightMargin: Config.spacing.xs
         spacing: Config.spacing.xxs
-        opacity: root.effectiveChecked ? 1 : 0.62
+        opacity: root.effectiveChecked ? 1 : 0.78
     }
 }
