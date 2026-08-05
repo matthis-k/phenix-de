@@ -133,7 +133,7 @@ Item {
 
                 contentItem: Text {
                     leftPadding: root.horizontalPadding
-                    rightPadding: root.horizontalPadding
+                    rightPadding: 30
                     verticalAlignment: Text.AlignVCenter
                     text: outputSelector.displayText
                     color: Config.styling.text0
@@ -178,7 +178,50 @@ Item {
                     }
 
                     background: Rectangle {
-                        color: outputSelector.highlightedIndex === index ? Config.styling.bg4 : "transparent"
+                        color: outputSelector.highlightedIndex === index
+                            ? Config.styling.bg4
+                            : Config.styling.bg2
+                    }
+                }
+
+                indicator: Item {
+                    x: outputSelector.width - width - 8
+                    y: (outputSelector.height - height) / 2
+                    width: 16
+                    height: 16
+
+                    Icon {
+                        anchors.fill: parent
+                        iconName: outputSelector.popup.visible
+                            ? "go-up-symbolic"
+                            : "go-down-symbolic"
+                        fallbackIconName: iconName
+                        color: Config.styling.text1
+                        implicitSize: 16
+                    }
+                }
+
+                popup: Popup {
+                    y: outputSelector.height + 2
+                    width: outputSelector.width
+                    implicitHeight: Math.min(contentItem.implicitHeight + 2, 240)
+                    padding: 1
+
+                    contentItem: ListView {
+                        clip: true
+                        implicitHeight: contentHeight
+                        model: outputSelector.popup.visible
+                            ? outputSelector.delegateModel
+                            : null
+                        currentIndex: outputSelector.highlightedIndex
+                        ScrollIndicator.vertical: ScrollIndicator {}
+                    }
+
+                    background: Rectangle {
+                        color: Config.styling.bg2
+                        radius: Config.styling.radius
+                        border.width: 1
+                        border.color: Config.styling.bg5
                     }
                 }
 

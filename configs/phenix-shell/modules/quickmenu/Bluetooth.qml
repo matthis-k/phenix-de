@@ -40,6 +40,22 @@ DashboardPage {
     readonly property var otherDevices: displayedDevices.filter(device => !!device && !device.connected)
     readonly property bool interactiveDevicePresent: !interactionState.interactionLocked || displayedDevices.some(device => BluetoothService.deviceKey(device) === interactionState.interactiveDeviceKey)
 
+    function ensureDiscovery() {
+        if (root.visible
+                && BluetoothService.enabled
+                && !BluetoothService.scanning
+                && BluetoothService.devices.length === 0)
+            BluetoothService.scan(true);
+    }
+
+    onVisibleChanged: root.ensureDiscovery()
+    Component.onCompleted: root.ensureDiscovery()
+
+    Connections {
+        target: BluetoothService
+        function onEnabledChanged() { root.ensureDiscovery(); }
+    }
+
     onDisplayedDevicesChanged: {
         if (interactionState.expandedDeviceKey
                 && !displayedDevices.some(device => BluetoothService.deviceKey(device) === interactionState.expandedDeviceKey))
@@ -73,7 +89,11 @@ DashboardPage {
         title: "Other devices"
         devices: root.otherDevices
         interactionState: interactionState
-        emptyText: BluetoothService.enabled ? "No Bluetooth devices found" : "Bluetooth is off"
+        emptyText: !BluetoothService.enabled
+            ? qsTr("Bluetooth is off")
+            : (BluetoothService.scanning
+                ? qsTr("Scanning for Bluetooth devices…")
+                : qsTr("No Bluetooth devices found"))
         scroll: true
         tabSwipeTarget: root.tabSwipeTarget
         contentWidth: root.contentWidth

@@ -10,7 +10,7 @@ import qs.components
 ColumnLayout {
     id: root
 
-    property bool powerModesFirst: false
+    property bool showPowerModes: true
     property bool showGraph: true
     property bool graphActive: true
     readonly property bool hasBattery: PowerService.hasBattery
@@ -141,18 +141,6 @@ ColumnLayout {
         }
     }
 
-    PowerModesBlock {
-        Layout.fillWidth: true
-        visible: root.powerModesFirst && root.hasBattery
-    }
-
-    Rectangle {
-        Layout.fillWidth: true
-        visible: root.powerModesFirst && root.hasBattery
-        implicitHeight: 1
-        color: Config.styling.bg3
-    }
-
     SummaryBlock {
         Layout.fillWidth: true
         visible: root.hasBattery
@@ -160,14 +148,14 @@ ColumnLayout {
 
     Rectangle {
         Layout.fillWidth: true
-        visible: !root.powerModesFirst && root.hasBattery
+        visible: root.showPowerModes && root.hasBattery
         implicitHeight: 1
         color: Config.styling.bg3
     }
 
     PowerModesBlock {
         Layout.fillWidth: true
-        visible: !root.powerModesFirst && root.hasBattery
+        visible: root.showPowerModes && root.hasBattery
     }
 
     Rectangle {

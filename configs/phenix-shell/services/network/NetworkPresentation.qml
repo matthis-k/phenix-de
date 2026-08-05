@@ -75,15 +75,4 @@ QtObject {
         return connectivity;
     }
 
-    function primaryNetworkInfo(network) {
-        if (!network)
-            return "Network unavailable";
-        return [`Frequency: ${network.frequency || "unknown"} MHz`, `Channel: ${wifiChannel(network.frequency)}`, `Band: ${wifiBand(network.frequency)}`].join(" | ");
-    }
-
-    function advancedNetworkInfo(network) {
-        if (!network)
-            return "Network unavailable";
-        return [`SSID: ${network.ssid || "unknown"}`, `BSSID: ${network.bssid || "unknown"}`].join("\n");
-    }
 }

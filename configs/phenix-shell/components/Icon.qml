@@ -18,6 +18,9 @@ Item {
     readonly property bool hasIconName: iconName !== "" || fallbackIconName !== ""
     readonly property var iconPath: hasIconName ? Quickshell.iconPath(iconName, fallbackIconName) : undefined
     readonly property var resolvedSource: root.source !== undefined ? root.source : root.iconPath
+    readonly property bool hasResolvedSource: root.resolvedSource !== undefined
+        && root.resolvedSource !== null
+        && root.resolvedSource !== ""
 
     property alias smooth: icon.smooth
     property alias mipmap: icon.mipmap
@@ -28,8 +31,8 @@ Item {
     IconImage {
         id: icon
         anchors.fill: parent
-        visible: root.resolvedSource !== undefined && root.resolvedSource !== ""
-        source: root.resolvedSource
+        visible: root.hasResolvedSource
+        source: root.hasResolvedSource ? root.resolvedSource : ""
         scale: root.hasImplicitSize ? root.implicitSize / Math.max(parent.width, parent.height, 1) : 1.0
     }
 

@@ -51,8 +51,11 @@ Rectangle {
     color: Config.styling.bg1
     radius: Config.styling.radius
     clip: true
+    implicitHeight: contentColumn.implicitHeight + root.sectionPadding * 2
 
     ColumnLayout {
+        id: contentColumn
+
         anchors.fill: parent
         anchors.margins: root.sectionPadding
         spacing: Config.spacing.xs

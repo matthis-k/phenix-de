@@ -155,7 +155,7 @@ DashboardPage {
             : (cpuObservation.promoted
                 ? qsTr("%1 hot core(s) promoted").arg(cpuObservation.promotedRows.length)
                 : qsTr("Current aggregate load"))
-        iconName: "processor-symbolic"
+        iconName: "utilities-system-monitor-symbolic"
         iconColor: root.observationColor(cpuObservation, Config.colors.blue)
         titleColor: cpuObservation.promoted ? iconColor : Config.styling.text0
         subtitleColor: cpuObservation.promoted ? iconColor : Config.styling.text2
@@ -328,7 +328,7 @@ DashboardPage {
                 required property var modelData
                 Layout.fillWidth: true
                 label: qsTr("Core %1").arg(modelData.index)
-                iconName: "processor-symbolic"
+                iconName: "utilities-system-monitor-symbolic"
                 percent: Number(modelData.percent || 0)
                 accentColor: modelData.severity === DashboardObservation.Critical
                     ? Config.styling.critical
@@ -470,8 +470,11 @@ DashboardPage {
                 model: cpuObservation.visibleRows
 
                 delegate: LegendButton {
+                    id: coreLegend
+
                     required property var modelData
                     readonly property int coreIndex: Number(modelData.index || 0)
+                    readonly property real corePercent: Number(modelData.percent || 0)
 
                     Layout.fillWidth: true
                     graphView: cpuGraph
@@ -480,7 +483,7 @@ DashboardPage {
                     color: root.cpuCoreColors[coreIndex % root.cpuCoreColors.length]
 
                     Text {
-                        text: `${parent.coreIndex}`
+                        text: `${coreLegend.coreIndex}`
                         font.pixelSize: 12
                         font.bold: true
                         color: Config.colors.base
@@ -489,7 +492,7 @@ DashboardPage {
                     Item { Layout.fillWidth: true }
 
                     Text {
-                        text: `${Math.round(modelData.percent || 0)}%`
+                        text: `${Math.round(coreLegend.corePercent)}%`
                         font.pixelSize: 11
                         color: Config.colors.base
                     }
@@ -633,34 +636,42 @@ DashboardPage {
     }
 
     component HeaderMetric: RowLayout {
+        id: headerMetric
+
         property string label: ""
         property real value: 0
         property color metricColor: Config.styling.text0
 
         spacing: Config.spacing.xxs
+        Layout.minimumHeight: 36
 
         Text {
-            text: parent.label
-            color: parent.metricColor
+            text: headerMetric.label
+            color: headerMetric.metricColor
             font.pixelSize: 12
             font.bold: true
         }
 
-        UsageArc {
-            implicitWidth: 14
-            implicitHeight: 14
-            percent: parent.value
-            accentColor: parent.metricColor
-            trackColor: Config.styling.bg4
-            strokeWidth: 2
-        }
+        Item {
+            Layout.preferredWidth: 36
+            Layout.preferredHeight: 36
 
-        Text {
-            text: `${Math.round(parent.value)}%`
-            color: parent.metricColor
-            font.pixelSize: 12
-            font.bold: true
-            font.family: "monospace"
+            UsageArc {
+                anchors.fill: parent
+                percent: headerMetric.value
+                accentColor: headerMetric.metricColor
+                trackColor: Config.styling.bg4
+                strokeWidth: 3
+            }
+
+            Text {
+                anchors.centerIn: parent
+                text: `${Math.round(headerMetric.value)}%`
+                color: headerMetric.metricColor
+                font.pixelSize: 12
+                font.bold: true
+                font.family: "monospace"
+            }
         }
     }
 

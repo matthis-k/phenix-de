@@ -30,6 +30,7 @@ Rectangle {
         || showDetailToggle
     property int sectionPadding: Config.spacing.xs
     property int contentSpacing: Config.spacing.xs
+    property bool fillBodyHeight: false
 
     readonly property bool globalDetailed: DashboardPresentation.detailed
     readonly property bool forcedDetailed: globalDetailed || inheritedDetailed
@@ -99,12 +100,16 @@ Rectangle {
         x: root.sectionPadding
         y: separator.y + separator.height + root.bodyTopGap
         width: Math.max(0, root.width - root.sectionPadding * 2)
+        height: root.fillBodyHeight
+            ? Math.max(0, root.height - y - root.sectionPadding)
+            : implicitHeight
         expanded: !root.collapsed
         slideDistance: Config.spacing.sm
 
         DashboardSectionContent {
             id: body
             width: parent.width
+            height: root.fillBodyHeight ? bodyClip.height : implicitHeight
             contentSpacing: root.contentSpacing
         }
     }

@@ -39,12 +39,15 @@ Singleton {
         return "enabled";
     }
 
-    readonly property var devices: root.bluetoothModels.collectDevices(adapter, root.bluetoothPresentation)
+    readonly property var devices: {
+        const _ = root._revision;
+        return root.bluetoothModels.collectDevices(root.adapter, root.bluetoothPresentation);
+    }
     readonly property var connectedDevices: root.bluetoothModels.connectedDevices(root.devices)
     readonly property var otherDevices: root.bluetoothModels.otherDevices(root.devices)
     readonly property var availableDevices: devices
 
-    property var _revision: 0
+    property int _revision: 0
 
     readonly property string iconName: {
         if (!adapter) return "bluetooth-disabled";
@@ -126,8 +129,12 @@ Singleton {
         if (adapter) {
             root.operationState.beginOperation("scan", value ? "on" : "off");
             adapter.discovering = value;
-            if (!value)
+            if (value)
+                scanTimeout.restart();
+            else {
+                scanTimeout.stop();
                 root.operationState.finishOperation(true, "");
+            }
             root.tracer.info("scanToggled", function() { return { scanning: value } });
         }
     }
@@ -234,21 +241,44 @@ Singleton {
         }
     }
 
+    Timer {
+        id: scanTimeout
+        interval: 15000
+        repeat: false
+        onTriggered: {
+            if (root.adapter && root.adapter.discovering)
+                root.adapter.discovering = false;
+            if (root.operationState.currentOperationKind === "scan")
+                root.operationState.finishOperation(true, "");
+        }
+    }
+
     Connections {
         target: Bluetooth
         function onDefaultAdapterChanged() { root._revision++; }
     }
 
-    onAdapterChanged: {
-        if (root.adapter) {
-            root.adapter.enabledChanged.connect(function() { root._revision++; });
-            if (root.adapter.devicesChanged)
-                root.adapter.devicesChanged.connect(function() { root._revision++; });
-            root.adapter.discoveringChanged.connect(function() {
-                root._revision++;
-                if (!root.adapter.discovering && root.operationState.currentOperationKind === "scan")
+    Connections {
+        target: root.adapter
+
+        function onEnabledChanged() { root._revision++; }
+        function onStateChanged() { root._revision++; }
+        function onDiscoveringChanged() {
+            root._revision++;
+            if (!root.adapter.discovering) {
+                scanTimeout.stop();
+                if (root.operationState.currentOperationKind === "scan")
                     root.operationState.finishOperation(true, "");
-            });
+            }
         }
     }
+
+    Connections {
+        target: root.adapter ? root.adapter.devices : null
+
+        function onObjectInsertedPost() { root._revision++; }
+        function onObjectRemovedPost() { root._revision++; }
+    }
+
+    onAdapterChanged: root._revision++
 }

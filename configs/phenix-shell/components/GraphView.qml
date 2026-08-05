@@ -52,8 +52,6 @@ Item {
     property bool _visibilityChangedInBatch: false
     property bool _destroying: false
     property var _dirtyReasons: ({})
-    property var _connectedGraphs: []
-    property var _connectedCollectors: []
     property var _plotArea: ({
             x: 0,
             y: 0,
@@ -67,80 +65,8 @@ Item {
                 })
         })
 
-    function _handleGraphChanged() {
-        if (!root || root._destroying)
-            return;
-        root.requestRender("", "graph");
-    }
-
     function _xWindow() {
         return Math.max(root.xWindow, 1);
-    }
-
-    function _disconnectGraphs() {
-        const graphs = root._connectedGraphs.slice();
-        for (let i = 0; i < graphs.length; i++) {
-            const graph = graphs[i];
-            try {
-                if (graph && graph.dataChanged)
-                    graph.dataChanged.disconnect(root._handleGraphChanged);
-                if (graph && graph.configChanged)
-                    graph.configChanged.disconnect(root._handleGraphChanged);
-            } catch (error) {
-                // The graph may already be in QObject teardown. The owner is
-                // being destroyed, so there is no remaining callback to keep.
-            }
-        }
-        root._connectedGraphs = [];
-
-        const collectors = root._connectedCollectors.slice();
-        for (let i = 0; i < collectors.length; i++) {
-            const collector = collectors[i];
-            try {
-                if (collector && collector.collected)
-                    collector.collected.disconnect(root._handleGraphChanged);
-            } catch (error) {
-                // See graph teardown above.
-            }
-        }
-        root._connectedCollectors = [];
-    }
-
-    function _connectGraphs() {
-        if (root._destroying)
-            return;
-
-        root._disconnectGraphs();
-
-        const graphs = root._graphs();
-        const connectedGraphs = [];
-        const connectedCollectors = [];
-
-        for (let i = 0; i < graphs.length; i++) {
-            const graph = graphs[i];
-            if (!graph)
-                continue;
-
-            let connected = false;
-            if (graph.dataChanged) {
-                graph.dataChanged.connect(root._handleGraphChanged);
-                connected = true;
-            }
-            if (graph.configChanged) {
-                graph.configChanged.connect(root._handleGraphChanged);
-                connected = true;
-            }
-            if (connected)
-                connectedGraphs.push(graph);
-
-            if (!graph.dataChanged && graph.collector && graph.collector.collected) {
-                graph.collector.collected.connect(root._handleGraphChanged);
-                connectedCollectors.push(graph.collector);
-            }
-        }
-
-        root._connectedGraphs = connectedGraphs;
-        root._connectedCollectors = connectedCollectors;
     }
 
     function _validNumber(value) {
@@ -456,7 +382,6 @@ Item {
         if (root._destroying)
             return;
         root._applyVisibleOverrides();
-        root._connectGraphs();
         root.requestRender("", "graphs");
         visibilityNotifier.restart();
     }
@@ -471,7 +396,6 @@ Item {
         root._destroying = true;
         renderScheduler.stop();
         visibilityNotifier.stop();
-        root._disconnectGraphs();
         root._renderQueued = false;
         root._renderPending = false;
         root._dirtyReasons = ({});

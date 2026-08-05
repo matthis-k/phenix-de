@@ -16,22 +16,34 @@ QtObject {
 
     function audioSinks(nodes) {
         root.tracer.trace("audioSinks", function() { return { count: (nodes || []).length } });
-        return (nodes || []).filter(node => (node.type & PwNodeType.AudioSink) === PwNodeType.AudioSink);
+        return (nodes || []).filter(node => !!node
+            && !!node.audio
+            && node.isSink === true
+            && node.isStream !== true);
     }
 
     function audioSources(nodes) {
         root.tracer.trace("audioSources", function() { return { count: (nodes || []).length } });
-        return (nodes || []).filter(node => (node.type & PwNodeType.AudioSource) === PwNodeType.AudioSource);
+        return (nodes || []).filter(node => !!node
+            && !!node.audio
+            && node.isSink !== true
+            && node.isStream !== true);
     }
 
     function outputStreams(nodes) {
         root.tracer.trace("outputStreams", function() { return { count: (nodes || []).length } });
-        return (nodes || []).filter(node => (node.type & PwNodeType.AudioOutStream) === PwNodeType.AudioOutStream);
+        return (nodes || []).filter(node => !!node
+            && !!node.audio
+            && node.isStream === true
+            && node.isSink !== true);
     }
 
     function inputStreams(nodes) {
         root.tracer.trace("inputStreams", function() { return { count: (nodes || []).length } });
-        return (nodes || []).filter(node => (node.type & PwNodeType.AudioInStream) === PwNodeType.AudioInStream);
+        return (nodes || []).filter(node => !!node
+            && !!node.audio
+            && node.isStream === true
+            && node.isSink === true);
     }
 
     function isStreamConnectedTo(stream, targetNode, linkGroups) {

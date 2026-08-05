@@ -22,7 +22,7 @@ DashboardPage {
         Battery {
             Layout.fillWidth: true
             graphActive: root.visible
-            powerModesFirst: true
+            showPowerModes: true
             showGraph: batterySection.detailed
         }
     }

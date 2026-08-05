@@ -10,7 +10,7 @@ DashboardPage {
     title: qsTr("Notifications")
     subtitle: NotificationCenter.doNotDisturbEnabled
         ? qsTr("Toasts paused")
-        : qsTr("Notification inbox and primary actions")
+        : qsTr("Toasts enabled")
     fillHeight: true
     headerAccessory: Component {
         RowLayout {
