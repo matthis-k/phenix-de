@@ -23,13 +23,90 @@ ColumnLayout {
     property int horizontalPadding: 8
     property int verticalPadding: 4
     property var tabSwipeTarget: null
+    readonly property var activeInterface: {
+        const _ = NetworkInterfaces.revision;
+        return NetworkInterfaces.activeInterface();
+    }
 
     spacing: 0
 
     DashboardSection {
         id: connectedSection
         Layout.fillWidth: true
-        title: connectedNetworks.length === 1 ? qsTr("Connected network") : qsTr("Connected networks")
+        title: qsTr("Current connection")
+        showDetailToggle: NetworkService.hasWiredConnection
+
+        DashboardListRow {
+            Layout.fillWidth: true
+            visible: NetworkService.hasWiredConnection
+            active: true
+            accentColor: Config.colors.blue
+            fillOpacity: 0.28
+            iconName: "network-wired-symbolic"
+            iconColor: Config.colors.blue
+            title: NetworkService.wiredDeviceName || qsTr("Wired connection")
+            subtitle: NetworkService.connectivity
+            status: qsTr("Connected")
+            statusColor: Config.colors.blue
+            iconSlotWidth: root.iconSlotWidth
+            iconSize: root.itemIconSize
+            titleSize: root.itemTextSize
+            subtitleSize: root.itemSubtextSize
+            horizontalPadding: root.horizontalPadding
+            verticalPadding: root.verticalPadding
+            contentSpacing: root.iconTextGap
+            accessory: Component {
+                SmallButton {
+                    text: qsTr("Disconnect")
+                    accessibleName: qsTr("Disconnect wired connection")
+                    onClicked: NetworkService.disconnectWired()
+                }
+            }
+        }
+
+        ColumnLayout {
+            Layout.fillWidth: true
+            visible: NetworkService.hasWiredConnection && connectedSection.detailed
+            spacing: Config.spacing.xxs
+
+            InfoRow {
+                Layout.fillWidth: true
+                visible: !!root.activeInterface && root.activeInterface.mac !== ""
+                iconName: "network-server-symbolic"
+                label: qsTr("Interface MAC")
+                value: root.activeInterface ? root.activeInterface.mac : ""
+            }
+
+            InfoRow {
+                Layout.fillWidth: true
+                visible: !!root.activeInterface
+                iconName: "network-server-symbolic"
+                label: qsTr("IPv4")
+                value: root.activeInterface
+                    ? NetworkInterfaces.formatAddresses(root.activeInterface.ipv4)
+                    : ""
+            }
+
+            InfoRow {
+                Layout.fillWidth: true
+                visible: !!root.activeInterface && root.activeInterface.ipv6.length > 0
+                iconName: "network-server-symbolic"
+                label: qsTr("IPv6")
+                value: root.activeInterface
+                    ? NetworkInterfaces.formatAddresses(root.activeInterface.ipv6)
+                    : ""
+            }
+
+            InfoRow {
+                Layout.fillWidth: true
+                visible: !!root.activeInterface
+                iconName: "dialog-information-symbolic"
+                label: qsTr("Link state / MTU")
+                value: root.activeInterface
+                    ? `${root.activeInterface.state} · ${root.activeInterface.mtu}`
+                    : ""
+            }
+        }
 
         Repeater {
             model: connectedNetworks
@@ -39,7 +116,6 @@ ColumnLayout {
                 Layout.fillWidth: true
                 network: modelData
                 interactionState: root.interactionState
-                inheritedDetailed: connectedSection.detailed
                 contentWidth: root.contentWidth
                 itemSpacing: root.itemSpacing
                 rowHeight: root.rowHeight
@@ -54,10 +130,21 @@ ColumnLayout {
         }
 
         Text {
-            visible: connectedNetworks.length === 0
-            text: qsTr("No connected Wi-Fi networks")
+            visible: connectedNetworks.length === 0 && !NetworkService.hasWiredConnection
+            text: qsTr("No current connection")
             color: Config.styling.text2
             font.pixelSize: 12
+        }
+
+        NetworkMetricsRow {
+            Layout.fillWidth: true
+            visible: connectedNetworks.length > 0 || NetworkService.hasWiredConnection
+            downloadRate: Stats.rxBytesPerSecond
+            uploadRate: Stats.txBytesPerSecond
+            showSignal: connectedNetworks.length > 0 && !NetworkService.hasWiredConnection
+            signalStrength: connectedNetworks.length > 0
+                ? Number(connectedNetworks[0].signalStrength || 0)
+                : 0
         }
     }
 
@@ -92,7 +179,6 @@ ColumnLayout {
                     Layout.fillWidth: true
                     network: modelData
                     interactionState: root.interactionState
-                    inheritedDetailed: availableSection.detailed
                     contentWidth: root.contentWidth
                     itemSpacing: root.itemSpacing
                     rowHeight: root.rowHeight

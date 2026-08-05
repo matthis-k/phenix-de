@@ -20,6 +20,13 @@ Item {
 
     readonly property var orderedNotifications: {
         const items = NotificationCenter.notifications.slice().reverse();
+        items.sort(function(left, right) {
+            const leftCritical = left.urgency === NotificationUrgency.Critical;
+            const rightCritical = right.urgency === NotificationUrgency.Critical;
+            if (leftCritical !== rightCritical)
+                return leftCritical ? -1 : 1;
+            return 0;
+        });
         return maxEntries > 0 ? items.slice(0, maxEntries) : items;
     }
 

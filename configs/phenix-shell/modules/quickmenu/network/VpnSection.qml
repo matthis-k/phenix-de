@@ -19,6 +19,7 @@ ColumnLayout {
     property int iconTextGap: 10
     property int horizontalPadding: 8
     property int verticalPadding: 4
+    property bool detailed: false
 
     spacing: Config.spacing.xs
 
@@ -62,8 +63,17 @@ ColumnLayout {
         }
     }
 
+    NetworkMetricsRow {
+        Layout.fillWidth: true
+        visible: VpnService.connected
+        downloadRate: Stats.vpnRxBytesPerSecond
+        uploadRate: Stats.vpnTxBytesPerSecond
+        accentColor: Config.colors.mauve
+    }
+
     Rectangle {
         Layout.fillWidth: true
+        visible: root.detailed
         implicitHeight: 1
         color: Config.styling.bg3
     }
@@ -71,6 +81,7 @@ ColumnLayout {
     VpnDestinationList {
         id: vpnDestinations
         Layout.fillWidth: true
+        visible: root.detailed
         tabSwipeTarget: root.tabSwipeTarget
         itemSpacing: root.itemSpacing
         rowHeight: root.rowHeight
@@ -84,36 +95,42 @@ ColumnLayout {
 
     Rectangle {
         Layout.fillWidth: true
+        visible: root.detailed
         implicitHeight: 1
         color: Config.styling.bg3
     }
 
     InfoRow {
         Layout.fillWidth: true
+        visible: root.detailed
         label: "Server"
         value: VpnService.server
     }
 
     InfoRow {
         Layout.fillWidth: true
+        visible: root.detailed
         label: "Hostname"
         value: VpnService.hostname
     }
 
     InfoRow {
         Layout.fillWidth: true
+        visible: root.detailed
         label: "IP"
         value: VpnService.ip
     }
 
     InfoRow {
         Layout.fillWidth: true
+        visible: root.detailed
         label: "Technology"
         value: VpnService.technology
     }
 
     InfoRow {
         Layout.fillWidth: true
+        visible: root.detailed
         label: "Protocol"
         value: VpnService.protocol
     }

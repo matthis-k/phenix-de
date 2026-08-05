@@ -8,6 +8,7 @@ QtObject {
     readonly property var prof: Profiler.scope("quickmenu.bluetoothInteractionState", { category: "quickmenu" })
 
     property string interactiveDeviceKey: ""
+    property string expandedDeviceKey: ""
     property bool interactiveShowAdvanced: false
     property var frozenDeviceOrder: []
     property var devices: []
@@ -43,6 +44,8 @@ QtObject {
 
         if (!root.interactionLocked)
             root.frozenDeviceOrder = root.devices.map(candidate => root.deviceKey(candidate));
+        if (root.expandedDeviceKey !== key)
+            root.expandedDeviceKey = "";
 
         if (root.interactiveDeviceKey !== key)
             root.interactiveShowAdvanced = false;
@@ -55,6 +58,20 @@ QtObject {
         root.interactiveDeviceKey = "";
         root.interactiveShowAdvanced = false;
         root.frozenDeviceOrder = [];
+    }
+
+    function detailsExpandedFor(device) {
+        const key = root.deviceKey(device);
+        return key !== "" && root.expandedDeviceKey === key;
+    }
+
+    function toggleDetailsFor(device) {
+        const key = root.deviceKey(device);
+        if (!key)
+            return;
+        if (root.interactionLocked && root.interactiveDeviceKey !== key)
+            root.unlockInteraction();
+        root.expandedDeviceKey = root.expandedDeviceKey === key ? "" : key;
     }
 
     function displayedDevices(devices) {

@@ -9,8 +9,9 @@ DashboardPage {
     id: root
 
     title: qsTr("Audio")
-    subtitle: qsTr("Primary devices and application streams")
     scrollable: true
+
+    property string expandedStreamKey: ""
 
     readonly property int contentWidth: width > 0 ? width : 360
     readonly property int itemSpacing: Config.spacing.xs
@@ -41,9 +42,7 @@ DashboardPage {
     }
 
     readonly property var applicationStreams: {
-        const sourceEntries = root.detailed
-            ? outputObservation.allEntries
-            : outputObservation.visibleEntries;
+        const sourceEntries = outputObservation.allEntries;
         const seen = {};
         const result = [];
         sourceEntries.forEach(entry => {
@@ -106,6 +105,12 @@ DashboardPage {
                 verticalPadding: root.verticalPadding
                 sliderHeight: root.sliderHeight
                 sliderWidth: root.sliderWidth
+                forcedDetailed: root.detailed
+                localDetailed: root.expandedStreamKey === String(modelData.id || modelData.name || "")
+                onToggleDetailsRequested: {
+                    const key = String(modelData.id || modelData.name || "");
+                    root.expandedStreamKey = root.expandedStreamKey === key ? "" : key;
+                }
             }
         }
     }

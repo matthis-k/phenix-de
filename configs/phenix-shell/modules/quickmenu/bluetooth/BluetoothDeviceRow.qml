@@ -10,8 +10,6 @@ Item {
 
     required property var device
     property QtObject interactionState: null
-    property bool inheritedDetailed: false
-    property bool localDetailed: false
     property int contentWidth: 320
     property int itemSpacing: 3
     property int rowHeight: 36
@@ -30,7 +28,10 @@ Item {
     readonly property bool interactionExpanded: root.interactionState && root.rowKey !== ""
         ? root.interactionState.interactiveDeviceKey === root.rowKey
         : false
-    readonly property bool forcedDetailed: DashboardPresentation.detailed || root.inheritedDetailed
+    readonly property bool forcedDetailed: DashboardPresentation.detailed
+    readonly property bool localDetailed: root.interactionState && root.hasDevice
+        ? root.interactionState.detailsExpandedFor(root.device)
+        : false
     readonly property bool detailed: root.forcedDetailed || root.localDetailed
     readonly property bool detailExpanded: root.interactionExpanded || root.detailed
     readonly property bool isConnecting: root.hasDevice
@@ -51,7 +52,8 @@ Item {
     function toggleLocalDetails() {
         if (root.forcedDetailed)
             return;
-        root.localDetailed = !root.localDetailed;
+        if (root.interactionState && root.hasDevice)
+            root.interactionState.toggleDetailsFor(root.device);
     }
 
     ColumnLayout {
