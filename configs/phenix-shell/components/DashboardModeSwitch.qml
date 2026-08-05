@@ -10,8 +10,8 @@ DashboardIconButton {
 
     implicitWidth: 28
     implicitHeight: 28
-    iconName: root.detailed ? "view-list-details-symbolic" : "view-list-symbolic"
-    fallbackIconName: root.detailed ? "go-down-symbolic" : "go-next-symbolic"
+    iconName: root.detailed ? "list-remove-symbolic" : "list-add-symbolic"
+    fallbackIconName: root.detailed ? "zoom-out-symbolic" : "zoom-in-symbolic"
     iconColor: root.detailed
         ? Config.styling.primaryAccent
         : (hovered ? Config.styling.text0 : Config.styling.text1)

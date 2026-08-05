@@ -152,7 +152,7 @@ Rectangle {
                 Layout.preferredWidth: 24
                 Layout.preferredHeight: 24
                 Layout.alignment: Qt.AlignVCenter
-                iconName: root.collapsed ? "go-next-symbolic" : "go-down-symbolic"
+                iconName: root.collapsed ? "list-add-symbolic" : "list-remove-symbolic"
                 fallbackIconName: iconName
                 iconColor: hovered ? Config.styling.activeIndicator : Config.styling.text0
                 backgroundColor: hovered ? Config.styling.bg3 : Config.styling.bg2

@@ -14,8 +14,12 @@ ColumnLayout {
     property bool showGraph: true
     property bool graphActive: true
     property bool compact: false
+    property bool navigationEnabled: false
+    property string navigationLabel: qsTr("Open power and display details")
     readonly property bool hasBattery: PowerService.hasBattery
     readonly property color stateColor: PowerService.iconColor
+
+    signal navigationRequested
 
     function formatDuration(seconds, prefix) {
         if (!seconds || seconds <= 0)
@@ -29,9 +33,9 @@ ColumnLayout {
     readonly property string batteryDetail: {
         if (!PowerService.hasBattery)
             return "";
-        if (PowerService.charging)
-            return formatDuration(PowerService.timeToFull, qsTr("Full in "));
-        return formatDuration(PowerService.timeToEmpty, qsTr("Empty in "));
+        if (PowerService.onBattery)
+            return formatDuration(PowerService.timeToEmpty, qsTr("Empty in "));
+        return formatDuration(PowerService.timeToFull, qsTr("Full in "));
     }
 
     function batteryGraphSeries() {
@@ -207,6 +211,19 @@ ColumnLayout {
             visible: root.showPowerModes
             iconsOnly: true
             Layout.alignment: Qt.AlignVCenter
+        }
+
+        DashboardIconButton {
+            visible: root.navigationEnabled
+            Layout.preferredWidth: 28
+            Layout.preferredHeight: 28
+            Layout.alignment: Qt.AlignVCenter
+            iconName: "go-next-symbolic"
+            fallbackIconName: iconName
+            iconColor: hovered ? Config.styling.secondaryAccent : Config.styling.text1
+            backgroundColor: hovered ? Config.styling.bg3 : "transparent"
+            accessibleName: root.navigationLabel
+            onClicked: root.navigationRequested()
         }
     }
 

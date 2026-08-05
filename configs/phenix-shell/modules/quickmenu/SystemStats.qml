@@ -428,87 +428,115 @@ DashboardPage {
             Layout.minimumHeight: 180
         }
 
-        RowLayout {
+        ColumnLayout {
             Layout.fillWidth: true
+            Layout.margins: Config.spacing.xs
             spacing: Config.spacing.xs
 
-            LegendButton {
-                id: averageLegend
-
+            RowLayout {
                 Layout.fillWidth: true
-                graphView: cpuGraph
-                seriesName: "avg"
-                accessibleLabel: qsTr("Toggle CPU average graph")
-                color: Config.colors.blue
+                spacing: Config.spacing.xs
 
-                Text {
-                    text: qsTr("Average")
-                    font.pixelSize: 13
-                    font.bold: true
-                    color: averageLegend.contentColor
-                }
-            }
-
-            LegendButton {
-                id: coresLegend
-
-                Layout.fillWidth: true
-                graphView: cpuGraph
-                seriesFilter: series => series.name.startsWith("core")
-                accessibleLabel: qsTr("Toggle all CPU core graphs")
-                color: Config.colors.overlay2
-
-                Text {
-                    text: qsTr("Cores")
-                    font.pixelSize: 13
-                    font.bold: true
-                    color: coresLegend.contentColor
-                }
-            }
-        }
-
-        GridLayout {
-            Layout.fillWidth: true
-            columns: 4
-            rowSpacing: Config.spacing.xxs
-            columnSpacing: Config.spacing.xs
-            uniformCellWidths: true
-
-            Repeater {
-                model: Services.Stats.cpuCorePercents.length
-
-                delegate: LegendButton {
-                    id: coreLegend
-
-                    required property int index
-                    readonly property int coreIndex: index
-                    readonly property real corePercent: {
-                        const _ = Services.Stats.cpuRevision;
-                        const values = Services.Stats.cpuCorePercents;
-                        return Array.isArray(values) && coreLegend.coreIndex < values.length
-                            ? Number(values[coreLegend.coreIndex] || 0)
-                            : 0;
-                    }
+                LegendButton {
+                    id: averageLegend
 
                     Layout.fillWidth: true
                     graphView: cpuGraph
-                    seriesName: `core${coreIndex}`
-                    accessibleLabel: qsTr("Toggle CPU core %1 graph").arg(coreIndex + 1)
-                    color: root.cpuCoreColors[coreIndex % root.cpuCoreColors.length]
+                    seriesName: "avg"
+                    accessibleLabel: qsTr("Toggle CPU average graph")
+                    color: Config.colors.blue
 
                     Text {
-                        text: qsTr("Core %1").arg(coreLegend.coreIndex + 1)
-                        font.pixelSize: 11
+                        text: qsTr("Average")
+                        font.pixelSize: 13
                         font.bold: true
-                        color: coreLegend.contentColor
+                        color: averageLegend.contentColor
                     }
+                }
 
-                    Item { Layout.fillWidth: true }
+                LegendButton {
+                    id: coresLegend
+
+                    Layout.fillWidth: true
+                    graphView: cpuGraph
+                    seriesFilter: series => series.name.startsWith("core")
+                    accessibleLabel: qsTr("Toggle all CPU core graphs")
+                    color: Config.colors.overlay2
 
                     Text {
-                        text: `${Math.round(coreLegend.corePercent)}%`
-                        font.pixelSize: 11
-                        color: coreLegend.contentColor
+                        text: qsTr("Cores")
+                        font.pixelSize: 13
+                        font.bold: true
+                        color: coresLegend.contentColor
+                    }
+                }
+            }
+
+            GridLayout {
+                Layout.fillWidth: true
+                columns: 4
+                rowSpacing: Config.spacing.xs
+                columnSpacing: Config.spacing.xs
+                uniformCellWidths: true
+
+                Repeater {
+                    model: Services.Stats.cpuCorePercents.length
+
+                    delegate: LegendButton {
+                        id: coreLegend
+
+                        required property int index
+                        readonly property int coreIndex: index
+                        readonly property real corePercent: {
+                            const _ = Services.Stats.cpuRevision;
+                            const values = Services.Stats.cpuCorePercents;
+                            return Array.isArray(values) && coreLegend.coreIndex < values.length
+                                ? Number(values[coreLegend.coreIndex] || 0)
+                                : 0;
+                        }
+
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 34
+                        implicitHeight: 34
+                        horizontalPadding: Config.spacing.xxs
+                        graphView: cpuGraph
+                        seriesName: `core${coreIndex}`
+                        accessibleLabel: qsTr("Toggle CPU core %1 graph").arg(coreIndex + 1)
+                        color: root.cpuCoreColors[coreIndex % root.cpuCoreColors.length]
+
+                        Text {
+                            text: qsTr("Core %1").arg(coreLegend.coreIndex + 1)
+                            font.pixelSize: 10
+                            font.bold: true
+                            color: coreLegend.contentColor
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        Item {
+                            Layout.preferredWidth: 24
+                            Layout.preferredHeight: 24
+                            Layout.alignment: Qt.AlignVCenter
+
+                            UsageArc {
+                                anchors.fill: parent
+                                percent: coreLegend.corePercent
+                                accentColor: Config.colors.base
+                                trackColor: Config.colorWithOpacity(Config.colors.base, 0.25)
+                                strokeWidth: 4
+                            }
+
+                            Text {
+                                anchors.fill: parent
+                                text: `${Math.round(coreLegend.corePercent)}`
+                                color: coreLegend.contentColor
+                                font.pixelSize: 8
+                                font.bold: true
+                                font.family: "monospace"
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
                     }
                 }
             }
