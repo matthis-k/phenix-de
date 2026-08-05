@@ -71,12 +71,10 @@
         "xdg-open"
       ];
 
-      phenixShell = pkgs.writeShellApplication {
+      phenixShellRunner = pkgs.writeShellApplication {
         name = "phenix-shell";
         runtimeInputs = shellRuntimeInputs;
         text = ''
-          quickshell_share=${pkgs.quickshell}/share
-
           if [ "''${1:-}" = "--check-runtime" ]; then
             missing=0
             for command in ${pkgs.lib.escapeShellArgs shellRuntimeCommands}; do
@@ -85,10 +83,6 @@
                 missing=1
               fi
             done
-            if [ ! -f "$quickshell_share/applications/org.quickshell.desktop" ]; then
-              printf 'missing Quickshell desktop entry: %s\n' "$quickshell_share/applications/org.quickshell.desktop" >&2
-              missing=1
-            fi
             exit "$missing"
           fi
 
@@ -100,10 +94,25 @@
             quickshell_args+=(--verbose)
           fi
 
-          export XDG_DATA_DIRS="$quickshell_share:''${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
-
           exec quickshell -p "$config_dir" "''${quickshell_args[@]}" "$@"
         '';
+      };
+
+      # The host portal resolves the application ID in its own long-lived
+      # process, so changing XDG_DATA_DIRS only for phenix-shell cannot make
+      # Quickshell's desktop metadata visible to it. Keep the upstream entry in
+      # the package installed by Home Manager instead, which links it into the
+      # user's shared application data path.
+      phenixShell = pkgs.symlinkJoin {
+        name = "phenix-shell";
+        paths = [ phenixShellRunner ];
+        postBuild = ''
+          mkdir -p "$out/share/applications"
+          ln -s \
+            ${pkgs.quickshell}/share/applications/org.quickshell.desktop \
+            "$out/share/applications/org.quickshell.desktop"
+        '';
+        meta.mainProgram = "phenix-shell";
       };
 
       kitty = inputs.nix-wrapper-modules.wrappers.kitty.wrap {
@@ -163,6 +172,7 @@
           pkgs.runCommand "phenix-shell-runtime-check" { nativeBuildInputs = [ phenixShell ]; }
             ''
               phenix-shell --check-runtime
+              test -f ${phenixShell}/share/applications/org.quickshell.desktop
               touch "$out"
             '';
 
