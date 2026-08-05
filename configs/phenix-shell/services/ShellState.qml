@@ -19,40 +19,50 @@ Singleton {
 
     readonly property alias instances: screenStates.instances
 
-    Component.onCompleted: {
-        tracer.info("completed", function() { return { screenCount: screenStates?.instances?.length || 0 }; });
-        ShellActions.launcherOpenRequested.connect(function(arg) {
-            forActiveScreens(screen => {
-                const ss = getScreenByName(screen.name);
+    Component.onCompleted: tracer.info("completed", function() {
+        return { screenCount: screenStates?.instances?.length || 0 };
+    })
+
+    Connections {
+        target: ShellActions
+
+        function onLauncherOpenRequested(arg) {
+            root.forActiveScreens(screen => {
+                const ss = root.getScreenByName(screen.name);
                 if (ss) ss.launcher.open(arg);
             });
-        });
-        ShellActions.launcherCloseRequested.connect(function() {
-            forActiveScreens(screen => {
-                const ss = getScreenByName(screen.name);
+        }
+
+        function onLauncherCloseRequested() {
+            root.forActiveScreens(screen => {
+                const ss = root.getScreenByName(screen.name);
                 if (ss) ss.launcher.close();
             });
-        });
-        ShellActions.dashboardOpenRequested.connect(function(tab) {
-            forActiveScreens(screen => {
-                const ss = getScreenByName(screen.name);
+        }
+
+        function onDashboardOpenRequested(tab) {
+            root.forActiveScreens(screen => {
+                const ss = root.getScreenByName(screen.name);
                 if (ss) ss.openDashboard(tab);
             });
-        });
-        ShellActions.dashboardToggleRequested.connect(function(tab) {
-            forActiveScreens(screen => {
-                const ss = getScreenByName(screen.name);
+        }
+
+        function onDashboardToggleRequested(tab) {
+            root.forActiveScreens(screen => {
+                const ss = root.getScreenByName(screen.name);
                 if (ss) ss.toggleDashboard(tab);
             });
-        });
-        ShellActions.hyprlandPreviewRequested.connect(function(screen, toplevel, x) {
-            const ss = getScreenByName(screen.name);
+        }
+
+        function onHyprlandPreviewRequested(screen, toplevel, x) {
+            const ss = root.getScreenByName(screen.name);
             if (ss) ss.hyprlandPreview.showPreviewAtGlobal(toplevel, x);
-        });
-        ShellActions.hyprlandPreviewHoverDelta.connect(function(screen, delta) {
-            const ss = getScreenByName(screen.name);
+        }
+
+        function onHyprlandPreviewHoverDelta(screen, delta) {
+            const ss = root.getScreenByName(screen.name);
             if (ss) ss.hyprlandPreview.externalHovers += delta;
-        });
+        }
     }
 
     component ScreenState: QtObject {

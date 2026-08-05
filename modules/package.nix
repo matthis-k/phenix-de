@@ -75,6 +75,8 @@
         name = "phenix-shell";
         runtimeInputs = shellRuntimeInputs;
         text = ''
+          quickshell_share=${pkgs.quickshell}/share
+
           if [ "''${1:-}" = "--check-runtime" ]; then
             missing=0
             for command in ${pkgs.lib.escapeShellArgs shellRuntimeCommands}; do
@@ -83,6 +85,10 @@
                 missing=1
               fi
             done
+            if [ ! -f "$quickshell_share/applications/org.quickshell.desktop" ]; then
+              printf 'missing Quickshell desktop entry: %s\n' "$quickshell_share/applications/org.quickshell.desktop" >&2
+              missing=1
+            fi
             exit "$missing"
           fi
 
@@ -93,6 +99,8 @@
             config_dir="''${PHENIX_DE_ROOT:-$HOME/phenix/repos/phenix-de}/configs/phenix-shell"
             quickshell_args+=(--verbose)
           fi
+
+          export XDG_DATA_DIRS="$quickshell_share:''${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
 
           exec quickshell -p "$config_dir" "''${quickshell_args[@]}" "$@"
         '';
