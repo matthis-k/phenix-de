@@ -62,6 +62,6 @@ DashboardPage {
     NotificationFeed {
         Layout.fillWidth: true
         Layout.fillHeight: true
-        detailed: root.detailed
+        detailed: true
     }
 }

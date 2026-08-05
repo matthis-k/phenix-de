@@ -92,6 +92,7 @@ Item {
                             required property int index
                             readonly property var notification: modelData
                             readonly property string notificationKey: root.notificationKey(notification, index)
+                            readonly property string imageSource: NotificationCenter.imageSource(notification)
                             readonly property bool expanded: root.detailed
                                 || root.expandedKey === notificationKey
                             readonly property bool hovered: cardHover.hovered
@@ -125,11 +126,15 @@ Item {
                                         Layout.fillWidth: true
                                         Layout.minimumHeight: 36
                                         backgroundColor: "transparent"
-                                        active: notificationCard.expanded
-                                        accessibleName: notificationCard.expanded
+                                        active: notificationCard.expanded && !root.detailed
+                                        accessibleName: root.detailed
+                                            ? (notification.summary || notification.appName || qsTr("Notification"))
+                                            : notificationCard.expanded
                                             ? qsTr("Collapse %1").arg(notification.summary || notification.appName || qsTr("notification"))
                                             : qsTr("Inspect %1").arg(notification.summary || notification.appName || qsTr("notification"))
                                         onClicked: {
+                                            if (root.detailed)
+                                                return;
                                             root.expandedKey = notificationCard.expanded && !root.detailed
                                                 ? ""
                                                 : notificationCard.notificationKey;
@@ -178,9 +183,13 @@ Item {
                                             }
 
                                             Icon {
+                                                visible: !root.detailed
                                                 iconName: notificationCard.expanded
-                                                    ? "go-down-symbolic"
-                                                    : "go-next-symbolic"
+                                                    ? "list-remove-symbolic"
+                                                    : "list-add-symbolic"
+                                                fallbackIconName: notificationCard.expanded
+                                                    ? "zoom-out-symbolic"
+                                                    : "zoom-in-symbolic"
                                                 color: Config.styling.text1
                                                 implicitSize: 16
                                             }
@@ -230,6 +239,38 @@ Item {
                                                     : notificationCard.notificationKey;
                                             }
                                         }
+                                    }
+                                }
+
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: visible
+                                        ? (root.compact ? 104 : 156)
+                                        : 0
+                                    visible: notificationCard.expanded
+                                        && notificationCard.imageSource !== ""
+                                        && notificationImage.status !== Image.Error
+                                    color: Config.styling.bg0
+                                    radius: Config.styling.radius
+                                    border.width: 1
+                                    border.color: Config.styling.bg4
+                                    clip: true
+
+                                    Image {
+                                        id: notificationImage
+
+                                        anchors.fill: parent
+                                        anchors.margins: Config.spacing.xxs
+                                        source: notificationCard.imageSource
+                                        asynchronous: true
+                                        cache: true
+                                        fillMode: Image.PreserveAspectFit
+                                        smooth: true
+                                        mipmap: true
+
+                                        Accessible.role: Accessible.Graphic
+                                        Accessible.name: qsTr("Image from %1").arg(
+                                            notification.appName || qsTr("notification"))
                                     }
                                 }
 

@@ -100,6 +100,15 @@ Singleton {
         return Config.styling.text0;
     }
 
+    function imageSource(notification) {
+        const value = String(notification?.image || "").trim();
+        if (value === "")
+            return "";
+        if (/^[a-z][a-z0-9+.-]*:/i.test(value))
+            return value;
+        return value.startsWith("/") ? `file://${value}` : value;
+    }
+
     function renderBody(body) {
         let text = (body || "").trim();
         if (text === "")
