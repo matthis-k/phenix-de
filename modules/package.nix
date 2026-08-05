@@ -149,7 +149,7 @@
       };
 
       checks = {
-        inherit configuredHyprland phenixShell kitty;
+        inherit phenixShell kitty;
 
         shell-runtime =
           pkgs.runCommand "phenix-shell-runtime-check" { nativeBuildInputs = [ phenixShell ]; }
