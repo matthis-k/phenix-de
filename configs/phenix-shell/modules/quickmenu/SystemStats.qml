@@ -498,7 +498,7 @@ DashboardPage {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 34
                         implicitHeight: 34
-                        horizontalPadding: Config.spacing.xxs
+                        contentHorizontalPadding: Config.spacing.xxs
                         graphView: cpuGraph
                         seriesName: `core${coreIndex}`
                         accessibleLabel: qsTr("Toggle CPU core %1 graph").arg(coreIndex + 1)
