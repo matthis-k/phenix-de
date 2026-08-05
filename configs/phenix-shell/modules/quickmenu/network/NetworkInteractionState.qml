@@ -8,6 +8,7 @@ QtObject {
     readonly property var prof: Profiler.scope("quickmenu.networkInteractionState", { category: "quickmenu" })
 
     property string interactiveNetworkKey: ""
+    property string expandedNetworkKey: ""
     property bool interactiveShowAdvanced: false
     property bool interactiveShowPasswordInput: false
     property string interactivePasswordText: ""
@@ -46,6 +47,8 @@ QtObject {
             return;
         if (!interactionLocked)
             frozenNetworkOrder = root.networks.map(candidate => networkKey(candidate));
+        if (root.expandedNetworkKey !== key)
+            root.expandedNetworkKey = "";
         if (interactiveNetworkKey !== key) {
             interactiveShowAdvanced = false;
             interactiveShowPasswordInput = false;
@@ -53,6 +56,20 @@ QtObject {
             interactiveErrorText = "";
         }
         interactiveNetworkKey = key;
+    }
+
+    function detailsExpandedFor(network) {
+        const key = networkKey(network);
+        return key !== "" && root.expandedNetworkKey === key;
+    }
+
+    function toggleDetailsFor(network) {
+        const key = networkKey(network);
+        if (!key)
+            return;
+        if (root.interactionLocked && root.interactiveNetworkKey !== key)
+            root.unlockInteraction();
+        root.expandedNetworkKey = root.expandedNetworkKey === key ? "" : key;
     }
 
     function unlockInteraction() {

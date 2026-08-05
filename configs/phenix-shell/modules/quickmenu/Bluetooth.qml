@@ -9,9 +9,6 @@ DashboardPage {
     id: root
 
     title: "Bluetooth"
-    subtitle: root.detailed
-        ? qsTr("Connection state, trust, pairing, adapter, and device metadata")
-        : qsTr("Connect and disconnect devices")
     fillHeight: true
     headerAccessory: Component {
         DashboardToggleSwitch {
@@ -42,6 +39,12 @@ DashboardPage {
     readonly property var connectedDevices: displayedDevices.filter(device => !!device && device.connected)
     readonly property var otherDevices: displayedDevices.filter(device => !!device && !device.connected)
     readonly property bool interactiveDevicePresent: !interactionState.interactionLocked || displayedDevices.some(device => BluetoothService.deviceKey(device) === interactionState.interactiveDeviceKey)
+
+    onDisplayedDevicesChanged: {
+        if (interactionState.expandedDeviceKey
+                && !displayedDevices.some(device => BluetoothService.deviceKey(device) === interactionState.expandedDeviceKey))
+            interactionState.expandedDeviceKey = "";
+    }
 
     onInteractiveDevicePresentChanged: {
         if (!root.interactiveDevicePresent)

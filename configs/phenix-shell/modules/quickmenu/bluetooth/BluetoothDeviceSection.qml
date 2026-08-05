@@ -86,7 +86,6 @@ DashboardSection {
                         width: parent.width
                         device: animatedRow.payload
                         interactionState: root.interactionState
-                        inheritedDetailed: root.detailed
                         contentWidth: root.contentWidth
                         itemSpacing: root.itemSpacing
                         rowHeight: root.rowHeight

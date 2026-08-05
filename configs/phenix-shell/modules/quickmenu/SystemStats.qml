@@ -11,9 +11,6 @@ DashboardPage {
     id: root
 
     title: qsTr("System stats")
-    subtitle: root.detailed
-        ? qsTr("Per-core, memory, GPU, storage, and network telemetry")
-        : qsTr("Current resource usage with abnormal observations promoted")
     scrollable: true
 
     readonly property var cpuCoreColors: [
@@ -125,6 +122,31 @@ DashboardPage {
         }));
     }
 
+    function metricSectionRank(key) {
+        const sections = [
+            { key: "cpu", order: 0, shown: true, exceptional: cpuObservation.exceptional, priority: cpuObservation.priority },
+            { key: "memory", order: 1, shown: true, exceptional: memoryObservation.exceptional, priority: memoryObservation.priority },
+            { key: "gpu", order: 2, shown: gpuObservation.shown, exceptional: gpuObservation.exceptional, priority: gpuObservation.priority },
+            { key: "storage", order: 3, shown: storageObservation.shown, exceptional: storageObservation.exceptional, priority: storageObservation.priority }
+        ];
+        sections.sort(function(left, right) {
+            if (left.shown !== right.shown)
+                return left.shown ? -1 : 1;
+            if (left.exceptional !== right.exceptional)
+                return left.exceptional ? -1 : 1;
+            if (left.exceptional && right.priority !== left.priority)
+                return right.priority - left.priority;
+            return left.order - right.order;
+        });
+        return sections.findIndex(section => section.key === key);
+    }
+
+    GridLayout {
+        Layout.fillWidth: true
+        columns: 1
+        rowSpacing: root.sectionSpacing
+        columnSpacing: 0
+
     AdaptiveDashboardSection {
         observation: cpuObservation
         title: qsTr("CPU usage")
@@ -149,6 +171,7 @@ DashboardPage {
         promotedDelegate: Component { CpuPromoted {} }
         detailedDelegate: Component { CpuTelemetry {} }
         Layout.fillWidth: true
+        Layout.row: root.metricSectionRank("cpu")
     }
 
     AdaptiveDashboardSection {
@@ -186,6 +209,7 @@ DashboardPage {
         promotedDelegate: Component { MemoryPromoted {} }
         detailedDelegate: Component { MemoryTelemetry {} }
         Layout.fillWidth: true
+        Layout.row: root.metricSectionRank("memory")
     }
 
     AdaptiveDashboardSection {
@@ -223,6 +247,7 @@ DashboardPage {
         promotedDelegate: Component { GpuPromoted {} }
         detailedDelegate: Component { GpuTelemetry {} }
         Layout.fillWidth: true
+        Layout.row: root.metricSectionRank("gpu")
     }
 
     AdaptiveDashboardSection {
@@ -253,6 +278,9 @@ DashboardPage {
             StorageTable { rows: storageObservation.visibleRows }
         }
         Layout.fillWidth: true
+        Layout.row: root.metricSectionRank("storage")
+    }
+
     }
 
     DashboardSection {
@@ -625,6 +653,14 @@ DashboardPage {
             accentColor: parent.metricColor
             trackColor: Config.styling.bg4
             strokeWidth: 2
+        }
+
+        Text {
+            text: `${Math.round(parent.value)}%`
+            color: parent.metricColor
+            font.pixelSize: 12
+            font.bold: true
+            font.family: "monospace"
         }
     }
 

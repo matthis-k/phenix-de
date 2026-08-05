@@ -11,9 +11,6 @@ DashboardPage {
     id: root
 
     title: qsTr("Networking")
-    subtitle: root.detailed
-        ? qsTr("Interfaces, link metadata, throughput, VPN, and connection controls")
-        : qsTr("Select and manage the active connection")
     fillHeight: true
     headerAccessory: Component {
         DashboardToggleSwitch {
@@ -44,6 +41,15 @@ DashboardPage {
     readonly property var displayedNetworks: interactionState.displayedNetworks(NetworkService.networks)
     readonly property var connectedNetworks: displayedNetworks.filter(network => network.connected)
     readonly property var disconnectedNetworks: displayedNetworks.filter(network => !network.connected)
+
+    onDisplayedNetworksChanged: {
+        if (interactionState.expandedNetworkKey
+                && !displayedNetworks.some(network => interactionState.networkKey(network) === interactionState.expandedNetworkKey))
+            interactionState.expandedNetworkKey = "";
+        if (interactionState.interactiveNetworkKey
+                && !displayedNetworks.some(network => interactionState.networkKey(network) === interactionState.interactiveNetworkKey))
+            interactionState.unlockInteraction();
+    }
 
     Connections {
         target: interactionState

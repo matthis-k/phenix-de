@@ -62,8 +62,7 @@ Singleton {
         readonly property ShellScreen screen: screenState.modelData
 
         property int dashboardWidth: 392
-        // Keep this order in sync with quickmenu/Window.qml SwipeView pages and bar dashboard icons.
-        readonly property var dashboardTabs: ["overview", "audio", "notifications", "bluetooth", "wifi", "energy", "stats"]
+        readonly property var dashboardTabs: DashboardPresentation.tabOrder
         property string activeTab: ""
         property string dashboardPhase: "closed"
         readonly property bool dashboardOpen: dashboardPhase !== "closed"

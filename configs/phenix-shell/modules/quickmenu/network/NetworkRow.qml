@@ -12,8 +12,6 @@ Item {
 
     required property var network
     property var interactionState: null
-    property bool inheritedDetailed: false
-    property bool localDetailed: false
     property int contentWidth: 320
     property int itemSpacing: 3
     property int rowHeight: 36
@@ -32,7 +30,10 @@ Item {
     readonly property bool interactionExpanded: rowRoot.interactionState && rowRoot.rowKey !== ""
         ? rowRoot.interactionState.interactiveNetworkKey === rowRoot.rowKey
         : false
-    readonly property bool forcedDetailed: DashboardPresentation.detailed || rowRoot.inheritedDetailed
+    readonly property bool forcedDetailed: DashboardPresentation.detailed
+    readonly property bool localDetailed: rowRoot.interactionState && rowRoot.hasNetwork
+        ? rowRoot.interactionState.detailsExpandedFor(rowRoot.network)
+        : false
     readonly property bool detailed: rowRoot.forcedDetailed || rowRoot.localDetailed
     readonly property bool detailExpanded: rowRoot.interactionExpanded || rowRoot.detailed
     readonly property var activeInterface: {
@@ -61,7 +62,8 @@ Item {
     function toggleLocalDetails() {
         if (rowRoot.forcedDetailed)
             return;
-        rowRoot.localDetailed = !rowRoot.localDetailed;
+        if (rowRoot.interactionState && rowRoot.hasNetwork)
+            rowRoot.interactionState.toggleDetailsFor(rowRoot.network);
     }
 
     function attemptConnect() {

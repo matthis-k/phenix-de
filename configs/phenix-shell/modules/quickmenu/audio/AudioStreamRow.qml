@@ -23,8 +23,14 @@ Item {
     property int verticalPadding: 4
     property int sliderHeight: 24
     property int sliderWidth: 100
+    property bool forcedDetailed: false
+    property bool localDetailed: false
 
     readonly property var outputEntries: root.sinks || []
+    readonly property bool detailed: root.forcedDetailed || root.localDetailed
+    readonly property bool canSelectOutput: root.outputEntries.length > 1
+
+    signal toggleDetailsRequested
 
     implicitWidth: root.contentWidth
     implicitHeight: rowContent.implicitHeight + root.verticalPadding * 2
@@ -74,6 +80,15 @@ Item {
                     elide: Text.ElideRight
                 }
             }
+
+            DashboardDetailToggle {
+                visible: root.canSelectOutput
+                detailed: root.detailed
+                forcedDetailed: root.forcedDetailed
+                localDetailed: root.localDetailed
+                subject: root.stream.name
+                onToggleRequested: root.toggleDetailsRequested()
+            }
         }
 
         VolumeSliderRow {
@@ -88,10 +103,11 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
+            visible: root.detailed && root.canSelectOutput
             spacing: root.itemSpacing
 
             Text {
-                text: "Output:"
+                text: qsTr("Output")
                 color: Config.styling.text1
                 font.pixelSize: 12
             }
@@ -113,7 +129,7 @@ Item {
                 textRole: ""
                 displayText: outputSelector.displayModel.length > 0 && outputSelector.currentIndex >= 0
                     ? outputSelector.displayModel[outputSelector.currentIndex].label
-                    : "Select output"
+                    : qsTr("Select output")
 
                 contentItem: Text {
                     leftPadding: root.horizontalPadding
@@ -154,7 +170,7 @@ Item {
 
                         Text {
                             visible: outputSelector.displayModel[index].isDefault
-                            text: "Default"
+                            text: qsTr("Default")
                             color: Config.colors.blue
                             font.pixelSize: 11
                             font.bold: true

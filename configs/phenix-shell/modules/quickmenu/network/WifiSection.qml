@@ -116,7 +116,6 @@ ColumnLayout {
                 Layout.fillWidth: true
                 network: modelData
                 interactionState: root.interactionState
-                inheritedDetailed: connectedSection.detailed
                 contentWidth: root.contentWidth
                 itemSpacing: root.itemSpacing
                 rowHeight: root.rowHeight
@@ -180,7 +179,6 @@ ColumnLayout {
                     Layout.fillWidth: true
                     network: modelData
                     interactionState: root.interactionState
-                    inheritedDetailed: availableSection.detailed
                     contentWidth: root.contentWidth
                     itemSpacing: root.itemSpacing
                     rowHeight: root.rowHeight

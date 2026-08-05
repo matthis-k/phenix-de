@@ -10,7 +10,6 @@ DashboardPage {
     id: root
 
     title: qsTr("Power & Display")
-    subtitle: qsTr("Battery, power profile, and display controls")
     scrollable: true
 
     DashboardSection {

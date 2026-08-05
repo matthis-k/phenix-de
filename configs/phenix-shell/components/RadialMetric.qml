@@ -15,7 +15,7 @@ Rectangle {
     property real gaugeSize: 64
 
     implicitWidth: 108
-    implicitHeight: 116
+    implicitHeight: root.detail !== "" ? 136 : 116
     color: Config.styling.bg2
     radius: Config.styling.radius
     border.width: emphasized ? 2 : 1
@@ -73,6 +73,16 @@ Rectangle {
                 font.bold: true
                 font.family: "monospace"
             }
+        }
+
+        Text {
+            Layout.fillWidth: true
+            visible: root.detail !== ""
+            text: root.detail
+            color: Config.styling.text2
+            font.pixelSize: 11
+            horizontalAlignment: Text.AlignHCenter
+            elide: Text.ElideRight
         }
     }
 }

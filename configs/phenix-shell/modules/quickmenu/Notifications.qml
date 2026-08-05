@@ -17,16 +17,16 @@ DashboardPage {
             spacing: Config.spacing.xs
 
             Text {
-                text: qsTr("Toasts")
+                text: qsTr("Do Not Disturb")
                 color: Config.styling.text1
                 font.pixelSize: 12
                 font.bold: true
             }
 
             DashboardToggleSwitch {
-                Accessible.name: qsTr("Notification toasts")
-                checked: NotificationCenter.toastsEnabled
-                onToggled: NotificationCenter.toastsEnabled = checked
+                Accessible.name: qsTr("Do Not Disturb")
+                checked: NotificationCenter.doNotDisturbEnabled
+                onToggled: NotificationCenter.setDoNotDisturb(checked)
             }
         }
     }
@@ -46,9 +46,7 @@ DashboardPage {
                     ? Config.colors.yellow
                     : Config.styling.text1)
             labelColor: iconColor
-            label: NotificationCenter.doNotDisturbEnabled
-                ? qsTr("Do Not Disturb")
-                : qsTr("Current notifications")
+            label: qsTr("Current notifications")
             value: String(NotificationCenter.count)
             valueColor: iconColor
         }

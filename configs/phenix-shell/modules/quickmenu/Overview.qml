@@ -8,9 +8,7 @@ DashboardPage {
     id: root
 
     title: qsTr("Quick Settings")
-    subtitle: root.detailed
-        ? qsTr("Expanded device state and system telemetry")
-        : qsTr("Primary controls and exceptional state")
+    scrollable: true
 
     property var screenState: null
 
@@ -52,11 +50,6 @@ DashboardPage {
         id: storageObservation
         presentationMode: root.presentationMode
         partitions: Stats.diskPartitions
-    }
-
-    readonly property var activeInterface: {
-        const _ = NetworkInterfaces.revision;
-        return NetworkInterfaces.activeInterface();
     }
 
     readonly property string connectionSummary: {
@@ -173,7 +166,6 @@ DashboardPage {
         titleColor: iconColor
         screenState: root.screenState
         targetTab: "wifi"
-        showDetailToggle: true
 
         DashboardSwitchRow {
             Layout.fillWidth: true
@@ -190,46 +182,6 @@ DashboardPage {
             onToggled: checked => NetworkService.setWifiEnabled(checked)
         }
 
-        InfoRow {
-            Layout.fillWidth: true
-            visible: networkSection.detailed && NetworkService.connected
-            iconName: NetworkService.hasWiredConnection
-                ? "network-wired-symbolic"
-                : "network-wireless-symbolic"
-            iconColor: Config.colors.green
-            labelColor: Config.colors.green
-            label: qsTr("Interface")
-            value: root.activeInterface
-                ? root.activeInterface.name
-                : (NetworkService.hasWiredConnection
-                    ? NetworkService.wiredDeviceName
-                    : NetworkService.wifiDeviceName)
-            valueColor: Config.colors.green
-        }
-
-        InfoRow {
-            Layout.fillWidth: true
-            visible: networkSection.detailed && !!root.activeInterface
-            iconName: "network-server-symbolic"
-            iconColor: Config.colors.mauve
-            labelColor: Config.colors.mauve
-            label: qsTr("IPv4")
-            value: root.activeInterface
-                ? NetworkInterfaces.formatAddresses(root.activeInterface.ipv4)
-                : qsTr("Unavailable")
-            valueColor: Config.colors.mauve
-        }
-
-        InfoRow {
-            Layout.fillWidth: true
-            visible: networkSection.detailed
-            iconName: "network-transmit-receive-symbolic"
-            iconColor: NetworkService.connected ? Config.colors.green : Config.styling.warning
-            labelColor: iconColor
-            label: qsTr("Connectivity")
-            value: NetworkService.connectivity
-            valueColor: iconColor
-        }
     }
 
     NavigableSectionHeader {
@@ -245,7 +197,6 @@ DashboardPage {
         titleColor: iconColor
         screenState: root.screenState
         targetTab: "bluetooth"
-        showDetailToggle: BluetoothService.available
 
         DashboardSwitchRow {
             Layout.fillWidth: true
@@ -262,16 +213,6 @@ DashboardPage {
             onToggled: checked => BluetoothService.setEnabled(checked)
         }
 
-        InfoRow {
-            Layout.fillWidth: true
-            visible: bluetoothSection.detailed && BluetoothService.available
-            iconName: "bluetooth-active-symbolic"
-            iconColor: Config.styling.bluetooth
-            labelColor: Config.styling.bluetooth
-            label: qsTr("Connected devices")
-            value: String(BluetoothService.connectedCount)
-            valueColor: Config.styling.bluetooth
-        }
     }
 
     DashboardSection {
@@ -332,6 +273,38 @@ DashboardPage {
         showDetailToggle: true
 
         MetricGrid {
+            Repeater {
+                model: cpuObservation.promotedRows
+
+                delegate: RadialMetric {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    label: qsTr("Core %1").arg(modelData.index)
+                    iconName: "processor-symbolic"
+                    percent: Number(modelData.percent || 0)
+                    accentColor: modelData.severity === DashboardObservation.Critical
+                        ? Config.styling.critical
+                        : Config.styling.warning
+                    detail: qsTr("outlier")
+                    emphasized: true
+                }
+            }
+
+            Repeater {
+                model: storageObservation.exceptionalRows.filter(row => String(row?.mount || "") !== "/")
+
+                delegate: RadialMetric {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    label: modelData.mount || modelData.device || qsTr("Disk")
+                    iconName: "drive-harddisk-symbolic"
+                    percent: Number(modelData.percent || 0)
+                    accentColor: root.percentColor(percent, Config.colors.peach, 75, 90)
+                    detail: qsTr("filesystem")
+                    emphasized: true
+                }
+            }
+
             RadialMetric {
                 Layout.fillWidth: true
                 label: qsTr("CPU")
@@ -392,37 +365,6 @@ DashboardPage {
                 detail: `${Stats.gpuVramUsedMiB}/${Stats.gpuVramTotalMiB} MiB`
             }
 
-            Repeater {
-                model: cpuObservation.promotedRows
-
-                delegate: RadialMetric {
-                    required property var modelData
-                    Layout.fillWidth: true
-                    label: qsTr("Core %1").arg(modelData.index)
-                    iconName: "processor-symbolic"
-                    percent: Number(modelData.percent || 0)
-                    accentColor: modelData.severity === DashboardObservation.Critical
-                        ? Config.styling.critical
-                        : Config.styling.warning
-                    detail: qsTr("outlier")
-                    emphasized: true
-                }
-            }
-
-            Repeater {
-                model: storageObservation.exceptionalRows.filter(row => String(row?.mount || "") !== "/")
-
-                delegate: RadialMetric {
-                    required property var modelData
-                    Layout.fillWidth: true
-                    label: modelData.mount || modelData.device || qsTr("Disk")
-                    iconName: "drive-harddisk-symbolic"
-                    percent: Number(modelData.percent || 0)
-                    accentColor: root.percentColor(percent, Config.colors.peach, 75, 90)
-                    detail: qsTr("filesystem")
-                    emphasized: true
-                }
-            }
         }
 
         InfoRow {
