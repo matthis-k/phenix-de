@@ -14,7 +14,7 @@ QtObject {
         }
         root.tracer.trace("rawDeviceById", function() { return { id: id } });
         for (const device of (adapter.devices.values || [])) {
-            if (device.address === id || device.dbusPath === id || device.name === id)
+            if (device.address === id || device.dbusPath === id)
                 return device;
         }
         return null;

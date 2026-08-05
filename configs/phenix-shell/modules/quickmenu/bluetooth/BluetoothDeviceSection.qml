@@ -25,6 +25,10 @@ DashboardSection {
     property bool scroll: false
 
     Layout.fillWidth: true
+    Layout.fillHeight: root.scroll
+    Layout.minimumHeight: root.scroll ? 120 : implicitHeight
+    Layout.preferredHeight: root.scroll ? 120 : implicitHeight
+    fillBodyHeight: root.scroll
 
     DashboardScrollArea {
         Layout.fillWidth: true

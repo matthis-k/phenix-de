@@ -215,31 +215,6 @@ Singleton {
         });
     }
 
-    function handleStateEvent(line) {
-        let event = null;
-        try {
-            event = JSON.parse(line);
-        } catch (error) {
-            root.tracer.warn("handleStateEvent.parseFailed", function() { return { line: line } });
-            refreshStatus();
-            return;
-        }
-
-        root.tracer.debug("stateEvent", function() { return { type: event.type } });
-        switch (event.type) {
-        case "settings":
-            refreshSettings();
-            break;
-        case "destinations":
-            refreshDestinations();
-            break;
-        case "status":
-        default:
-            refreshStatus();
-            break;
-        }
-    }
-
     function disconnect() {
         beginOperation("disconnect", "vpn");
         root.tracer.info("disconnect");
@@ -259,10 +234,8 @@ Singleton {
 
     Component.onCompleted: {
         root.tracer.info("serviceStarting");
-        root.refreshStatus();
         root.refreshSettings();
         root.refreshDestinations();
-        stateWatchProcess.exec({ command: ["nordvpn-watch"] });
     }
 
     Process {
@@ -336,25 +309,9 @@ Singleton {
         }
     }
 
-    Process {
-        id: stateWatchProcess
-        stdout: SplitParser {
-            onRead: line => root.handleStateEvent(line)
-        }
-        function onExited(exitCode, exitStatus) {
-            stateWatchRestartTimer.restart();
-        }
-    }
-
-    Timer {
-        id: stateWatchRestartTimer
-        interval: 2000
-        onTriggered: stateWatchProcess.exec({ command: ["nordvpn-watch"] })
-    }
-
     Timer {
         id: pollTimer
-        interval: 60000
+        interval: 10000
         running: true
         repeat: true
         triggeredOnStart: true

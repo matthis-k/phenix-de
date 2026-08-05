@@ -94,15 +94,17 @@ DashboardPage {
         }
     }
 
-    DashboardSection {
-        id: quickControlsSection
+    NavigableSectionHeader {
+        id: audioControlsSection
         Layout.fillWidth: true
-        title: qsTr("Quick controls")
+        title: qsTr("Audio")
         iconName: AudioService.outputIconName
         iconColor: AudioService.outputMuted
             ? Config.styling.critical
             : AudioService.outputIconColor
         titleColor: iconColor
+        screenState: root.screenState
+        targetTab: "audio"
         showDetailToggle: !!AudioService.defaultSource
 
         AudioDeviceCard {
@@ -121,20 +123,8 @@ DashboardPage {
             onValueModified: value => AudioService.setOutputVolume(value)
         }
 
-        LabeledSlider {
-            Layout.fillWidth: true
-            visible: Brightness.available
-            label: qsTr("Brightness")
-            iconName: Brightness.iconName
-            value: Brightness.percent
-            from: 0
-            to: 100
-            valueText: `${Brightness.percent}%`
-            onValueCommitted: value => Brightness.setPercent(value)
-        }
-
         AudioDeviceCard {
-            visible: quickControlsSection.detailed || AudioService.inputMuted
+            visible: audioControlsSection.detailed || AudioService.inputMuted
             title: AudioService.inputDeviceName
             iconName: AudioService.inputIconName
             iconColor: AudioService.inputIconColor
@@ -148,6 +138,26 @@ DashboardPage {
             accentColor: AudioService.inputMuted ? Config.styling.critical : Config.colors.blue
             onIconClicked: AudioService.toggleInputMute()
             onValueModified: value => AudioService.setInputVolume(value)
+        }
+    }
+
+    DashboardSection {
+        Layout.fillWidth: true
+        visible: Brightness.available
+        title: qsTr("Display")
+        iconName: Brightness.iconName
+        iconColor: Config.colors.yellow
+        titleColor: iconColor
+
+        LabeledSlider {
+            Layout.fillWidth: true
+            label: qsTr("Brightness")
+            iconName: Brightness.iconName
+            value: Brightness.percent
+            from: 0
+            to: 100
+            valueText: `${Brightness.percent}%`
+            onValueCommitted: value => Brightness.setPercent(value)
         }
     }
 
@@ -228,7 +238,7 @@ DashboardPage {
         Battery {
             Layout.fillWidth: true
             showGraph: false
-            powerModesFirst: batterySection.detailed
+            showPowerModes: batterySection.detailed
         }
     }
 
@@ -265,7 +275,7 @@ DashboardPage {
         id: statsSection
         Layout.fillWidth: true
         title: qsTr("System health")
-        iconName: "processor-symbolic"
+        iconName: "utilities-system-monitor-symbolic"
         iconColor: root.observationColor(cpuObservation, Config.colors.blue)
         titleColor: iconColor
         screenState: root.screenState
@@ -280,7 +290,7 @@ DashboardPage {
                     required property var modelData
                     Layout.fillWidth: true
                     label: qsTr("Core %1").arg(modelData.index)
-                    iconName: "processor-symbolic"
+                    iconName: "utilities-system-monitor-symbolic"
                     percent: Number(modelData.percent || 0)
                     accentColor: modelData.severity === DashboardObservation.Critical
                         ? Config.styling.critical
@@ -308,7 +318,7 @@ DashboardPage {
             RadialMetric {
                 Layout.fillWidth: true
                 label: qsTr("CPU")
-                iconName: "processor-symbolic"
+                iconName: "utilities-system-monitor-symbolic"
                 percent: Stats.cpuPercent
                 accentColor: root.percentColor(Stats.cpuPercent, Config.colors.blue, 75, 90)
                 detail: qsTr("average")

@@ -193,12 +193,9 @@ Item {
                     anchors.margins: horizontalPadding
                     spacing: Config.spacing.xxs
 
-                    Text {
+                    NetworkRadioSummary {
                         Layout.fillWidth: true
-                        text: NetworkService.primaryNetworkInfo(rowRoot.network)
-                        color: Config.styling.text1
-                        font.pixelSize: 12
-                        wrapMode: Text.Wrap
+                        network: rowRoot.network
                     }
 
                     InfoRow {
@@ -268,13 +265,12 @@ Item {
                         valueColor: Config.styling.warning
                     }
 
-                    Text {
+                    InfoRow {
                         Layout.fillWidth: true
-                        visible: rowRoot.detailed
-                        text: NetworkService.advancedNetworkInfo(rowRoot.network)
-                        color: Config.styling.text2
-                        font.pixelSize: 12
-                        wrapMode: Text.Wrap
+                        visible: rowRoot.detailed && String(rowRoot.network.bssid || "") !== ""
+                        iconName: "network-wireless-symbolic"
+                        label: qsTr("BSSID")
+                        value: String(rowRoot.network.bssid || "")
                     }
 
                     TextField {

@@ -63,9 +63,7 @@ DashboardPage {
     WifiSection {
         Layout.fillWidth: true
         interactionState: interactionState
-        networks: NetworkService.networks
         connectedNetworks: root.connectedNetworks
-        disconnectedNetworks: root.disconnectedNetworks
         contentWidth: root.contentWidth
         itemSpacing: root.itemSpacing
         rowHeight: root.rowHeight
@@ -76,7 +74,6 @@ DashboardPage {
         iconTextGap: root.iconTextGap
         horizontalPadding: root.horizontalPadding
         verticalPadding: root.verticalPadding
-        tabSwipeTarget: root.tabSwipeTarget
     }
 
     DashboardSection {
@@ -111,5 +108,23 @@ DashboardPage {
             horizontalPadding: root.horizontalPadding
             verticalPadding: root.verticalPadding
         }
+    }
+
+    AvailableNetworksSection {
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        interactionState: interactionState
+        networks: root.disconnectedNetworks
+        contentWidth: root.contentWidth
+        itemSpacing: root.itemSpacing
+        rowHeight: root.rowHeight
+        iconSlotWidth: root.iconSlotWidth
+        itemIconSize: root.itemIconSize
+        itemTextSize: root.itemTextSize
+        itemSubtextSize: root.itemSubtextSize
+        iconTextGap: root.iconTextGap
+        horizontalPadding: root.horizontalPadding
+        verticalPadding: root.verticalPadding
+        tabSwipeTarget: root.tabSwipeTarget
     }
 }

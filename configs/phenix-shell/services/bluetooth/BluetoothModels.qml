@@ -8,7 +8,12 @@ QtObject {
     readonly property var prof: Profiler.scope("bluetooth.models", { category: "bluetooth" })
 
     function deviceKey(device) {
-        return device?.address || device?.dbusPath || (device ? root.displayFallback(device) : "");
+        if (!device)
+            return "";
+        const address = String(device.address || "").trim();
+        if (address !== "")
+            return address;
+        return String(device.dbusPath || "").trim();
     }
 
     function collectDevices(adapter, presentation) {
@@ -18,8 +23,14 @@ QtObject {
             return items;
         }
 
-        for (const device of adapter.devices.values || [])
+        const seen = {};
+        for (const device of adapter.devices.values || []) {
+            const key = root.deviceKey(device);
+            if (key === "" || seen[key])
+                continue;
+            seen[key] = true;
             items.push(device);
+        }
 
         items.sort(function(a, b) {
             if (a.connected !== b.connected)

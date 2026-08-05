@@ -157,12 +157,12 @@ Singleton {
         return networkPresentation.securityLabel(network);
     }
 
-    function primaryNetworkInfo(network) {
-        return networkPresentation.primaryNetworkInfo(network);
+    function wifiChannel(frequency) {
+        return networkPresentation.wifiChannel(frequency);
     }
 
-    function advancedNetworkInfo(network) {
-        return networkPresentation.advancedNetworkInfo(network);
+    function wifiBand(frequency) {
+        return networkPresentation.wifiBand(frequency);
     }
 
     function _syncConnectedState() {

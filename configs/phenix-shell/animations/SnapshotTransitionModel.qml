@@ -77,8 +77,25 @@ QtObject {
         if (!ctx.reason)
             ctx.reason = root.primaryReason(reasons);
 
-        transitionCoordinator.applySnapshot(projection.snapshot || [], ctx);
+        transitionCoordinator.applySnapshot(root.keyedRows(projection.snapshot || []), ctx);
         root.snapshotApplied(committed ? projection.changes : transitionCoordinator.lastChangeSet);
+    }
+
+    function keyedRows(items) {
+        const rows = [];
+        for (let i = 0; i < items.length; i += 1) {
+            const item = items[i];
+            rows.push({
+                key: String(root.keyOf(item, i)),
+                payload: item && item.payload !== undefined ? item.payload : item,
+                animationRole: item && item.animationRole ? item.animationRole : "",
+                fullHeight: item && item.fullHeight ? item.fullHeight : 0,
+                estimatedHeight: item && item.estimatedHeight
+                    ? item.estimatedHeight
+                    : root.estimatedRowHeight
+            });
+        }
+        return rows;
     }
 
     function primaryReason(reasons) {
