@@ -10,7 +10,7 @@ ActionButton {
     property string seriesName: ""
     property var seriesFilter: null
     property string accessibleLabel: ""
-    property int horizontalPadding: Config.spacing.xs
+    property int contentHorizontalPadding: Config.spacing.xs
     required property color color
 
     default property alias content: contentRow.children
@@ -86,8 +86,8 @@ ActionButton {
         id: contentRow
 
         anchors.fill: parent
-        anchors.leftMargin: root.horizontalPadding
-        anchors.rightMargin: root.horizontalPadding
+        anchors.leftMargin: root.contentHorizontalPadding
+        anchors.rightMargin: root.contentHorizontalPadding
         spacing: Config.spacing.xxs
         opacity: root.effectiveChecked ? 1 : 0.8
     }
