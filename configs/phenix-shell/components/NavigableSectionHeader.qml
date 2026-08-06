@@ -77,10 +77,13 @@ Rectangle {
                     : Qt.NoFocus
                 hoverEnabled: root.navigable
                 cursorShape: root.navigable ? Qt.PointingHandCursor : Qt.ArrowCursor
-                fillOnHover: root.navigable
+                fillOnHover: false
                 indicatorOnHover: root.navigable
+                highlightSide: ActiveIndicator.Side.Bottom
+                fillOpacity: 0
                 active: false
                 backgroundColor: "transparent"
+                pressedBackgroundColor: "transparent"
                 accessibleName: root.navigable
                     ? qsTr("Open %1").arg(root.title)
                     : root.title
