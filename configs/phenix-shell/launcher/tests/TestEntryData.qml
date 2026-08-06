@@ -27,7 +27,8 @@ QtObject {
                 testDisplayFieldsMatchByDefault(),
                 testAliasesSupplementDisplay(),
                 testSubtitleCanBeExcluded(),
-                testFieldWeightOverride()
+                testFieldWeightOverride(),
+                testLegacyLabelWeightOverride()
             ]
         };
     }
@@ -95,6 +96,16 @@ QtObject {
         var titleField = fieldByName(fields, "label");
         var ok = !!titleField && Math.abs(titleField.weight - 1.4) < 0.0001;
         return testResult(ok, "field-weight-override", fieldSummary(fields));
+    }
+
+    function testLegacyLabelWeightOverride() {
+        var fields = fieldsFor({
+            display: { title: "Legacy weighted title" },
+            fieldWeights: { label: 1.25 }
+        });
+        var titleField = fieldByName(fields, "label");
+        var ok = !!titleField && Math.abs(titleField.weight - 1.25) < 0.0001;
+        return testResult(ok, "legacy-label-weight-override", fieldSummary(fields));
     }
 
     function fieldsFor(entry) {
