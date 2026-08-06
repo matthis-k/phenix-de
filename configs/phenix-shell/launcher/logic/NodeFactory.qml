@@ -1,6 +1,7 @@
 import QtQml
 import qs.services
 import "EvaluationProfiles.js" as EvalProfiles
+import "EntryData.js" as EntryData
 
 QtObject {
     id: root
@@ -13,31 +14,51 @@ QtObject {
         return { id: id, label: label || id, icon: null, default: false, payload: payload || null };
     }
 
+    function unique(items) {
+        var out = [];
+        for (var i = 0; i < (items || []).length; i += 1) {
+            if (out.indexOf(items[i]) < 0)
+                out.push(items[i]);
+        }
+        return out;
+    }
+
     function makeNode(props) {
         tracer.trace("makeNode", function() { return { id: props?.id, label: props?.label, childCount: (props?.children || []).length }; });
         var node = props || {};
         if (node.__compositePrepared) return node;
+
+        var runtimeTags = node.tags || [];
+        var display = EntryData.displayFor(node);
+        var match = EntryData.matchFor(node);
+
         node.id = node.id || "";
         node.backendId = node.backendId || "";
         node.kind = node.kind || "node";
-        node.label = node.label || node.title || "";
-        node.title = node.label;
-        node.subtitle = node.subtitle || "";
-        node.icon = node.icon || null;
-        node.iconColor = node.iconColor || null;
+
+        // Canonical data ownership. Flat fields remain derived compatibility
+        // projections for the existing evaluator and delegates.
+        node.display = display;
+        node.match = match;
+        node.label = display.title;
+        node.title = display.title;
+        node.subtitle = display.subtitle;
+        node.icon = display.icon;
+        node.iconColor = display.iconColor;
+        node.aliases = match.aliases;
+        node.keywords = match.keywords;
+        node.tags = root.unique(runtimeTags.concat(match.tags || []));
+        node.fieldWeights = match.fieldWeights;
+        node.semanticTerms = match.semanticTerms;
+        node.semanticBoostRequiresAny = match.semanticBoostRequiresAny;
+        node.command = match.command || "";
+        node.path = match.path || "";
+        node.usageCount = match.usageCount || 0;
+        node.lastUsedDaysAgo = match.lastUsedDaysAgo === undefined ? 9999 : match.lastUsedDaysAgo;
+        node.evaluationProfile = match.evaluationProfile || EvalProfiles.defaultNodeProfile();
+
         node.children = node.children || node._children || [];
-        node.aliases = node.aliases || [];
-        node.keywords = node.keywords || [];
-        node.tags = node.tags || [];
-        node.fieldWeights = node.fieldWeights || {};
         node.behavior = node.behavior || {};
-        node.semanticTerms = node.semanticTerms || [];
-        node.semanticBoostRequiresAny = node.semanticBoostRequiresAny || [];
-        node.command = node.command || "";
-        node.path = node.path || "";
-        node.usageCount = node.usageCount || 0;
-        node.lastUsedDaysAgo = node.lastUsedDaysAgo === undefined ? 9999 : node.lastUsedDaysAgo;
-        node.evaluationProfile = node.evaluationProfile || EvalProfiles.defaultNodeProfile();
         node.actionList = node.actionList || [];
         node.meta = node.meta || node.metadata || {};
         for (var i = 0; i < node.children.length; i += 1) {
