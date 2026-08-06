@@ -33,19 +33,6 @@ DashboardPage {
         criticalThreshold: 90
     }
 
-    UsageDashboardObservation {
-        id: gpuObservation
-        key: "overview-gpu"
-        presentationMode: root.presentationMode
-        available: Stats.gpuAvailable
-        primaryLabel: qsTr("GPU compute")
-        secondaryLabel: qsTr("VRAM")
-        primaryPercent: Stats.gpuUtilPercent
-        secondaryPercent: Stats.gpuVramPercent
-        warningThreshold: 85
-        criticalThreshold: 90
-    }
-
     StorageDashboardObservation {
         id: storageObservation
         presentationMode: root.presentationMode
@@ -107,6 +94,7 @@ DashboardPage {
     NavigableSectionHeader {
         Layout.fillWidth: true
         title: qsTr("Audio")
+        subtitle: AudioService.outputDeviceName
         iconName: AudioService.outputIconName
         iconColor: AudioService.outputMuted
             ? Config.styling.critical
@@ -116,7 +104,8 @@ DashboardPage {
         targetTab: "audio"
 
         AudioDeviceCard {
-            title: AudioService.outputDeviceName
+            Layout.fillWidth: true
+            title: qsTr("Output")
             iconName: AudioService.outputIconName
             iconColor: AudioService.outputIconColor
             valueText: AudioService.defaultSink ? `${AudioService.outputVolume}%` : ""
@@ -130,29 +119,18 @@ DashboardPage {
             onIconClicked: AudioService.toggleOutputMute()
             onValueModified: value => AudioService.setOutputVolume(value)
         }
-
     }
 
-    DashboardSection {
+    NavigableSectionHeader {
         Layout.fillWidth: true
         visible: Brightness.available
-        title: qsTr("Display")
+        title: qsTr("Display and power")
+        subtitle: qsTr("Brightness and energy settings")
         iconName: Brightness.iconName
         iconColor: Config.colors.yellow
         titleColor: iconColor
-        headerAccessory: Component {
-            DashboardIconButton {
-                iconName: "go-next-symbolic"
-                fallbackIconName: iconName
-                iconColor: hovered ? Config.styling.secondaryAccent : Config.styling.text1
-                backgroundColor: hovered ? Config.styling.bg3 : "transparent"
-                accessibleName: qsTr("Open power and display details")
-                onClicked: {
-                    if (root.screenState)
-                        root.screenState.openDashboard("energy");
-                }
-            }
-        }
+        screenState: root.screenState
+        targetTab: "energy"
 
         LabeledSlider {
             Layout.fillWidth: true
@@ -166,9 +144,20 @@ DashboardPage {
         }
     }
 
-    DashboardSection {
+    NavigableSectionHeader {
         Layout.fillWidth: true
-        sectionPadding: 0
+        title: qsTr("Network")
+        subtitle: root.connectionSummary
+        iconName: NetworkService.wifiEnabled
+            ? "network-wireless-symbolic"
+            : "network-wireless-offline-symbolic"
+        iconColor: NetworkService.connected
+            ? Config.colors.green
+            : (NetworkService.wifiEnabled ? Config.styling.warning : Config.styling.text1)
+        titleColor: iconColor
+        screenState: root.screenState
+        targetTab: "wifi"
+        sectionPadding: Config.spacing.xs
         contentSpacing: 3
 
         DashboardSwitchRow {
@@ -183,13 +172,7 @@ DashboardPage {
                 : (NetworkService.wifiEnabled ? Config.styling.warning : Config.styling.text1)
             enabled: NetworkService.wifiHardwareEnabled
             checked: NetworkService.wifiEnabled
-            navigationEnabled: true
-            navigationLabel: qsTr("Open network details")
             onToggled: checked => NetworkService.setWifiEnabled(checked)
-            onNavigationRequested: {
-                if (root.screenState)
-                    root.screenState.openDashboard("wifi");
-            }
         }
 
         DashboardSwitchRow {
@@ -204,9 +187,20 @@ DashboardPage {
         }
     }
 
-    DashboardSection {
+    NavigableSectionHeader {
         Layout.fillWidth: true
-        sectionPadding: 0
+        title: qsTr("Bluetooth")
+        subtitle: root.bluetoothSummary
+        iconName: BluetoothService.enabled
+            ? "bluetooth-symbolic"
+            : "bluetooth-disabled-symbolic"
+        iconColor: BluetoothService.enabled
+            ? Config.styling.bluetooth
+            : Config.styling.text1
+        titleColor: iconColor
+        screenState: root.screenState
+        targetTab: "bluetooth"
+        sectionPadding: Config.spacing.xs
 
         DashboardSwitchRow {
             Layout.fillWidth: true
@@ -220,37 +214,36 @@ DashboardPage {
                 : Config.styling.text1
             enabled: BluetoothService.available
             checked: BluetoothService.enabled
-            navigationEnabled: true
-            navigationLabel: qsTr("Open Bluetooth details")
             onToggled: checked => BluetoothService.setEnabled(checked)
-            onNavigationRequested: {
-                if (root.screenState)
-                    root.screenState.openDashboard("bluetooth");
-            }
         }
     }
 
-    DashboardSection {
+    NavigableSectionHeader {
         Layout.fillWidth: true
         visible: PowerService.hasBattery
+        title: qsTr("Battery")
+        subtitle: PowerService.statusText
+        iconName: PowerService.iconName
+        iconColor: PowerService.iconColor
+        titleColor: iconColor
+        screenState: root.screenState
+        targetTab: "energy"
 
         Battery {
             Layout.fillWidth: true
             compact: true
             showGraph: false
-            showPowerModes: true
-            navigationEnabled: true
-            onNavigationRequested: {
-                if (root.screenState)
-                    root.screenState.openDashboard("energy");
-            }
+            showPowerModes: false
+            navigationEnabled: false
         }
     }
 
     NavigableSectionHeader {
-        id: notificationsSection
         Layout.fillWidth: true
         title: qsTr("Notifications")
+        subtitle: NotificationCenter.doNotDisturbEnabled
+            ? qsTr("Do Not Disturb enabled")
+            : qsTr("%1 current").arg(NotificationCenter.count)
         iconName: NotificationCenter.doNotDisturbEnabled
             ? "notifications-disabled-symbolic"
             : "bell-symbolic"
@@ -261,24 +254,39 @@ DashboardPage {
         screenState: root.screenState
         targetTab: "notifications"
 
-        InfoRow {
+        RowLayout {
             Layout.fillWidth: true
-            iconName: notificationsSection.iconName
-            iconColor: notificationsSection.iconColor
-            labelColor: notificationsSection.iconColor
-            label: NotificationCenter.doNotDisturbEnabled
-                ? qsTr("Do Not Disturb")
-                : qsTr("Unread")
-            value: NotificationCenter.doNotDisturbEnabled
-                ? qsTr("Enabled")
-                : String(NotificationCenter.count)
-            valueColor: notificationsSection.iconColor
+            spacing: Config.spacing.xs
+
+            InfoRow {
+                Layout.fillWidth: true
+                iconName: parent.parent.iconName
+                iconColor: parent.parent.iconColor
+                labelColor: parent.parent.iconColor
+                label: qsTr("Current")
+                value: String(NotificationCenter.count)
+                valueColor: parent.parent.iconColor
+            }
+
+            Text {
+                text: qsTr("Do Not Disturb")
+                color: Config.styling.text1
+                font.pixelSize: 12
+                font.bold: true
+            }
+
+            DashboardToggleSwitch {
+                Accessible.name: qsTr("Do Not Disturb")
+                checked: NotificationCenter.doNotDisturbEnabled
+                onToggled: NotificationCenter.setDoNotDisturb(checked)
+            }
         }
     }
 
     NavigableSectionHeader {
         Layout.fillWidth: true
         title: qsTr("System health")
+        subtitle: qsTr("CPU, memory, and storage")
         iconName: "utilities-system-monitor-symbolic"
         iconColor: root.observationColor(cpuObservation, Config.colors.blue)
         titleColor: iconColor
@@ -296,6 +304,7 @@ DashboardPage {
                 Layout.fillWidth: true
                 compact: true
                 label: qsTr("RAM")
+                iconName: "computer-symbolic"
                 percent: Stats.memoryPercent
                 accentColor: root.percentColor(Stats.memoryPercent, Config.colors.blue, 85, 90)
                 emphasized: Stats.memoryPercent >= memoryObservation.warningThreshold
@@ -305,6 +314,7 @@ DashboardPage {
                 Layout.fillWidth: true
                 compact: true
                 label: qsTr("CPU")
+                iconName: "utilities-system-monitor-symbolic"
                 percent: Stats.cpuPercent
                 accentColor: root.percentColor(Stats.cpuPercent, Config.colors.blue, 75, 90)
                 emphasized: cpuObservation.promoted
@@ -314,6 +324,7 @@ DashboardPage {
                 Layout.fillWidth: true
                 compact: true
                 label: qsTr("Storage")
+                iconName: "drive-harddisk-symbolic"
                 percent: Stats.rootDiskPercent
                 accentColor: root.percentColor(Stats.rootDiskPercent, Config.colors.peach, 75, 90)
                 emphasized: Stats.rootDiskPercent >= storageObservation.warningThreshold
@@ -332,5 +343,4 @@ DashboardPage {
             Layout.fillWidth: true
         }
     }
-
 }
