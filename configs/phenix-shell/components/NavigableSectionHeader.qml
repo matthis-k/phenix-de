@@ -24,7 +24,6 @@ Rectangle {
     property int sectionPadding: Config.spacing.xs
     property int contentSpacing: Config.spacing.xs
     property int trailingControlInset: Config.spacing.xs
-    property int navigationSlotWidth: 28
 
     readonly property bool globalDetailed: DashboardPresentation.detailed
     readonly property bool forcedDetailed: globalDetailed || inheritedDetailed
@@ -177,24 +176,6 @@ Rectangle {
                 localDetailed: root.localDetailed
                 subject: root.title
                 onToggleRequested: root.toggleLocalDetails()
-            }
-
-            DashboardIconButton {
-                visible: root.navigable
-                Layout.preferredWidth: root.navigationSlotWidth
-                Layout.minimumWidth: root.navigationSlotWidth
-                Layout.maximumWidth: root.navigationSlotWidth
-                Layout.preferredHeight: 28
-                Layout.alignment: Qt.AlignVCenter
-                iconName: "go-next-symbolic"
-                fallbackIconName: iconName
-                iconColor: hovered ? Config.styling.secondaryAccent : Config.styling.text1
-                backgroundColor: hovered ? Config.styling.bg3 : "transparent"
-                active: hovered
-                fillOnHover: true
-                indicatorOnHover: false
-                accessibleName: qsTr("Open %1").arg(root.title)
-                onClicked: root.navigate()
             }
         }
 
