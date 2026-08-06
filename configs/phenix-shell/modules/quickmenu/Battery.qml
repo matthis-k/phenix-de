@@ -33,9 +33,11 @@ ColumnLayout {
     readonly property string batteryDetail: {
         if (!PowerService.hasBattery)
             return "";
+        if (PowerService.charging)
+            return formatDuration(PowerService.timeToFull, qsTr("Full in "));
         if (PowerService.onBattery)
             return formatDuration(PowerService.timeToEmpty, qsTr("Empty in "));
-        return formatDuration(PowerService.timeToFull, qsTr("Full in "));
+        return "";
     }
 
     function batteryGraphSeries() {
