@@ -39,7 +39,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: rowMouse.containsMouse && root.enabled ? Config.styling.bg4 : Config.styling.bg3
+        color: labelMouse.containsMouse && root.enabled ? Config.styling.bg4 : Config.styling.bg3
         border.color: root.activeFocus ? Config.styling.primaryAccent : "transparent"
         border.width: root.activeFocus ? 1 : 0
         radius: Config.styling.radius
@@ -51,53 +51,71 @@ Item {
         }
     }
 
-    MouseArea {
-        id: rowMouse
-        anchors.fill: parent
-        z: 2
-        enabled: root.enabled
-        hoverEnabled: root.enabled
-        cursorShape: Qt.PointingHandCursor
-        onClicked: {
-            root.forceActiveFocus();
-            root.requestToggle();
-        }
-    }
-
     RowLayout {
         id: row
+
         anchors.fill: parent
         anchors.margins: Config.spacing.xs
         spacing: Config.spacing.sm
 
-        Icon {
-            visible: root.iconName !== ""
-            iconName: root.iconName
-            color: root.iconColor
-            implicitSize: 18
-            Layout.alignment: Qt.AlignVCenter
-        }
+        Item {
+            id: labelArea
 
-        ColumnLayout {
-            spacing: 2
             Layout.fillWidth: true
+            Layout.fillHeight: true
+            implicitWidth: labelContent.implicitWidth
+            implicitHeight: labelContent.implicitHeight
 
-            Text {
-                Layout.fillWidth: true
-                text: root.label
-                color: Config.styling.text0
-                font.pixelSize: 14
-                font.bold: true
-                elide: Text.ElideRight
+            RowLayout {
+                id: labelContent
+
+                anchors.fill: parent
+                spacing: Config.spacing.sm
+
+                Icon {
+                    visible: root.iconName !== ""
+                    iconName: root.iconName
+                    color: root.iconColor
+                    implicitSize: 18
+                    Layout.alignment: Qt.AlignVCenter
+                }
+
+                ColumnLayout {
+                    spacing: 2
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignVCenter
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: root.label
+                        color: Config.styling.text0
+                        font.pixelSize: 14
+                        font.bold: true
+                        elide: Text.ElideRight
+                    }
+
+                    Text {
+                        visible: text !== ""
+                        Layout.fillWidth: true
+                        text: root.subtitle
+                        color: Config.styling.text2
+                        font.pixelSize: 12
+                        wrapMode: Text.WordWrap
+                    }
+                }
             }
 
-            Text {
-                visible: text !== ""
-                Layout.fillWidth: true
-                text: root.subtitle
-                color: Config.styling.text2
-                font.pixelSize: 12
-                wrapMode: Text.WordWrap
+            MouseArea {
+                id: labelMouse
+
+                anchors.fill: parent
+                enabled: root.enabled
+                hoverEnabled: root.enabled
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    root.forceActiveFocus();
+                    root.requestToggle();
+                }
             }
         }
 
@@ -108,9 +126,6 @@ Item {
             spacing: Config.spacing.xs
 
             DashboardToggleSwitch {
-                id: toggleSwitch
-
-                z: 3
                 checked: root.checked
                 enabled: root.enabled
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
@@ -119,7 +134,6 @@ Item {
 
             DashboardIconButton {
                 visible: root.navigationEnabled
-                z: 3
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                 iconName: "go-next-symbolic"
                 fallbackIconName: "go-next-symbolic"
