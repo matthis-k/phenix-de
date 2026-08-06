@@ -23,6 +23,8 @@ Rectangle {
     property bool localDetailed: false
     property int sectionPadding: Config.spacing.xs
     property int contentSpacing: Config.spacing.xs
+    property int trailingControlInset: Config.spacing.xs
+    property int navigationSlotWidth: 28
 
     readonly property bool globalDetailed: DashboardPresentation.detailed
     readonly property bool forcedDetailed: globalDetailed || inheritedDetailed
@@ -112,18 +114,32 @@ Rectangle {
                 }
             }
 
-            Loader {
-                id: accessoryLoader
+            Item {
+                id: accessorySlot
 
-                active: root.accessory !== null
-                sourceComponent: root.accessory
-                Layout.preferredWidth: item ? item.implicitWidth : 0
+                visible: root.accessory !== null
+                Layout.preferredWidth: accessoryLoader.item
+                    ? accessoryLoader.item.implicitWidth + root.trailingControlInset
+                    : 0
                 Layout.minimumWidth: Layout.preferredWidth
                 Layout.maximumWidth: Layout.preferredWidth
-                Layout.preferredHeight: item ? item.implicitHeight : 0
+                Layout.preferredHeight: accessoryLoader.item
+                    ? accessoryLoader.item.implicitHeight
+                    : 0
                 Layout.minimumHeight: Layout.preferredHeight
                 Layout.maximumHeight: Layout.preferredHeight
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+
+                Loader {
+                    id: accessoryLoader
+
+                    active: root.accessory !== null
+                    sourceComponent: root.accessory
+                    width: item ? item.implicitWidth : 0
+                    height: item ? item.implicitHeight : 0
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                }
             }
 
             DashboardDetailToggle {
@@ -138,9 +154,9 @@ Rectangle {
 
             DashboardIconButton {
                 visible: root.navigable
-                Layout.preferredWidth: 28
-                Layout.minimumWidth: 28
-                Layout.maximumWidth: 28
+                Layout.preferredWidth: root.navigationSlotWidth
+                Layout.minimumWidth: root.navigationSlotWidth
+                Layout.maximumWidth: root.navigationSlotWidth
                 Layout.preferredHeight: 28
                 Layout.alignment: Qt.AlignVCenter
                 iconName: "go-next-symbolic"
