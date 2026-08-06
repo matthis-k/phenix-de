@@ -11,6 +11,21 @@ QtObject {
     property var targetResolver: null
     required property var commandExecutor
 
+    function synchronizeTreeSwitchState(result) {
+        if (!result || !result.switchActions || !root.controller)
+            return;
+        if (!root.controller.isInTree() || !root.controller.currentTreeKey || root.controller.selectedIndex < 0)
+            return;
+
+        var treeRow = root.controller.findTreeRowData(root.controller.currentTreeKey);
+        if (!treeRow)
+            return;
+
+        treeRow.switchState = result.switchState;
+        if (typeof root.controller.treeSwitchRefreshRequested === "function")
+            root.controller.treeSwitchRefreshRequested(root.controller.selectedIndex);
+    }
+
     function _adjustSelectedValue(delta) {
         var result = root.targetResolver ? root.targetResolver.selectedActionTarget() : null;
         if (!result) {
@@ -35,13 +50,7 @@ QtObject {
         tracer.info("adjustSelectedValue", function() { return { delta: delta, targetId: result.id || result.nodeId || "", title: result.title || "", preferredIds: preferredIds, switchActions: !!result.switchActions, switchState: result.switchState }; });
         for (var i = 0; i < preferredIds.length; i += 1) {
             if (root.controller && root.controller.activateResultAction(result, preferredIds[i])) {
-                if (root.controller.isInTree() && root.controller.currentTreeKey && result.switchActions && root.controller.selectedIndex >= 0) {
-                    var treeRow = root.controller.findTreeRowData(root.controller.currentTreeKey);
-                    if (treeRow)
-                        treeRow.switchState = result.switchState;
-                    if (typeof root.controller.treeSwitchRefreshRequested === "function")
-                        root.controller.treeSwitchRefreshRequested(root.controller.selectedIndex);
-                }
+                root.synchronizeTreeSwitchState(result);
                 return true;
             }
         }
@@ -51,19 +60,25 @@ QtObject {
 
     readonly property var adjustSelectedValue: prof.fn("adjustSelectedValue", _adjustSelectedValue)
 
-    function toggleSelectedMute() {
+    function toggleSelectedSwitch() {
         var result = root.targetResolver ? root.targetResolver.selectedActionTarget() : null;
         if (!result) {
-            tracer.debug("toggleSelectedMute", function() { return { reason: "no target" }; });
+            tracer.debug("toggleSelectedSwitch", function() { return { reason: "no target" }; });
             return false;
         }
         if (result.switchActions && (result.switchActions.toggle || result.switchActions.on || result.switchActions.off)) {
             var toggleResult = root.commandExecutor.execute({ kind: "toggle-control", args: {} }, result);
-            tracer.info("toggleSelectedMute", function() { return { targetId: result.id || result.nodeId || "", success: !!toggleResult.success }; });
+            if (toggleResult.success)
+                root.synchronizeTreeSwitchState(result);
+            tracer.info("toggleSelectedSwitch", function() { return { targetId: result.id || result.nodeId || "", success: !!toggleResult.success }; });
             return !!toggleResult.success;
         }
-        tracer.debug("toggleSelectedMute", function() { return { reason: "no switch actions", targetId: result.id || result.nodeId || "" }; });
+        tracer.debug("toggleSelectedSwitch", function() { return { reason: "no switch actions", targetId: result.id || result.nodeId || "" }; });
         return false;
+    }
+
+    function toggleSelectedMute() {
+        return root.toggleSelectedSwitch();
     }
 
     function _refreshSwitchResult(result, action) {
