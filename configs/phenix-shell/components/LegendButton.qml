@@ -75,20 +75,21 @@ ActionButton {
 
     Rectangle {
         anchors.fill: parent
-        z: -0.5
+        z: 0.5
         visible: !root.effectiveChecked
         color: Config.styling.bg0
-        opacity: 0.38
+        opacity: 0.34
         radius: Config.styling.radius
     }
 
     contentItem: RowLayout {
         id: contentRow
 
+        z: 1
         anchors.fill: parent
         anchors.leftMargin: root.contentHorizontalPadding
         anchors.rightMargin: root.contentHorizontalPadding
         spacing: Config.spacing.xxs
-        opacity: root.effectiveChecked ? 1 : 0.8
+        opacity: 1
     }
 }
