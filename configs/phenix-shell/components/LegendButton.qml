@@ -30,7 +30,6 @@ ActionButton {
     readonly property color contentColor: Config.styling.textOnAccent
 
     checkable: false
-    checked: root.effectiveChecked
 
     implicitHeight: 28
     active: false
