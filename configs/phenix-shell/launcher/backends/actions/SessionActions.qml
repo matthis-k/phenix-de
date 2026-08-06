@@ -9,11 +9,13 @@ QtObject {
     function node(id, aliases, title, subtitle, icon, color, operation, risk) {
         return {
             id: id,
-            aliases: aliases,
-            title: title,
-            subtitle: subtitle,
-            icon: icon,
-            iconColor: color,
+            display: {
+                title: title,
+                subtitle: subtitle,
+                icon: icon,
+                iconColor: color
+            },
+            match: { aliases: aliases },
             action: { service: "session", op: operation },
             dangerous: !!risk,
             risk: risk || null
@@ -24,12 +26,16 @@ QtObject {
         tracer.trace("roots", function() { return {}; });
         return [{
             id: "session",
-            aliases: ["session", "system"],
-            title: qsTr("Session"),
-            icon: "system-shutdown-symbolic",
+            display: {
+                title: qsTr("Session"),
+                icon: "system-shutdown-symbolic"
+            },
+            match: {
+                aliases: ["session", "system"],
+                evaluationProfile: EvalProfiles.groupProfile({ evidence: ["field-match", "semantic"] })
+            },
             template: "flat-action-group",
             behavior: { filterChildren: true },
-            evaluationProfile: EvalProfiles.groupProfile({ evidence: ["field-match", "semantic"] }),
             children: [
                 node("lock", ["lock"], qsTr("Lock"), qsTr("Lock the current session"), "system-lock-screen-symbolic", Config.styling.info, "lock"),
                 node("logout", ["logout", "exit"], qsTr("Log Out"), qsTr("Exit the current session"), "system-log-out-symbolic", Config.styling.warning, "logout", { level: "session", activation: "confirm-and-explicit-prefix" }),
