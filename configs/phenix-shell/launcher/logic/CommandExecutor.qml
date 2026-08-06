@@ -41,7 +41,7 @@ QtObject {
         case "set-control":
             return setControl(target, command.args);
         case "toggle-control":
-            return activate(target, { prefer: ["toggle", "mute", "toggle-mute"] });
+            return activate(target, { action: "default" });
         case "noop":
             return outcome(true, false, "");
         default:
@@ -152,6 +152,12 @@ QtObject {
         if (args.action && args.action !== "default")
             return actionById(target, args.action) || { id: args.action };
 
+        if (target.switchActions) {
+            var toggleAction = resolveSwitchToggleAction(target);
+            if (toggleAction)
+                return toggleAction;
+        }
+
         var preferred = args.prefer || [];
         for (var i = 0; i < preferred.length; i += 1) {
             var preferredAction = actionById(target, preferred[i]);
@@ -165,6 +171,19 @@ QtObject {
                 return actions[ai];
         }
         return actions[0] || null;
+    }
+
+    function resolveSwitchToggleAction(target) {
+        var switchActions = target && target.switchActions || null;
+        if (!switchActions)
+            return null;
+        if (switchActions.toggle)
+            return switchActions.toggle;
+        if (target.switchState === true && switchActions.off)
+            return switchActions.off;
+        if (target.switchState !== true && switchActions.on)
+            return switchActions.on;
+        return switchActions.off || switchActions.on || null;
     }
 
     function actionById(target, actionId) {
