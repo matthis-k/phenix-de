@@ -13,17 +13,24 @@ ActionButton {
     property int contentHorizontalPadding: Config.spacing.xs
     required property color color
 
-    property bool _destroying: false
-
     default property alias content: contentRow.children
 
-    checkable: true
-    checked: true
-    readonly property bool effectiveChecked: root.checked
-    readonly property color contentColor: Config.styling.textOnAccent
     readonly property var visibilityRevision: graphView && graphView.visibilityRevision !== undefined
         ? graphView.visibilityRevision
         : 0
+    readonly property bool effectiveChecked: {
+        const _ = root.visibilityRevision;
+        if (!root.graphView || !root.graphView.isSeriesVisible)
+            return false;
+
+        const names = root.seriesNames();
+        return names.length > 0
+            && names.some(name => root.graphView.isSeriesVisible(name) === true);
+    }
+    readonly property color contentColor: Config.styling.textOnAccent
+
+    checkable: false
+    checked: root.effectiveChecked
 
     implicitHeight: 28
     active: false
@@ -37,64 +44,28 @@ ActionButton {
     Accessible.checked: root.effectiveChecked
 
     function seriesNames() {
-        if (root._destroying || !root.graphView)
+        if (!root.graphView)
             return [];
         if (root.seriesFilter)
             return root.graphView.seriesNames().filter(name => root.seriesFilter(root.graphView.series(name)));
         return root.seriesName ? [root.seriesName] : [];
     }
 
-    function refreshChecked() {
-        if (root._destroying || !root.graphView || !root.graphView.isSeriesVisible)
-            return;
-
-        const names = root.seriesNames();
-        if (names.length === 0)
-            return;
-
-        root.checked = names.some(name => root.graphView.isSeriesVisible(name) === true);
-    }
-
-    function scheduleRefresh() {
-        if (!root._destroying)
-            refreshTimer.restart();
-    }
-
     function toggleVisibility() {
-        if (root._destroying || !root.graphView)
+        if (!root.graphView)
             return;
+
         const names = root.seriesNames();
         if (names.length === 0)
             return;
-        const currentlyVisible = names.some(name => root.graphView.isSeriesVisible(name) === true);
-        const target = !currentlyVisible;
+
+        const target = !root.effectiveChecked;
         root.graphView.batch(() => {
             names.forEach(name => root.graphView.setSeriesVisible(name, target));
         });
     }
 
-    Component.onCompleted: root.scheduleRefresh()
-    Component.onDestruction: {
-        root._destroying = true;
-        refreshTimer.stop();
-    }
-
-    onGraphViewChanged: root.scheduleRefresh()
-    onVisibilityRevisionChanged: root.scheduleRefresh()
-    onSeriesNameChanged: root.scheduleRefresh()
-    onSeriesFilterChanged: root.scheduleRefresh()
     onClicked: root.toggleVisibility()
-
-    Timer {
-        id: refreshTimer
-
-        interval: 0
-        repeat: false
-        onTriggered: {
-            if (!root._destroying)
-                root.refreshChecked();
-        }
-    }
 
     Rectangle {
         anchors.fill: parent
