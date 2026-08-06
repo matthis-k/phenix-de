@@ -19,7 +19,6 @@ Item {
     property int asyncGeneration: 0
     property int queryRevision: 0
     property var asyncBackendQueries: ({})
-    property bool emptyQueryResultsEnabled: true
 
     signal resultsClearRequested()
     signal searchStarted(string text, int generation, int revision)
@@ -33,22 +32,18 @@ Item {
         onTriggered: root.startSearch(root.query, root.generation, true)
     }
 
-    Connections {
-        target: LauncherUsage
-
-        function onRevisionChanged() {
-            if (root.emptyQueryResultsEnabled && root.query.trim().length === 0)
-                root.refreshEmptyQuery();
-        }
+    function hasUserQuery(text) {
+        return String(text || "").trim().length > 0;
     }
 
-    function refreshEmptyQuery() {
-        if (!root.emptyQueryResultsEnabled)
-            return;
-        queryRevision += 1;
-        generation += 1;
-        query = "";
-        searchTimer.restart();
+    function clearSearchState() {
+        searchTimer.stop();
+        resultsClearRequested();
+        loading = false;
+        if (controller)
+            controller.clearSearchOutputState();
+        asyncBackendQueries = {};
+        asyncGeneration += 1;
     }
 
     function updateQuery(text) {
@@ -59,14 +54,9 @@ Item {
         if (controller)
             controller.selectedActionIndex = 0;
 
-        if (!query || query.trim().length === 0) {
-            tracer.debug("updateQuery", function() { return { action: "empty-search", queryEmpty: true }; });
-            resultsClearRequested();
-            if (controller)
-                controller.clearSearchOutputState();
-            searchTimer.stop();
-            if (emptyQueryResultsEnabled)
-                searchTimer.restart();
+        if (!hasUserQuery(query)) {
+            tracer.debug("updateQuery", function() { return { action: "clear", queryEmpty: true }; });
+            clearSearchState();
             return;
         }
 
@@ -75,37 +65,61 @@ Item {
 
     function reset() {
         tracer.info("reset", function() { return { wasQuery: query, wasLoading: loading }; });
-        searchTimer.stop();
         query = "";
-        resultsClearRequested();
-        loading = false;
         generation += 1;
         queryRevision += 1;
-        if (controller)
-            controller.clearSearchOutputState();
-        asyncBackendQueries = {};
-        asyncGeneration += 1;
-        if (emptyQueryResultsEnabled)
-            searchTimer.restart();
+        clearSearchState();
     }
 
     function requestSearch(text, requestGeneration) {
-        startSearch(text || "", requestGeneration, false);
+        var requestedText = text || "";
+        if (!hasUserQuery(requestedText)) {
+            tracer.debug("requestSearch", function() {
+                return { action: "ignored-empty-query", generation: requestGeneration };
+            });
+            clearSearchState();
+            return;
+        }
+        startSearch(requestedText, requestGeneration, false);
     }
 
     function _startSearch(text, requestGeneration, bumpAsyncGeneration) {
+        if (!hasUserQuery(text)) {
+            tracer.debug("startSearch", function() {
+                return { action: "ignored-empty-query", generation: requestGeneration };
+            });
+            clearSearchState();
+            return;
+        }
+        if (requestGeneration !== root.generation || text !== root.query) {
+            tracer.trace("startSearch", function() {
+                return {
+                    action: "ignored-stale-query",
+                    text: text,
+                    generation: requestGeneration,
+                    currentGeneration: root.generation
+                };
+            });
+            return;
+        }
+
         tracer.info("startSearch", function() { return { text: text, generation: requestGeneration, bump: bumpAsyncGeneration }; });
         var ag = bumpAsyncGeneration ? (root.asyncGeneration += 1) : root.asyncGeneration;
         var revision = root.queryRevision;
         var backendPorts = BackendContract.adaptAll(root.backends || []);
         triggerAsyncBackends(text, requestGeneration, backendPorts);
         searchStarted(text, requestGeneration, revision);
-        Engine.searchAsync(backendPorts, text || "", stateForSearch(), searchOptions(),
-            function() { return root.generation === requestGeneration && root.asyncGeneration === ag; },
+        Engine.searchAsync(backendPorts, text, stateForSearch(), searchOptions(),
+            function() {
+                return root.generation === requestGeneration
+                    && root.asyncGeneration === ag
+                    && root.query === text
+                    && root.hasUserQuery(root.query);
+            },
             function(output) {
                 if (!output)
                     return;
-                if (requestGeneration !== root.generation || text !== root.query)
+                if (requestGeneration !== root.generation || text !== root.query || !root.hasUserQuery(root.query))
                     return;
 
                 output.queryRevision = revision;
@@ -126,19 +140,26 @@ Item {
     }
 
     function _triggerAsyncBackends(text, currentGeneration, providedPorts) {
+        if (!hasUserQuery(text)) {
+            tracer.trace("triggerAsyncBackends", function() {
+                return { action: "ignored-empty-query", generation: currentGeneration };
+            });
+            return;
+        }
+
         tracer.trace("triggerAsyncBackends", function() { return { text: text, generation: currentGeneration }; });
         var backendPorts = providedPorts || BackendContract.adaptAll(root.backends || []);
-        var route = RoutingTree.routeQuery(root.routingTree, text || "");
+        var route = RoutingTree.routeQuery(root.routingTree, text);
         var directive = route && route.endpoints && route.endpoints.length > 0
-            ? Engine.buildDirectiveFromRoute(text || "", route, backendPorts)
-            : Tokenize.parseDirective(text || "", backendPorts);
+            ? Engine.buildDirectiveFromRoute(text, route, backendPorts)
+            : Tokenize.parseDirective(text, backendPorts);
         var parsedQuery = Tokenize.tokenize(directive.searchRaw || "");
 
         for (let i = 0; i < backendPorts.length; i += 1) {
             let backend = backendPorts[i];
             if (!backend.enabled || !backend.asyncCapable)
                 continue;
-            if (!backend.shouldParticipate(text || "", directive, parsedQuery))
+            if (!backend.shouldParticipate(text, directive, parsedQuery))
                 continue;
             if (directive.active && directive.backendIds.indexOf(backend.backendId) < 0)
                 continue;
@@ -169,7 +190,7 @@ Item {
     }
 
     function receiveAsyncBackendResults(backend, key, text, requestGeneration, update) {
-        if (requestGeneration !== root.generation || text !== root.query) {
+        if (requestGeneration !== root.generation || text !== root.query || !hasUserQuery(root.query)) {
             tracer.debug("receiveAsyncBackendResults", function() { return { key: key, text: text, stale: true, requestGeneration: requestGeneration, currentGen: root.generation }; });
             return;
         }
@@ -195,10 +216,5 @@ Item {
                 return true;
         }
         return false;
-    }
-
-    Component.onCompleted: {
-        if (root.emptyQueryResultsEnabled)
-            root.refreshEmptyQuery();
     }
 }
