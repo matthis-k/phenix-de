@@ -31,6 +31,12 @@ ActionButton {
     accessibleDescription: root.label === "" ? "" : qsTr("Open %1").arg(root.label)
 
     active: screenState ? screenState.isIndicatorActive(tabName) : false
+    highlightSide: root.expanded
+        ? ActiveIndicator.Side.Bottom
+        : ActiveIndicator.Side.Top
+    fillOpacity: root.expanded ? 0 : Config.behaviour.hoverBgOpacity
+    backgroundColor: root.expanded ? "transparent" : Config.styling.bg3
+    pressedBackgroundColor: root.expanded ? "transparent" : Config.styling.bg5
     scaleIcon: true
     iconScaleTarget: statusIcon
     hoveredScale: 1.0
