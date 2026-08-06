@@ -9,15 +9,18 @@ import "ScoreBundle.qml"
 import "PolicyChain.qml"
 import "DecisionDecider.qml"
 import "PresentationContext.qml"
+import "IntentProjection.qml"
 
 Singleton {
     readonly property var prof: Profiler.scope("launcher.renderedRows", { category: "launcher" })
     readonly property var tracer: Logger.scope("launcher.renderedRows", { category: "launcher" })
     function _toResultRow(ev, depth, state, ctx, childRows, options, shapedItem, parentPresentationContext) {
         options = options || {};
-        var node = ev.node;
-        tracer.trace("toResultRow", function() { return { nodeId: node.id, label: node.label, depth: depth, childRows: (childRows || []).length }; });
-        var chain = Evaluate.collectParentChain(node);
+        var slotNode = ev.node;
+        var node = slotNode;
+        var rowEv = ev;
+        tracer.trace("toResultRow", function() { return { nodeId: slotNode.id, label: slotNode.label, depth: depth, childRows: (childRows || []).length }; });
+        var chain = Evaluate.collectParentChain(slotNode);
 
         var presCtx = shapedItem
             ? PresentationContext.forShapedItem(ev, shapedItem, parentPresentationContext)
@@ -30,7 +33,7 @@ Singleton {
         if (presCtx.breadcrumbs.length === 0 && brRoot)
             breadcrumbs = breadcrumbs.slice(chain.indexOf(brRoot));
 
-        var displayPolicy = displayPolicyFor(node);
+        var displayPolicy = displayPolicyFor(slotNode);
         var breadcrumbText = presCtx.showBreadcrumbs
             ? presCtx.breadcrumbText
             : breadcrumbTextFor(ev, breadcrumbs, displayPolicy, childRows);
@@ -131,6 +134,19 @@ Singleton {
             }
         }
 
+        var decision = shapedItem && shapedItem.decision || null;
+        var intentRow = (slotNode.switchActions || decision && decision.projection)
+            ? IntentProjection.resolveRow(ev, decision, ctx, selectedAction)
+            : null;
+        if (intentRow) {
+            rowEv = intentRow.ev || ev;
+            node = intentRow.node || slotNode;
+            selectedAction = intentRow.selectedAction;
+            action = intentRow.action;
+            suppressOwnActions = false;
+            displayPolicy = displayPolicyFor(node);
+        }
+
         var sourceActions = suppressOwnActions ? [] : (node.actionList || []).slice();
         if (node.switchActions) {
             sourceActions = [node.switchActions.toggle, node.switchActions.on, node.switchActions.off].filter(Boolean);
@@ -148,36 +164,54 @@ Singleton {
         var activation = semantics && semantics.activation ? semantics.activation : null;
         var canExecuteNow = hasAction && (!activation || activation.allowed !== false);
         var needsConfirmation = hasAction && activation && activation.allowed === false && !!activation.requiresConfirm;
+        var lockedSlot = !!(intentRow && intentRow.lockedSlot);
+        var visibleChildren = lockedSlot ? [] : (childRows || []);
+        var defaultActionMetadata = ActionPolicy.selectedActionMetadata(selectedAction);
+        if (defaultActionMetadata && intentRow)
+            defaultActionMetadata.explicit = !!intentRow.explicitAction;
+        var projectedTitle = intentRow ? intentRow.title : node.label;
+        var projectedSubtitle = intentRow ? intentRow.subtitle : node.subtitle;
+        var projectedIcon = intentRow ? intentRow.icon : node.icon;
+        var projectedIconColor = intentRow ? intentRow.iconColor : node.iconColor || null;
+        var projectedScore = shapedItem && shapedItem.sortScore !== undefined ? shapedItem.sortScore : ev.score;
 
         var row = {
-            id: "row:" + node.id,
-            nodeId: node.id,
+            id: "row:" + slotNode.id,
+            nodeId: slotNode.id,
             source: node.backendId,
             backendId: node.backendId,
             kind: node.kind,
-            title: node.label,
-            label: node.label,
-            subtitle: node.subtitle,
-            icon: node.icon,
-            iconColor: node.iconColor || null,
+            title: projectedTitle,
+            label: projectedTitle,
+            subtitle: projectedSubtitle,
+            icon: projectedIcon,
+            iconColor: projectedIconColor,
             depth: depth,
             placement: placement,
-            score: ev.score,
-            ownScore: ev.ownScore,
-            inheritedScore: ev.inheritedScore || 0,
-            descendantScore: ev.descendantScore || 0,
-            ownVisible: !!ev.ownVisible,
-            matchDepth: ev.matchDepth === undefined ? depth : ev.matchDepth,
-            evidence: copyEvidence(ev.evidence || []),
-            selected: state.selectedNodeId === node.id,
-            expandable: (childRows && childRows.length > 0) || (ev.children && ev.children.length > 0),
-            expanded: state.expandedNodeIds[node.id] || node.kind === "backend",
+            score: projectedScore,
+            ownScore: rowEv.ownScore,
+            inheritedScore: rowEv.inheritedScore || 0,
+            descendantScore: rowEv.descendantScore || 0,
+            ownVisible: !!rowEv.ownVisible,
+            matchDepth: rowEv.matchDepth === undefined ? depth : rowEv.matchDepth,
+            evidence: copyEvidence(rowEv.evidence || []),
+            selected: state.selectedNodeId === slotNode.id || state.selectedNodeId === node.id,
+            expandable: !lockedSlot && ((childRows && childRows.length > 0) || (ev.children && ev.children.length > 0)),
+            expanded: state.expandedNodeIds[slotNode.id] || slotNode.kind === "backend",
             breadcrumbs: breadcrumbs,
             breadcrumbText: breadcrumbText,
             display: Object.assign({ breadcrumbText: breadcrumbText, showBreadcrumbs: presCtx.showBreadcrumbs, showBackendBadge: presCtx.showBackendBadge, showActionHint: presCtx.showActionHint, density: presCtx.density }, displayPolicy),
-            labelMatches: copyRanges(rangesForField(ev.evidence, "label", node.id)),
-            subtitleMatches: copyRanges(rangesForField(ev.evidence, "subtitle", node.id)),
+            labelMatches: copyRanges(rangesForField(rowEv.evidence, "label", node.id)),
+            subtitleMatches: copyRanges(rangesForField(rowEv.evidence, "subtitle", node.id)),
             semantics: semantics,
+            projection: intentRow ? {
+                active: !!(intentRow.subjectSelected || intentRow.explicitAction),
+                slotOwnerId: intentRow.slotOwnerId || slotNode.id,
+                subjectOwnerId: intentRow.subjectOwnerId || "",
+                actionOwnerId: intentRow.actionOwnerId || "",
+                explicitAction: !!intentRow.explicitAction,
+                reason: intentRow.reason || ""
+            } : null,
             actions: actions,
             enter: hasReplaceQuery
                 ? { type: "sequence", steps: [{ type: "edit-query", value: replaceQueryInfo.value }] }
@@ -200,27 +234,31 @@ Singleton {
             selectable: !(node.behavior && node.behavior.selectable === false),
             explicitBrowseChild: !!(options && options.explicitBrowseChild),
             lazy: !!node.lazy,
-            alwaysExpanded: hasExplicitAlwaysExpanded(node)
+            alwaysExpanded: !lockedSlot && (hasExplicitAlwaysExpanded(node)
                 ? node.behavior.alwaysExpanded !== false
                 : hasExplicitExpandPolicy(node)
                     ? shapedAsNestedGroup(shapedItem)
-                    : (parentMatchShowsChildren(ev, ctx) || childHasGoodMatch(childRows) || switchHasResidualChildren(ev, ctx)),
-            children: childRows || [],
+                    : (parentMatchShowsChildren(ev, ctx) || childHasGoodMatch(childRows) || switchHasResidualChildren(ev, ctx))),
+            children: visibleChildren,
             switchActions: suppressOwnActions ? null : copySwitchActions(node.switchActions, action),
-            defaultAction: ActionPolicy.selectedActionMetadata(selectedAction),
+            defaultAction: defaultActionMetadata,
             switchState: node.switchState === undefined ? null : node.switchState,
             control: node.control || null,
             presentation: node.presentation || null,
             presentationContext: PresentationContext.toDebug(presCtx),
             metadata: copyMetadata(node.meta, node, action),
-            scoreBundle: ev.scoreBundle || null,
+            scoreBundle: rowEv.scoreBundle || null,
             interactions: node.interactions || null
         };
 
         if (hasReplaceQuery)
             row.recipes = { activate: [["edit-query", { mode: "replace", from: "metadata.replaceQuery" }]] };
-        else if (action)
-            row.recipes = { activate: [["run-action", { action: "default" }], ["close"]] };
+        else if (action) {
+            var activationActionId = intentRow && intentRow.activationExplicit && intentRow.actionOwnerId
+                ? intentRow.actionOwnerId
+                : "default";
+            row.recipes = { activate: [["run-action", { action: activationActionId }], ["close"]] };
+        }
 
         if (hasReplaceQuery || (!suppressOwnActions && node.behavior && node.behavior.filterable))
             row.recipes = row.recipes || {};
@@ -361,11 +399,23 @@ Singleton {
         return out;
     }
 
+    function copyPresentation(presentation) {
+        if (!presentation || typeof presentation !== "object") return null;
+        return {
+            title: presentation.title || "",
+            subtitle: presentation.subtitle === undefined ? undefined : presentation.subtitle,
+            icon: presentation.icon || null,
+            iconColor: presentation.iconColor || null
+        };
+    }
+
     function copyAction(a, isDef) {
         if (!a) return null;
         return {
             id: a.id || "", label: a.label || a.title || a.id || "",
             icon: a.icon || null, default: isDef === undefined ? !!a.default : !!isDef,
+            aliases: (a.aliases || []).slice(),
+            presentation: copyPresentation(a.presentation || a.payload && a.payload.presentation),
             intent: a.intent || null, payload: copyPayload(a.payload),
             dangerous: !!a.dangerous,
             risk: a.risk || null,
@@ -419,6 +469,7 @@ Singleton {
             hasRecipes: !!row.recipes,
             hasInteractions: !!row.interactions,
             defaultAction: row.defaultAction,
+            projection: row.projection || null,
             interactionKeys: row.interactions ? Object.keys(row.interactions) : []
         };
     }

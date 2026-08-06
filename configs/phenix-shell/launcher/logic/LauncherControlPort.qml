@@ -11,28 +11,39 @@ QtObject {
 
     function adjust(control, delta) {
         if (!control || control.kind !== "slider")
-            return false;
+            return adjustment(false, null);
+
+        var direction = Number(delta || 0);
+        if (direction === 0)
+            return adjustment(false, null);
+        direction = direction < 0 ? -1 : 1;
 
         var step = Number(control.step || 1);
         switch (control.target) {
         case "brightness": {
-            var value = alignedValue(brightness.percent, delta, step, control.from || 0, control.to || 100);
+            var value = alignedValue(brightness.percent, direction, step, control.from || 0, control.to || 100);
             brightness.setPercent(value);
-            return true;
+            return adjustment(true, value);
         }
         case "pipewire":
         case "audio": {
             var current = audio.volumePercentById(control.nodeId);
             if (current === null || current === undefined)
-                return false;
-            var volume = alignedValue(current, delta, step, control.from || 0, control.to || 150);
-            return audio.setVolumeById(control.nodeId, volume);
+                return adjustment(false, null);
+            var volume = alignedValue(current, direction, step, control.from || 0, control.to || 150);
+            var success = audio.setVolumeById(control.nodeId, volume);
+            return adjustment(success, success ? volume : null);
         }
-        case "power-profile":
-            power.cycleProfile(delta * step);
-            return true;
+        case "power-profile": {
+            var currentProfile = Number(control.value);
+            if (!isFinite(currentProfile))
+                currentProfile = power.profileIndex(power.profile);
+            var profile = alignedValue(currentProfile, direction, step, control.from || 0, control.to || 2);
+            power.setProfile(power.profileFromIndex(profile));
+            return adjustment(true, profile);
+        }
         default:
-            return false;
+            return adjustment(false, null);
         }
     }
 
@@ -60,5 +71,12 @@ QtObject {
         if (Math.abs(base - current) < 0.0001)
             base += delta * step;
         return Math.max(from, Math.min(to, base));
+    }
+
+    function adjustment(success, value) {
+        return {
+            success: success === true,
+            value: value === null || value === undefined ? null : Number(value)
+        };
     }
 }

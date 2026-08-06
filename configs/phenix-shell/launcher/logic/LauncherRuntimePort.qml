@@ -45,4 +45,27 @@ QtObject {
         controller.actions.refreshSwitchResult(target, action);
         return true;
     }
+
+    function refreshControlResult(target, value) {
+        if (!controller || !target || !target.control)
+            return false;
+
+        target.control = Object.assign({}, target.control, { value: Number(value) });
+
+        if (controller.isInTree() && controller.currentTreeKey && controller.selectedIndex >= 0) {
+            var treeRow = controller.findTreeRowData(controller.currentTreeKey);
+            if (treeRow && treeRow.control) {
+                treeRow.control = Object.assign({}, treeRow.control, { value: Number(value) });
+                if (typeof controller.treeSwitchRefreshRequested === "function")
+                    controller.treeSwitchRefreshRequested(controller.selectedIndex);
+            }
+        }
+
+        controller.resultsRefreshRequested();
+        Qt.callLater(function() {
+            if (controller && typeof controller.searchRequested === "function")
+                controller.searchRequested(controller.query, controller.generation);
+        });
+        return true;
+    }
 }

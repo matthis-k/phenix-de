@@ -41,7 +41,7 @@ QtObject {
         case "set-control":
             return setControl(target, command.args);
         case "toggle-control":
-            return activate(target, { prefer: ["toggle", "mute", "toggle-mute"] });
+            return activate(target, { action: "default" });
         case "noop":
             return outcome(true, false, "");
         default:
@@ -91,21 +91,23 @@ QtObject {
                 return outcome(intentResult !== false, !!intentResult, intentResult === false ? "legacy-intent-failed" : "");
             }
 
+            var result;
             var payload = action.payload || {};
             if (payload.service) {
                 var serviceSuccess = root.serviceCommands.execute(payload);
-                return outcome(serviceSuccess, false, serviceSuccess ? "" : "service-command-failed");
+                result = outcome(serviceSuccess, false, serviceSuccess ? "" : "service-command-failed");
+            } else {
+                var backend = root.runtime.backendFor(target.source || target.backendId);
+                if (!backend)
+                    return outcome(false, false, "backend-not-found");
+                if (!backend.activate(target, action))
+                    return outcome(false, false, "backend-activation-unsupported");
+                result = outcome(true, false, "");
             }
 
-            var backend = root.runtime.backendFor(target.source || target.backendId);
-            if (!backend)
-                return outcome(false, false, "backend-not-found");
-
-            if (!backend.activate(target, action))
-                return outcome(false, false, "backend-activation-unsupported");
-            if (target.switchActions)
+            if (result.success && target.switchActions)
                 root.runtime.refreshSwitchResult(target, action);
-            return outcome(true, false, "");
+            return result;
         } catch (error) {
             root.tracer.error("activationFailed", function() {
                 return {
@@ -134,7 +136,12 @@ QtObject {
         var control = target && target.control;
         if (!control || control.kind !== "slider")
             return outcome(false, false, "missing-slider-control");
-        var success = root.controlPort.adjust(control, Number(args.delta || 0));
+
+        var adjustment = root.controlPort.adjust(control, Number(args.delta || 0));
+        var success = adjustment === true || !!(adjustment && adjustment.success);
+        var value = adjustment && adjustment.value !== undefined ? adjustment.value : null;
+        if (success && value !== null && value !== undefined && isFinite(Number(value)))
+            root.runtime.refreshControlResult(target, Number(value));
         return outcome(success, false, success ? "" : "control-command-failed");
     }
 
@@ -150,6 +157,12 @@ QtObject {
         if (args.action && args.action !== "default")
             return actionById(target, args.action) || { id: args.action };
 
+        if (target.switchActions) {
+            var toggleAction = resolveSwitchToggleAction(target);
+            if (toggleAction)
+                return toggleAction;
+        }
+
         var preferred = args.prefer || [];
         for (var i = 0; i < preferred.length; i += 1) {
             var preferredAction = actionById(target, preferred[i]);
@@ -163,6 +176,19 @@ QtObject {
                 return actions[ai];
         }
         return actions[0] || null;
+    }
+
+    function resolveSwitchToggleAction(target) {
+        var switchActions = target && target.switchActions || null;
+        if (!switchActions)
+            return null;
+        if (switchActions.toggle)
+            return switchActions.toggle;
+        if (target.switchState === true && switchActions.off)
+            return switchActions.off;
+        if (target.switchState !== true && switchActions.on)
+            return switchActions.on;
+        return switchActions.off || switchActions.on || null;
     }
 
     function actionById(target, actionId) {

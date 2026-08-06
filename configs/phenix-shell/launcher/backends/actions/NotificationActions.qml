@@ -5,8 +5,79 @@ import "../../logic/EvaluationProfiles.js" as EvalProfiles
 QtObject {
     readonly property var tracer: Logger.scope("backend.actions.notifications", { category: "backend" })
     readonly property var prof: Profiler.scope("backend.actions.notifications", { category: "backend" })
-    function roots(context) { tracer.trace("roots", function() { return {}; }); return [{ id: "notifications", aliases: ["notif", "notifications", "notification"], title: qsTr("Notifications"), icon: "bell-symbolic", iconColor: Config.styling.warning, template: "flat-action-group", behavior: { filterChildren: true }, evaluationProfile: EvalProfiles.groupProfile(), children: [
-        { id: "dnd", aliases: ["dnd"], title: qsTr("Do Not Disturb"), icon: "bell-disabled-symbolic", iconColor: NotificationCenter.doNotDisturbEnabled ? Config.styling.warning : Config.styling.text1, template: "switch", switchState: NotificationCenter.doNotDisturbEnabled, switchActions: { toggle: { id: "toggle", title: qsTr("Toggle"), state: null, payload: { service: "notifications", op: "toggleDnd" } }, on: { id: "on", title: qsTr("On"), state: true, payload: { service: "notifications", op: "setDnd", enabled: true } }, off: { id: "off", title: qsTr("Off"), state: false, payload: { service: "notifications", op: "setDnd", enabled: false } } } },
-        { id: "clear", aliases: ["clear", "clear-all"], title: qsTr("Clear All"), subtitle: qsTr("Dismiss all current notifications"), icon: "user-trash-symbolic", iconColor: Config.styling.critical, action: { service: "notifications", op: "clearAll" } }
-    ] }]; }
+
+    function roots(context) {
+        tracer.trace("roots", function() { return {}; });
+        return [{
+            id: "notifications",
+            display: {
+                title: qsTr("Notifications"),
+                icon: "bell-symbolic",
+                iconColor: Config.styling.warning
+            },
+            match: {
+                aliases: ["notif", "notifications", "notification"],
+                evaluationProfile: EvalProfiles.groupProfile()
+            },
+            template: "flat-action-group",
+            behavior: { filterChildren: true },
+            children: [
+                {
+                    id: "dnd",
+                    display: {
+                        title: qsTr("Do Not Disturb"),
+                        icon: "bell-disabled-symbolic",
+                        iconColor: NotificationCenter.doNotDisturbEnabled ? Config.styling.warning : Config.styling.text1
+                    },
+                    match: { aliases: ["dnd", "do not disturb"] },
+                    template: "switch",
+                    switchState: NotificationCenter.doNotDisturbEnabled,
+                    switchActions: {
+                        toggle: {
+                            id: "toggle",
+                            title: qsTr("Toggle"),
+                            state: null,
+                            aliases: ["toggle", "switch"],
+                            payload: { service: "notifications", op: "toggleDnd" }
+                        },
+                        on: {
+                            id: "on",
+                            title: qsTr("Enable"),
+                            state: true,
+                            aliases: ["on", "enable", "silence"],
+                            presentation: {
+                                title: qsTr("Enable Do Not Disturb"),
+                                subtitle: qsTr("Silence non-critical notifications"),
+                                icon: "bell-disabled-symbolic"
+                            },
+                            payload: { service: "notifications", op: "setDnd", enabled: true }
+                        },
+                        off: {
+                            id: "off",
+                            title: qsTr("Disable"),
+                            state: false,
+                            aliases: ["off", "disable", "resume"],
+                            presentation: {
+                                title: qsTr("Disable Do Not Disturb"),
+                                subtitle: qsTr("Resume normal notifications"),
+                                icon: "bell-symbolic"
+                            },
+                            payload: { service: "notifications", op: "setDnd", enabled: false }
+                        }
+                    }
+                },
+                {
+                    id: "clear",
+                    display: {
+                        title: qsTr("Clear All"),
+                        subtitle: qsTr("Dismiss all current notifications"),
+                        icon: "user-trash-symbolic",
+                        iconColor: Config.styling.critical
+                    },
+                    match: { aliases: ["clear", "clear-all"] },
+                    action: { service: "notifications", op: "clearAll" }
+                }
+            ]
+        }];
+    }
 }

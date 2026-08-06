@@ -8,6 +8,7 @@ import "Evaluate.qml"
 import "PolicyChain.qml"
 import "ResultSemantics.qml"
 import "TakeoverEngine.qml"
+import "IntentProjection.qml"
 import "DecisionTrace.qml"
 import "DecisionDecider.qml"
 
@@ -84,6 +85,14 @@ Singleton {
             }
             var decision = decidePlacement(ev, ctx);
             DecisionTrace.placement(ev, ctx, decision);
+            if (decision.mode === "intent-projection") {
+                var projectionScore = Number(decision.projection && decision.projection.proxyScore || 0);
+                var threshold = Number(ctx.visibilityThreshold === undefined ? 0.18 : ctx.visibilityThreshold);
+                if (ctx.showHidden || projectionScore + 0.0001 >= threshold) {
+                    makeShaped(ev, depth, projectionScore, [], forceInclude, {}, "intent-projection", decision);
+                }
+                return;
+            }
             if (decision.mode === "flatten-all-children") {
                 for (var ai = 0; ai < decision.children.length; ai += 1) {
                     var child = decision.children[ai];
@@ -230,6 +239,24 @@ Singleton {
         var expandNames = profile.expand || [];
         var retainNames = profile.retainParent || [];
 
+        var intentProjection = IntentProjection.evaluate(ev, ctx);
+        if (intentProjection && intentProjection.configured) {
+            DecisionTrace.initPolicyTrace(ev, ctx);
+            DecisionTrace.final(ev, ctx, "intent-projection", {
+                active: !!intentProjection.active,
+                subjectOwnerId: intentProjection.subjectOwnerId || "",
+                proxyScore: Number(intentProjection.proxyScore || 0)
+            }, [{ code: "intent_projection", text: intentProjection.reason || "intent projection" }]);
+            return {
+                placement: "intent-projection",
+                mode: "intent-projection",
+                showParent: true,
+                suppressParentActions: false,
+                children: [],
+                projection: intentProjection
+            };
+        }
+
         var takeoverClaims = ev.children && ev.children.length > 0
             ? TakeoverEngine.evaluateTakeoverRequests(ev, ev.children, ctx)
             : [];
@@ -253,13 +280,11 @@ Singleton {
             return attachNesting(attachTakeover(obj, takeoverClaims, takeoverDecision), nestingResult, null);
         }
 
-        // Evaluate retain decision once (used by all paths)
         var retainReduced = retainNames.length > 0
             ? runDecisionPolicies(ev, ctx, "retainParent", retainNames, { mode: "highest-priority", tieBreak: "first" })
             : null;
         var retainResult = retainReduced && retainReduced.decision;
 
-        // 1. Takeover (still needed for parent-level promotion, but nesting can override)
         if (takeoverDecision && takeoverDecision.accepted) {
             var takeoverChildren = eligibleChildren(ev.children, {
                 includeAllChildren: takeoverDecision.includeAllChildren === true,
@@ -268,7 +293,6 @@ Singleton {
             if (takeoverChildren.length > 0) {
                 var takeoverShowParent = takeoverDecision.retainParent !== false;
                 if (takeoverDecision.representation === "flatten" || takeoverDecision.representation === "promote-child") {
-                    // If nesting says this node should be self-group, override takeover
                     if (nestingResult && nestingResult.intent === "self-group") {
                         var nestingKids = nestingResult.includeChildren === "all" ? eligibleChildren(ev.children, { includeAllChildren: true })
                             : nestingResult.includeChildren === "matching" ? eligibleChildren(ev.children, { includeAllChildren: false, minScore: 0.05 })
@@ -306,10 +330,7 @@ Singleton {
             }
         }
 
-        // 2. Collect expand votes (direct expand + policy expand) and reduce via decider
         var expandVotes = [];
-
-        // Direct expand vote (priority 100, always beats policy expand)
         var directVote = directExpandDecision(ev, ctx);
         if (directVote) {
             DecisionTrace.initPolicyTrace(ev, ctx);
@@ -317,28 +338,24 @@ Singleton {
             expandVotes.push(directVote);
         }
 
-        // Policy expand votes (accumulated via runDecisionPolicies)
         if (expandNames.length > 0) {
             var policyReduced = runDecisionPolicies(ev, ctx, "expand", expandNames, { mode: "highest-priority", tieBreak: "first" });
             if (policyReduced && policyReduced.decision && policyReduced.decision.expand)
                 expandVotes.push(policyReduced);
         }
 
-        // Reduce expand votes
         var expandReduced = expandVotes.length > 0
             ? DecisionDecider.reduce("expand", expandVotes, { mode: "highest-priority", tieBreak: "first" })
             : null;
         var expandResult = expandReduced && expandReduced.decision;
         var isDirectExpand = directVote !== null && expandReduced && expandReduced.selectedPolicy === "implicit-direct-expand";
 
-        // Apply expand decision
         if (expandResult && expandResult.expand && ev.children && ev.children.length > 0) {
             var expandKids = eligibleChildren(ev.children, {
                 includeAllChildren: !!expandResult.includeAllChildren,
                 minScore: expandResult.minScore === undefined ? (expandResult.includeAllChildren ? 0 : 0.25) : expandResult.minScore
             });
 
-            // Residual label filtering (direct expand only)
             if (isDirectExpand && expandResult.childFilter === "residual-label-contains") {
                 var tf = ev.tokenFlow;
                 var hasResidual = tf && tf.passed && tf.passed.length > 0;
@@ -360,13 +377,11 @@ Singleton {
                         });
                     }
                 }
-                // Fallback: if residual search produced no matching children, try with zero threshold
                 if (expandKids.length === 0 && hasResidual && !expandResult.includeAllChildren) {
                     expandKids = eligibleChildren(ev.children, { minScore: 0 });
                 }
             }
 
-            // Policy expand: apply maxChildren cap
             if (!isDirectExpand && expandResult.maxChildren !== undefined) {
                 expandKids = expandKids.slice(0, expandResult.maxChildren);
             }
@@ -376,7 +391,6 @@ Singleton {
                 if (retainResult && retainResult.retain === false)
                     expandShowParent = false;
 
-                // Single residual child promotion (direct expand only)
                 if (isDirectExpand && expandResult.promoteSingleResidual) {
                     var hasResidual = ev.tokenFlow && ev.tokenFlow.passed && ev.tokenFlow.passed.length > 0;
                     if (hasResidual && expandKids.length === 1) {
@@ -403,7 +417,6 @@ Singleton {
             }
         }
 
-        // 3. Retain-only (no expand or expand produced no children)
         if (retainResult && retainResult.retain === false && ev.children && ev.children.length > 0) {
             var retainKids = eligibleChildren(ev.children, { includeAllChildren: true });
             DecisionTrace.final(ev, ctx, "retain", { retain: false, children: retainKids.length }, [{ code: "retain_suppress", text: "Retain suppressed parent, flattening " + retainKids.length + " children" }]);
@@ -416,7 +429,6 @@ Singleton {
             });
         }
 
-        // 4. Default
         return _d({
             placement: "standalone",
             mode: "normal",
@@ -469,6 +481,7 @@ Singleton {
         case "flatten-children": return "promoted-child";
         case "flatten-all-children": return "flattened";
         case "nested-group": return "nested-group";
+        case "intent-projection": return "intent-projection";
         case "group": return "group";
         case "normal": return "standalone";
         default: return mode || "standalone";
@@ -485,6 +498,7 @@ Singleton {
         case "flattened": return "flattened (no parent)";
         case "promoted-child": return "promoted to standalone";
         case "nested-group": return "nested group with visible children";
+        case "intent-projection": return "exclusive intent projection";
         default: return "unknown";
         }
     }
@@ -518,6 +532,7 @@ Singleton {
                 childCount: (item.childEvs || []).length,
                 showParent: decision.showParent !== false,
                 mode: decision.mode || "normal",
+                projection: IntentProjection.toDebug(decision.projection),
                 nesting: decision.nesting || null,
                 ownership: decision.ownership || null,
                 semantics: ResultSemantics.toDebug(item.semantics)

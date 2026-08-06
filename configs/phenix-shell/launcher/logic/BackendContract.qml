@@ -29,6 +29,7 @@ Singleton {
 
         var hasAsyncSearch = typeof source.resultsAsync === "function";
         var hasStreamUpdates = typeof source.applyStreamUpdate === "function";
+        var hasCancellation = typeof source.cancelSearch === "function";
 
         return {
             source: source,
@@ -73,6 +74,21 @@ Singleton {
                 source.compositeQuery = query;
                 source.applyStreamUpdate(update || []);
                 return true;
+            },
+
+            cancelAsyncSearch: function(query, generation) {
+                var cancelled = false;
+                if (hasCancellation) {
+                    source.cancelSearch(query || "", generation || 0);
+                    cancelled = true;
+                }
+                if (hasStreamUpdates) {
+                    source.pendingCompositeQuery = "";
+                    source.compositeQuery = "";
+                    source.applyStreamUpdate({ op: "clear" });
+                    cancelled = true;
+                }
+                return cancelled;
             },
 
             activate: function(result, action) {

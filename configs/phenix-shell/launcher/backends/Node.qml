@@ -1,5 +1,6 @@
 import QtQml
 import qs.services
+import "../logic/EntryData.js" as EntryData
 
 QtObject {
     id: root
@@ -12,18 +13,28 @@ QtObject {
     property string nodeId: ""
     property string name: ""
     property string template: ""
+
+    // Canonical authored data layers. Visible text is matched by default;
+    // `match` only supplies vocabulary and matching-policy overrides.
+    property var display: ({})
+    property var match: ({})
+
+    // Compatibility authoring aliases. Normalization moves these values into
+    // `display` and `match`; new entries should prefer the namespaced fields.
     property string title: ""
     property string subtitle: ""
     property string icon: ""
     property var iconColor: null
     property var aliases: []
     property var keywords: []
+    property var tokenPolicy: null
+    property var evaluationProfile: null
+
     property var dynamicChildren: []
     property bool dangerous: false
     property var risk: null
     property var behavior: null
     property var _legacyGroupOptions: ({})
-    property var tokenPolicy: null
     property var action: null
     property var actionProps: ({})
     property string actionId: ""
@@ -65,20 +76,17 @@ QtObject {
 
     function toTreeObject() {
         tracer.trace("toTreeObject", function() { return { nodeId: root.nodeId, template: root.template, entryCount: root.entries.length }; });
-        var id = root.nodeId || root.name || root.title;
+        var displayData = EntryData.displayFor(root);
+        var matchData = EntryData.matchFor(root);
+        var id = root.nodeId || root.name || displayData.title;
         var out = {
             id: id,
-            aliases: root.aliases || [],
-            keywords: root.keywords || [],
-            title: root.title || root.name || id,
             template: root.template,
-            subtitle: root.subtitle || "",
-            icon: root.icon || "",
-            iconColor: root.iconColor,
+            display: displayData,
+            match: matchData,
             dangerous: root.dangerous,
             risk: root.risk,
             behavior: root.behavior,
-            tokenPolicy: root.tokenPolicy,
             children: childNodes(),
             replaceQuery: root.replaceQuery
         };
