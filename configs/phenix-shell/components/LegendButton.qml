@@ -13,6 +13,8 @@ ActionButton {
     property int contentHorizontalPadding: Config.spacing.xs
     required property color color
 
+    property bool _destroying: false
+
     default property alias content: contentRow.children
 
     checkable: true
@@ -35,43 +37,64 @@ ActionButton {
     Accessible.checked: root.effectiveChecked
 
     function seriesNames() {
-        if (!graphView)
+        if (root._destroying || !root.graphView)
             return [];
-        if (seriesFilter)
-            return graphView.seriesNames().filter(name => seriesFilter(graphView.series(name)));
-        return seriesName ? [seriesName] : [];
+        if (root.seriesFilter)
+            return root.graphView.seriesNames().filter(name => root.seriesFilter(root.graphView.series(name)));
+        return root.seriesName ? [root.seriesName] : [];
     }
 
     function refreshChecked() {
-        if (!graphView || !graphView.isSeriesVisible)
+        if (root._destroying || !root.graphView || !root.graphView.isSeriesVisible)
             return;
 
         const names = root.seriesNames();
         if (names.length === 0)
             return;
 
-        root.checked = names.some(name => graphView.isSeriesVisible(name) === true);
+        root.checked = names.some(name => root.graphView.isSeriesVisible(name) === true);
+    }
+
+    function scheduleRefresh() {
+        if (!root._destroying)
+            refreshTimer.restart();
     }
 
     function toggleVisibility() {
-        if (!graphView)
+        if (root._destroying || !root.graphView)
             return;
         const names = root.seriesNames();
         if (names.length === 0)
             return;
-        const currentlyVisible = names.some(name => graphView.isSeriesVisible(name) === true);
+        const currentlyVisible = names.some(name => root.graphView.isSeriesVisible(name) === true);
         const target = !currentlyVisible;
-        graphView.batch(() => {
-            names.forEach(name => graphView.setSeriesVisible(name, target));
+        root.graphView.batch(() => {
+            names.forEach(name => root.graphView.setSeriesVisible(name, target));
         });
     }
 
-    Component.onCompleted: Qt.callLater(root.refreshChecked)
-    onGraphViewChanged: Qt.callLater(root.refreshChecked)
-    onVisibilityRevisionChanged: Qt.callLater(root.refreshChecked)
-    onSeriesNameChanged: Qt.callLater(root.refreshChecked)
-    onSeriesFilterChanged: Qt.callLater(root.refreshChecked)
+    Component.onCompleted: root.scheduleRefresh()
+    Component.onDestruction: {
+        root._destroying = true;
+        refreshTimer.stop();
+    }
+
+    onGraphViewChanged: root.scheduleRefresh()
+    onVisibilityRevisionChanged: root.scheduleRefresh()
+    onSeriesNameChanged: root.scheduleRefresh()
+    onSeriesFilterChanged: root.scheduleRefresh()
     onClicked: root.toggleVisibility()
+
+    Timer {
+        id: refreshTimer
+
+        interval: 0
+        repeat: false
+        onTriggered: {
+            if (!root._destroying)
+                root.refreshChecked();
+        }
+    }
 
     Rectangle {
         anchors.fill: parent
