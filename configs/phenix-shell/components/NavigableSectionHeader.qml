@@ -119,21 +119,22 @@ Rectangle {
                         Rectangle {
                             id: titleUnderline
 
-                            anchors.left: titleText.left
-                            anchors.bottom: parent.bottom
-                            width: Math.min(titleText.paintedWidth, titleText.width)
-                            height: 3
-                            color: titleText.color
-                            opacity: root.navigable
+                            readonly property bool expanded: root.navigable
                                 && (navigationAction.hovered
                                     || navigationAction.down
                                     || navigationAction.visualFocus)
-                                ? 1
-                                : 0
+                            readonly property real expandedWidth: Math.min(
+                                titleText.paintedWidth,
+                                titleText.width
+                            )
 
-                            Animations.RevealBehavior on opacity {
-                                duration: Config.motion.micro
-                            }
+                            anchors.left: titleText.left
+                            anchors.bottom: parent.bottom
+                            width: expanded ? expandedWidth : 0
+                            height: 3
+                            color: titleText.color
+
+                            Animations.ExpandBehavior on width {}
                         }
                     }
                 }
