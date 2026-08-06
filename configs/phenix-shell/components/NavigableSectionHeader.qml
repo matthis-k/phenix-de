@@ -144,6 +144,7 @@ Rectangle {
 
                 visible: root.accessory !== null || root.showDetailToggle
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                Layout.rightMargin: Config.spacing.xs
                 spacing: Config.spacing.xs
 
                 Loader {
