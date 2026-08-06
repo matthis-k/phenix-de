@@ -124,15 +124,6 @@ Singleton {
         if (directImage !== "")
             return directImage;
 
-        const hints = notification.hints || {};
-        const hintedImage = hints["image-path"]
-            || hints.image_path
-            || hints["image_path"]
-            || "";
-        const normalizedHint = root.normalizeImageLocation(hintedImage);
-        if (normalizedHint !== "")
-            return normalizedHint;
-
         // Several screenshot tools put the captured file in the app-icon
         // argument rather than the notification image hint. Only accept actual
         // paths/URLs here so regular symbolic application icons stay icons.
