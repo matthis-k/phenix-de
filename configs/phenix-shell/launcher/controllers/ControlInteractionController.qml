@@ -60,21 +60,50 @@ QtObject {
 
     readonly property var adjustSelectedValue: prof.fn("adjustSelectedValue", _adjustSelectedValue)
 
+    function toggleActionId(result) {
+        var switchActions = result && result.switchActions || null;
+        if (!switchActions)
+            return "";
+        if (switchActions.toggle)
+            return "toggle";
+        if (result.switchState === true && switchActions.off)
+            return "off";
+        if (result.switchState !== true && switchActions.on)
+            return "on";
+        if (switchActions.off)
+            return "off";
+        if (switchActions.on)
+            return "on";
+        return "";
+    }
+
     function toggleSelectedSwitch() {
         var result = root.targetResolver ? root.targetResolver.selectedActionTarget() : null;
         if (!result) {
             tracer.debug("toggleSelectedSwitch", function() { return { reason: "no target" }; });
             return false;
         }
-        if (result.switchActions && (result.switchActions.toggle || result.switchActions.on || result.switchActions.off)) {
-            var toggleResult = root.commandExecutor.execute({ kind: "toggle-control", args: {} }, result);
-            if (toggleResult.success)
-                root.synchronizeTreeSwitchState(result);
-            tracer.info("toggleSelectedSwitch", function() { return { targetId: result.id || result.nodeId || "", success: !!toggleResult.success }; });
-            return !!toggleResult.success;
+
+        var actionId = root.toggleActionId(result);
+        if (!actionId) {
+            tracer.debug("toggleSelectedSwitch", function() { return { reason: "no switch actions", targetId: result.id || result.nodeId || "" }; });
+            return false;
         }
-        tracer.debug("toggleSelectedSwitch", function() { return { reason: "no switch actions", targetId: result.id || result.nodeId || "" }; });
-        return false;
+
+        var toggleResult = root.commandExecutor.execute({
+            kind: "activate",
+            args: { action: actionId }
+        }, result);
+        if (toggleResult.success)
+            root.synchronizeTreeSwitchState(result);
+        tracer.info("toggleSelectedSwitch", function() {
+            return {
+                targetId: result.id || result.nodeId || "",
+                actionId: actionId,
+                success: !!toggleResult.success
+            };
+        });
+        return !!toggleResult.success;
     }
 
     function toggleSelectedMute() {
