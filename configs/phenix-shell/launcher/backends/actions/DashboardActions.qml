@@ -32,9 +32,35 @@ QtObject {
         default: return Config.styling.text0;
         }
     }
+
     function roots(context) {
         tracer.trace("roots", function() { return {}; });
         const tabs = DashboardPresentation.tabOrder;
-        return [{ id: "dashboard", aliases: ["db", "dashboard"], title: qsTr("Dashboard"), icon: iconForTab("overview"), iconColor: colorForTab("overview"), template: "flat-action-group", behavior: { filterChildren: true }, evaluationProfile: EvalProfiles.groupProfile({ evidence: ["field-match", "semantic"] }), action: { service: "dashboard", tab: "overview" }, children: tabs.map(function(tab) { return { id: tab, title: titleForTab(tab), icon: iconForTab(tab), iconColor: colorForTab(tab), action: { service: "dashboard", tab: tab } }; }) }];
+        return [{
+            id: "dashboard",
+            display: {
+                title: qsTr("Dashboard"),
+                icon: iconForTab("overview"),
+                iconColor: colorForTab("overview")
+            },
+            match: {
+                aliases: ["db", "dashboard"],
+                evaluationProfile: EvalProfiles.groupProfile({ evidence: ["field-match", "semantic"] })
+            },
+            template: "flat-action-group",
+            behavior: { filterChildren: true },
+            action: { service: "dashboard", tab: "overview" },
+            children: tabs.map(function(tab) {
+                return {
+                    id: tab,
+                    display: {
+                        title: titleForTab(tab),
+                        icon: iconForTab(tab),
+                        iconColor: colorForTab(tab)
+                    },
+                    action: { service: "dashboard", tab: tab }
+                };
+            })
+        }];
     }
 }
