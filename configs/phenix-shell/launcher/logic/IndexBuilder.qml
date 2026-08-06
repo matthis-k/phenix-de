@@ -3,6 +3,7 @@ import QtQml
 import Quickshell
 import qs.services
 import "Tokenize.qml"
+import "EntryData.js" as EntryData
 
 Singleton {
     readonly property var prof: Profiler.scope("launcher.indexBuilder", { category: "launcher" })
@@ -17,18 +18,40 @@ Singleton {
         return field;
     }
 
+    function appendField(fields, node, ruleName, outputName, text, defaultWeight, primary) {
+        if (text === undefined || text === null || text === "")
+            return;
+        var rule = EntryData.fieldRule(node.match, ruleName, defaultWeight, true);
+        if (!rule.enabled)
+            return;
+        fields.push({
+            field: outputName,
+            text: text,
+            weight: rule.weight,
+            nodeId: node.id,
+            primary: primary === true
+        });
+    }
+
     function searchableFields(node) {
         if (node.__searchableFields)
             return node.__searchableFields;
         tracer.trace("searchableFields", function() { return { nodeId: node.id, kind: node.kind }; });
-        var w = node.fieldWeights || {};
-        var fields = [{ field: "label", text: node.label, weight: w.label === undefined ? 1.0 : w.label, nodeId: node.id, primary: true }];
-        if (node.subtitle) fields.push({ field: "subtitle", text: node.subtitle, weight: w.subtitle === undefined ? 0.55 : w.subtitle, nodeId: node.id });
-        if (node.aliases && node.aliases.length) fields.push({ field: "aliases", text: node.aliases.join(" "), weight: w.aliases === undefined ? 0.72 : w.aliases, nodeId: node.id, primary: true });
-        if (node.keywords && node.keywords.length) fields.push({ field: "keywords", text: node.keywords.join(" "), weight: w.keywords === undefined ? 0.45 : w.keywords, nodeId: node.id });
-        if (node.command) fields.push({ field: "command", text: node.command, weight: w.command === undefined ? 0.25 : w.command, nodeId: node.id });
-        if (node.path) fields.push({ field: "path", text: node.path, weight: w.path === undefined ? 0.38 : w.path, nodeId: node.id });
-        if (node.breadcrumbLabel) fields.push({ field: "breadcrumb", text: node.breadcrumbLabel, weight: w.breadcrumb === undefined ? 0.5 : w.breadcrumb, nodeId: node.id });
+
+        var display = node.display || EntryData.displayFor(node);
+        var match = node.match || EntryData.matchFor(node);
+        node.display = display;
+        node.match = match;
+
+        var fields = [];
+        appendField(fields, node, "title", "label", display.title, 1.0, true);
+        appendField(fields, node, "subtitle", "subtitle", display.subtitle, 0.55, false);
+        appendField(fields, node, "aliases", "aliases", (match.aliases || []).join(" "), 0.72, true);
+        appendField(fields, node, "keywords", "keywords", (match.keywords || []).join(" "), 0.45, false);
+        appendField(fields, node, "command", "command", match.command || node.command, 0.25, false);
+        appendField(fields, node, "path", "path", match.path || node.path, 0.38, false);
+        appendField(fields, node, "breadcrumb", "breadcrumb", node.breadcrumbLabel, 0.5, false);
+
         node.__searchableFields = fields.map(prepareSearchableField);
         return node.__searchableFields;
     }
@@ -145,7 +168,7 @@ Singleton {
         for (var i = 0; i < nodes.length; i += 1) {
             if (capState.hits >= capState.cap) return;
             capState.hits += 1;
-                    markNodeFamily(marked, nodes[i], key, capState.query);
+            markNodeFamily(marked, nodes[i], key, capState.query);
         }
     }
 
