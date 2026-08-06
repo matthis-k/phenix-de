@@ -121,17 +121,32 @@ function matchFor(source) {
     return match;
 }
 
+function legacyFieldName(fieldName) {
+    return fieldName === "title" ? "label" : fieldName;
+}
+
+function configuredValue(object, fieldName) {
+    if (hasOwn(object, fieldName))
+        return { found: true, value: object[fieldName] };
+    var legacyName = legacyFieldName(fieldName);
+    if (legacyName !== fieldName && hasOwn(object, legacyName))
+        return { found: true, value: object[legacyName] };
+    return { found: false, value: undefined };
+}
+
 function fieldRule(match, fieldName, defaultWeight, defaultEnabled) {
     match = objectValue(match);
     var configuredWeights = objectValue(match.fieldWeights);
-    var weight = hasOwn(configuredWeights, fieldName)
-        ? Number(configuredWeights[fieldName])
+    var configuredWeight = configuredValue(configuredWeights, fieldName);
+    var weight = configuredWeight.found
+        ? Number(configuredWeight.value)
         : Number(defaultWeight);
     var enabled = defaultEnabled !== false;
 
     var fields = objectValue(match.fields);
-    if (hasOwn(fields, fieldName)) {
-        var rule = fields[fieldName];
+    var configuredRule = configuredValue(fields, fieldName);
+    if (configuredRule.found) {
+        var rule = configuredRule.value;
         if (rule === false) {
             enabled = false;
         } else if (rule === true) {
