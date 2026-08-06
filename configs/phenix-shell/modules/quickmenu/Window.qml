@@ -73,28 +73,59 @@ PanelWindow {
         return true;
     }
 
+    function positionTabInstantly(targetIndex) {
+        const contentView = selection.contentItem;
+        const previousMoveDuration = contentView
+            && contentView.highlightMoveDuration !== undefined
+            ? contentView.highlightMoveDuration
+            : undefined;
+        const previousResizeDuration = contentView
+            && contentView.highlightResizeDuration !== undefined
+            ? contentView.highlightResizeDuration
+            : undefined;
+
+        if (previousMoveDuration !== undefined)
+            contentView.highlightMoveDuration = 0;
+        if (previousResizeDuration !== undefined)
+            contentView.highlightResizeDuration = 0;
+
+        selection.setCurrentIndex(targetIndex);
+        if (contentView && contentView.positionViewAtIndex)
+            contentView.positionViewAtIndex(targetIndex, ListView.Beginning);
+        if (contentView
+                && contentView.contentX !== undefined
+                && selection.width > 0)
+            contentView.contentX = targetIndex * selection.width;
+
+        Qt.callLater(function() {
+            if (!contentView)
+                return;
+            if (previousMoveDuration !== undefined)
+                contentView.highlightMoveDuration = previousMoveDuration;
+            if (previousResizeDuration !== undefined)
+                contentView.highlightResizeDuration = previousResizeDuration;
+        });
+    }
+
     function syncCurrentTab(animate) {
         if (!shellScreenState)
             return;
 
         const targetIndex = root.tabIndex(shellScreenState.activeTab);
-        if (selection.currentIndex === targetIndex)
+        const contentView = selection.contentItem;
+        const expectedX = targetIndex * selection.width;
+        const visuallyAligned = !contentView
+            || contentView.contentX === undefined
+            || Math.abs(contentView.contentX - expectedX) < 0.5;
+        if (selection.currentIndex === targetIndex && visuallyAligned)
             return;
 
-        const contentView = selection.contentItem;
-        const canPositionInstantly = contentView
-            && contentView.highlightMoveDuration !== undefined
-            && contentView.positionViewAtIndex;
-        if (animate !== false || !canPositionInstantly) {
+        if (animate === true) {
             selection.setCurrentIndex(targetIndex);
             return;
         }
 
-        const previousDuration = contentView.highlightMoveDuration;
-        contentView.highlightMoveDuration = 0;
-        selection.setCurrentIndex(targetIndex);
-        contentView.positionViewAtIndex(targetIndex, ListView.Beginning);
-        contentView.highlightMoveDuration = previousDuration;
+        root.positionTabInstantly(targetIndex);
     }
 
     function componentForPage(pageId) {
@@ -241,13 +272,19 @@ PanelWindow {
         id: inputShield
 
         anchors.fill: inputSurface
-        z: 0
+        z: 0.5
         enabled: root.dashboardVisible
         acceptedButtons: Qt.AllButtons
+        hoverEnabled: true
         preventStealing: true
+        propagateComposedEvents: false
+        scrollGestureEnabled: true
         onPressed: mouse => mouse.accepted = true
         onReleased: mouse => mouse.accepted = true
+        onPositionChanged: mouse => mouse.accepted = true
         onWheel: wheel => wheel.accepted = true
+        onDoubleClicked: mouse => mouse.accepted = true
+        onPressAndHold: mouse => mouse.accepted = true
         onClicked: mouse => {
             mouse.accepted = true;
             if (mouse.x >= panelCard.x
@@ -261,6 +298,7 @@ PanelWindow {
 
     Rectangle {
         anchors.fill: parent
+        z: 0
         color: Config.colorWithOpacity(Config.styling.bg0, 1)
         opacity: root.backdropOpacity
 
@@ -294,70 +332,26 @@ PanelWindow {
                 radius: Config.styling.radius
             }
 
-            Rectangle {
-                id: globalToolbar
-                z: 2
-                anchors {
-                    top: parent.top
-                    left: parent.left
-                    right: parent.right
-                }
-                height: 36
-                color: Config.styling.bg1
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: Config.spacing.md
-                    anchors.rightMargin: Config.spacing.md
-                    spacing: Config.spacing.xs
-
-                    Item { Layout.fillWidth: true }
-
-                    Text {
-                        text: qsTr("Details")
-                        color: Config.styling.text2
-                        font.pixelSize: 12
-                        font.bold: true
-                    }
-
-                    DashboardModeSwitch {
-                        mode: root.presentationMode
-                        onModeRequested: mode => root.setPresentationMode(mode)
-                    }
-                }
-
-                Rectangle {
-                    anchors {
-                        left: parent.left
-                        right: parent.right
-                        bottom: parent.bottom
-                    }
-                    height: 1
-                    color: Config.styling.bg3
-                }
-            }
-
             SwipeView {
                 id: selection
-                anchors {
-                    fill: parent
-                    topMargin: globalToolbar.height
-                }
+                anchors.fill: parent
                 interactive: false
                 clip: true
-                Component.onCompleted: root.syncCurrentTab(false)
+                Component.onCompleted: Qt.callLater(() => root.syncCurrentTab(false))
 
                 WheelHandler {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
                     orientation: Qt.Horizontal
-                    blocking: false
+                    blocking: true
 
                     onActiveChanged: {
                         if (!active)
                             root.resetTabSwipe();
                     }
 
-                    onWheel: event => root.queueTabSwipeFromWheelEvent(event)
+                    onWheel: event => {
+                        event.accepted = root.queueTabSwipeFromWheelEvent(event);
+                    }
                 }
 
                 Repeater {
@@ -380,8 +374,7 @@ PanelWindow {
             enabled: root.shellScreenState !== null
 
             function onActiveTabChanged() {
-                const animate = root.shellScreenState.dashboardPhase !== "closed"
-                    && root.shellScreenState.dashboardPhase !== "opening";
+                const animate = root.shellScreenState.dashboardPhase === "open";
                 root.resetTabSwipe();
                 root.syncCurrentTab(animate);
             }
@@ -389,6 +382,8 @@ PanelWindow {
             function onDashboardPhaseChanged() {
                 if (root.shellScreenState.dashboardPhase !== "open")
                     root.resetTabSwipe();
+                if (root.shellScreenState.dashboardPhase === "opening")
+                    Qt.callLater(() => root.syncCurrentTab(false));
             }
         }
     }
