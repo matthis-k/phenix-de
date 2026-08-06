@@ -78,9 +78,7 @@ Rectangle {
                 hoverEnabled: root.navigable
                 cursorShape: root.navigable ? Qt.PointingHandCursor : Qt.ArrowCursor
                 fillOnHover: false
-                indicatorOnHover: root.navigable
-                highlightSide: ActiveIndicator.Side.Bottom
-                fillOpacity: 0
+                indicatorOnHover: false
                 active: false
                 backgroundColor: "transparent"
                 pressedBackgroundColor: "transparent"
@@ -102,17 +100,43 @@ Rectangle {
                         Layout.alignment: Qt.AlignVCenter
                     }
 
-                    Text {
+                    Item {
                         Layout.fillWidth: true
-                        text: root.title
-                        color: navigationAction.hovered && root.navigable
-                            ? Config.styling.secondaryAccent
-                            : root.titleColor
-                        font.pixelSize: 16
-                        font.bold: true
-                        elide: Text.ElideRight
+                        Layout.fillHeight: true
+                        implicitHeight: titleText.implicitHeight
 
-                        Animations.StateColorBehavior on color {}
+                        Text {
+                            id: titleText
+
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: root.title
+                            color: root.titleColor
+                            font.pixelSize: 16
+                            font.bold: true
+                            elide: Text.ElideRight
+                        }
+
+                        Rectangle {
+                            id: titleUnderline
+
+                            anchors.left: titleText.left
+                            anchors.bottom: parent.bottom
+                            width: Math.min(titleText.paintedWidth, titleText.width)
+                            height: 3
+                            color: titleText.color
+                            opacity: root.navigable
+                                && (navigationAction.hovered
+                                    || navigationAction.down
+                                    || navigationAction.visualFocus)
+                                ? 1
+                                : 0
+
+                            Animations.RevealBehavior on opacity {
+                                duration: Config.motion.micro
+                            }
+                        }
                     }
                 }
             }
