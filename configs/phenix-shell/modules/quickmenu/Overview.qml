@@ -239,6 +239,8 @@ DashboardPage {
     }
 
     NavigableSectionHeader {
+        id: notificationsSection
+
         Layout.fillWidth: true
         title: qsTr("Notifications")
         subtitle: NotificationCenter.doNotDisturbEnabled
@@ -260,12 +262,12 @@ DashboardPage {
 
             InfoRow {
                 Layout.fillWidth: true
-                iconName: parent.parent.iconName
-                iconColor: parent.parent.iconColor
-                labelColor: parent.parent.iconColor
+                iconName: notificationsSection.iconName
+                iconColor: notificationsSection.iconColor
+                labelColor: notificationsSection.iconColor
                 label: qsTr("Current")
                 value: String(NotificationCenter.count)
-                valueColor: parent.parent.iconColor
+                valueColor: notificationsSection.iconColor
             }
 
             Text {
