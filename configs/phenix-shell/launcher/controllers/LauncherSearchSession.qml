@@ -36,18 +36,32 @@ Item {
         return String(text || "").trim().length > 0;
     }
 
+    function cancelPendingAsyncSearches() {
+        var states = asyncBackendQueries || {};
+        for (var key in states) {
+            var state = states[key];
+            if (!state || !state.pending || !state.backend)
+                continue;
+            if (typeof state.backend.cancelAsyncSearch === "function")
+                state.backend.cancelAsyncSearch(state.pending, state.generation || 0);
+        }
+        asyncBackendQueries = {};
+        loading = false;
+        asyncGeneration += 1;
+    }
+
     function clearSearchState() {
         searchTimer.stop();
+        cancelPendingAsyncSearches();
         resultsClearRequested();
-        loading = false;
         if (controller)
             controller.clearSearchOutputState();
-        asyncBackendQueries = {};
-        asyncGeneration += 1;
     }
 
     function updateQuery(text) {
         tracer.trace("updateQuery", function() { return { textLen: (text || "").length, revision: queryRevision + 1 }; });
+        searchTimer.stop();
+        cancelPendingAsyncSearches();
         queryRevision += 1;
         generation += 1;
         query = text || "";
@@ -56,7 +70,9 @@ Item {
 
         if (!hasUserQuery(query)) {
             tracer.debug("updateQuery", function() { return { action: "clear", queryEmpty: true }; });
-            clearSearchState();
+            resultsClearRequested();
+            if (controller)
+                controller.clearSearchOutputState();
             return;
         }
 
@@ -169,7 +185,7 @@ Item {
             if (state.ready === text || state.pending === text)
                 continue;
 
-            beginAsyncBackendSearch(backend, key, text);
+            beginAsyncBackendSearch(backend, key, text, currentGeneration);
 
             backend.searchAsync(text, function(newResults) {
                 receiveAsyncBackendResults(backend, key, text, currentGeneration, newResults || []);
@@ -179,11 +195,13 @@ Item {
 
     readonly property var triggerAsyncBackends: prof.fn("triggerAsyncBackends", _triggerAsyncBackends)
 
-    function beginAsyncBackendSearch(backend, key, text) {
+    function beginAsyncBackendSearch(backend, key, text, requestGeneration) {
         tracer.debug("beginAsyncBackendSearch", function() { return { key: key, text: text, backend: backend.backendId }; });
         var state = asyncBackendQueries[key] || {};
         state.pending = text;
         state.ready = "";
+        state.backend = backend;
+        state.generation = requestGeneration;
         asyncBackendQueries[key] = state;
         backend.beginAsyncSearch(text);
         refreshLoading();
@@ -199,6 +217,8 @@ Item {
         var state = asyncBackendQueries[key] || {};
         state.pending = "";
         state.ready = text;
+        state.backend = backend;
+        state.generation = requestGeneration;
         asyncBackendQueries[key] = state;
         backend.finishAsyncSearch(text, update || []);
         refreshLoading();
