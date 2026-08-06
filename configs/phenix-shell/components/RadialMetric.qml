@@ -13,12 +13,12 @@ Rectangle {
     property color accentColor: Config.styling.primaryAccent
     property bool emphasized: false
     property bool compact: false
-    property real gaugeSize: root.compact ? 48 : 64
+    property real gaugeSize: root.compact ? 46 : 64
 
     implicitWidth: root.compact ? 76 : 108
     implicitHeight: root.compact
-        ? 82
-        : (root.detail !== "" ? 136 : 116)
+        ? 88
+        : (root.detail !== "" ? 140 : 122)
     color: Config.styling.bg2
     radius: Config.styling.radius
     border.width: emphasized ? 2 : 1
@@ -29,29 +29,33 @@ Rectangle {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: root.compact ? Config.spacing.xxs : Config.spacing.xs
-        spacing: root.compact ? 1 : 3
+        anchors.margins: root.compact ? Config.spacing.xs : Config.spacing.sm
+        spacing: root.compact ? 2 : 4
 
-        RowLayout {
+        Item {
             Layout.fillWidth: true
-            spacing: 5
+            Layout.preferredHeight: 18
 
             Icon {
                 visible: root.iconName !== ""
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
                 iconName: root.iconName
                 fallbackIconName: root.iconName
                 color: root.accentColor
-                implicitSize: 16
-                Layout.alignment: Qt.AlignVCenter
+                implicitSize: root.compact ? 14 : 16
             }
 
             Text {
-                Layout.fillWidth: true
+                anchors.fill: parent
+                anchors.leftMargin: root.iconName !== "" ? 16 : 0
+                anchors.rightMargin: root.iconName !== "" ? 16 : 0
                 text: root.label
                 color: root.accentColor
-                font.pixelSize: 12
+                font.pixelSize: root.compact ? 11 : 12
                 font.bold: true
-                horizontalAlignment: root.compact ? Text.AlignHCenter : Text.AlignLeft
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
                 elide: Text.ElideRight
             }
         }
@@ -65,8 +69,10 @@ Rectangle {
                 anchors.fill: parent
                 percent: root.percent
                 accentColor: root.accentColor
-                trackColor: Config.styling.bg4
-                strokeWidth: Math.max(5, width * 0.09)
+                trackColor: Config.colorWithOpacity(root.accentColor, 0.2)
+                strokeWidth: root.compact
+                    ? Math.max(6, width * 0.13)
+                    : Math.max(7, width * 0.11)
             }
 
             Text {
@@ -74,8 +80,8 @@ Rectangle {
                 text: root.valueText
                 color: root.accentColor
                 font.pixelSize: root.compact
-                    ? (root.valueText.length > 5 ? 11 : 13)
-                    : (root.valueText.length > 5 ? 13 : 16)
+                    ? (root.valueText.length > 5 ? 8 : 10)
+                    : (root.valueText.length > 5 ? 11 : 13)
                 font.bold: true
                 font.family: "monospace"
                 horizontalAlignment: Text.AlignHCenter
