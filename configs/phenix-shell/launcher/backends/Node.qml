@@ -76,9 +76,9 @@ QtObject {
 
     function toTreeObject() {
         tracer.trace("toTreeObject", function() { return { nodeId: root.nodeId, template: root.template, entryCount: root.entries.length }; });
-        var id = root.nodeId || root.name || root.title || root.display.title;
         var displayData = EntryData.displayFor(root);
         var matchData = EntryData.matchFor(root);
+        var id = root.nodeId || root.name || displayData.title;
         var out = {
             id: id,
             template: root.template,
