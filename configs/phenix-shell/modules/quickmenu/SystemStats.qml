@@ -147,144 +147,143 @@ DashboardPage {
         rowSpacing: root.sectionSpacing
         columnSpacing: 0
 
-    AdaptiveDashboardSection {
-        observation: cpuObservation
-        localDetailed: true
-        title: qsTr("CPU usage")
-        subtitle: cpuObservation.detailed
-            ? qsTr("Average and every logical core over time")
-            : (cpuObservation.promoted
-                ? qsTr("%1 hot core(s) promoted").arg(cpuObservation.promotedRows.length)
-                : qsTr("Current aggregate load"))
-        iconName: "utilities-system-monitor-symbolic"
-        iconColor: root.observationColor(cpuObservation, Config.colors.blue)
-        titleColor: cpuObservation.promoted ? iconColor : Config.styling.text0
-        subtitleColor: cpuObservation.promoted ? iconColor : Config.styling.text2
-        subtitleBold: cpuObservation.promoted
-        summary: Component {
-            HeaderMetric {
-                label: qsTr("AVG")
-                value: Services.Stats.cpuPercent
-                metricColor: root.observationColor(cpuObservation, Config.colors.blue)
-            }
-        }
-        overviewDelegate: null
-        promotedDelegate: Component { CpuPromoted {} }
-        detailedDelegate: Component { CpuTelemetry {} }
-        Layout.fillWidth: true
-        Layout.row: root.metricSectionRank("cpu")
-    }
-
-    AdaptiveDashboardSection {
-        observation: memoryObservation
-        localDetailed: true
-        title: qsTr("Memory")
-        subtitle: memoryObservation.detailed
-            ? qsTr("Allocation and usage history")
-            : (memoryObservation.promoted
-                ? memoryObservation.promotionReason
-                : qsTr("Current RAM pressure"))
-        iconName: "computer-symbolic"
-        iconColor: root.observationColor(memoryObservation, root.ramColor)
-        titleColor: memoryObservation.promoted ? iconColor : Config.styling.text0
-        subtitleColor: memoryObservation.promoted ? iconColor : Config.styling.text2
-        subtitleBold: memoryObservation.promoted
-        summary: Component {
-            RowLayout {
-                spacing: Config.spacing.xs
-
+        AdaptiveDashboardSection {
+            observation: cpuObservation
+            localDetailed: false
+            title: qsTr("CPU usage")
+            subtitle: cpuObservation.detailed
+                ? qsTr("Average and every logical core over time")
+                : (cpuObservation.promoted
+                    ? qsTr("%1 hot core(s) promoted").arg(cpuObservation.promotedRows.length)
+                    : qsTr("Current aggregate load"))
+            iconName: "utilities-system-monitor-symbolic"
+            iconColor: root.observationColor(cpuObservation, Config.colors.blue)
+            titleColor: cpuObservation.promoted ? iconColor : Config.styling.text0
+            subtitleColor: cpuObservation.promoted ? iconColor : Config.styling.text2
+            subtitleBold: cpuObservation.promoted
+            summary: Component {
                 HeaderMetric {
-                    label: qsTr("RAM")
-                    value: Services.Stats.memoryPercent
-                    metricColor: root.percentColor(Services.Stats.memoryPercent, root.ramColor, 85, 90)
-                }
-
-                HeaderMetric {
-                    visible: Services.Stats.swapTotalMiB > 0 && Services.Stats.swapPercent > 0
-                    label: qsTr("SWAP")
-                    value: Services.Stats.swapPercent
-                    metricColor: root.percentColor(Services.Stats.swapPercent, root.swapColor, 85, 90)
+                    label: qsTr("AVG")
+                    value: Services.Stats.cpuPercent
+                    metricColor: root.observationColor(cpuObservation, Config.colors.blue)
                 }
             }
+            overviewDelegate: null
+            promotedDelegate: Component { CpuPromoted {} }
+            detailedDelegate: Component { CpuTelemetry {} }
+            Layout.fillWidth: true
+            Layout.row: root.metricSectionRank("cpu")
         }
-        overviewDelegate: null
-        promotedDelegate: Component { MemoryPromoted {} }
-        detailedDelegate: Component { MemoryTelemetry {} }
-        Layout.fillWidth: true
-        Layout.row: root.metricSectionRank("memory")
-    }
 
-    AdaptiveDashboardSection {
-        observation: gpuObservation
-        localDetailed: true
-        domainVisible: Services.Stats.gpuAvailable
-        title: qsTr("GPU")
-        subtitle: gpuObservation.detailed
-            ? qsTr("Compute, VRAM, and usage history")
-            : (gpuObservation.promoted
-                ? gpuObservation.promotionReason
-                : qsTr("Current GPU pressure"))
-        iconName: "video-display-symbolic"
-        iconColor: root.observationColor(gpuObservation, root.gpuUsageColor)
-        titleColor: gpuObservation.promoted ? iconColor : Config.styling.text0
-        subtitleColor: gpuObservation.promoted ? iconColor : Config.styling.text2
-        subtitleBold: gpuObservation.promoted
-        summary: Component {
-            RowLayout {
-                spacing: Config.spacing.xs
+        AdaptiveDashboardSection {
+            observation: memoryObservation
+            localDetailed: false
+            title: qsTr("Memory")
+            subtitle: memoryObservation.detailed
+                ? qsTr("Allocation and usage history")
+                : (memoryObservation.promoted
+                    ? memoryObservation.promotionReason
+                    : qsTr("Current RAM pressure"))
+            iconName: "computer-symbolic"
+            iconColor: root.observationColor(memoryObservation, root.ramColor)
+            titleColor: memoryObservation.promoted ? iconColor : Config.styling.text0
+            subtitleColor: memoryObservation.promoted ? iconColor : Config.styling.text2
+            subtitleBold: memoryObservation.promoted
+            summary: Component {
+                RowLayout {
+                    spacing: Config.spacing.xs
 
-                HeaderMetric {
-                    label: qsTr("GPU")
-                    value: Services.Stats.gpuUtilPercent
-                    metricColor: root.percentColor(Services.Stats.gpuUtilPercent, root.gpuUsageColor, 85, 90)
-                }
+                    HeaderMetric {
+                        label: qsTr("RAM")
+                        value: Services.Stats.memoryPercent
+                        metricColor: root.percentColor(Services.Stats.memoryPercent, root.ramColor, 85, 90)
+                    }
 
-                HeaderMetric {
-                    label: qsTr("VRAM")
-                    value: Services.Stats.gpuVramPercent
-                    metricColor: root.percentColor(Services.Stats.gpuVramPercent, root.gpuVramColor, 85, 90)
+                    HeaderMetric {
+                        visible: Services.Stats.swapTotalMiB > 0 && Services.Stats.swapPercent > 0
+                        label: qsTr("SWAP")
+                        value: Services.Stats.swapPercent
+                        metricColor: root.percentColor(Services.Stats.swapPercent, root.swapColor, 85, 90)
+                    }
                 }
             }
+            overviewDelegate: null
+            promotedDelegate: Component { MemoryPromoted {} }
+            detailedDelegate: Component { MemoryTelemetry {} }
+            Layout.fillWidth: true
+            Layout.row: root.metricSectionRank("memory")
         }
-        overviewDelegate: null
-        promotedDelegate: Component { GpuPromoted {} }
-        detailedDelegate: Component { GpuTelemetry {} }
-        Layout.fillWidth: true
-        Layout.row: root.metricSectionRank("gpu")
-    }
 
-    AdaptiveDashboardSection {
-        observation: storageObservation
-        localDetailed: true
-        title: qsTr("Storage")
-        subtitle: storageObservation.detailed
-            ? qsTr("Every mounted filesystem")
-            : (storageObservation.promoted
-                ? storageObservation.promotionReason
-                : qsTr("Current root filesystem usage"))
-        iconName: "drive-harddisk-symbolic"
-        iconColor: root.observationColor(storageObservation, Config.colors.peach)
-        titleColor: storageObservation.promoted ? iconColor : Config.styling.text0
-        subtitleColor: storageObservation.promoted ? iconColor : Config.styling.text2
-        subtitleBold: storageObservation.promoted
-        summary: Component {
-            HeaderMetric {
-                label: "/"
-                value: Services.Stats.rootDiskPercent
-                metricColor: root.percentColor(Services.Stats.rootDiskPercent, Config.colors.peach, 75, 90)
+        AdaptiveDashboardSection {
+            observation: gpuObservation
+            localDetailed: false
+            domainVisible: Services.Stats.gpuAvailable
+            title: qsTr("GPU")
+            subtitle: gpuObservation.detailed
+                ? qsTr("Compute, VRAM, and usage history")
+                : (gpuObservation.promoted
+                    ? gpuObservation.promotionReason
+                    : qsTr("Current GPU pressure"))
+            iconName: "video-display-symbolic"
+            iconColor: root.observationColor(gpuObservation, root.gpuUsageColor)
+            titleColor: gpuObservation.promoted ? iconColor : Config.styling.text0
+            subtitleColor: gpuObservation.promoted ? iconColor : Config.styling.text2
+            subtitleBold: gpuObservation.promoted
+            summary: Component {
+                RowLayout {
+                    spacing: Config.spacing.xs
+
+                    HeaderMetric {
+                        label: qsTr("GPU")
+                        value: Services.Stats.gpuUtilPercent
+                        metricColor: root.percentColor(Services.Stats.gpuUtilPercent, root.gpuUsageColor, 85, 90)
+                    }
+
+                    HeaderMetric {
+                        label: qsTr("VRAM")
+                        value: Services.Stats.gpuVramPercent
+                        metricColor: root.percentColor(Services.Stats.gpuVramPercent, root.gpuVramColor, 85, 90)
+                    }
+                }
             }
+            overviewDelegate: null
+            promotedDelegate: Component { GpuPromoted {} }
+            detailedDelegate: Component { GpuTelemetry {} }
+            Layout.fillWidth: true
+            Layout.row: root.metricSectionRank("gpu")
         }
-        overviewDelegate: null
-        promotedDelegate: Component {
-            StorageOverview { rows: storageObservation.exceptionalRows }
-        }
-        detailedDelegate: Component {
-            StorageOverview { rows: storageObservation.visibleRows }
-        }
-        Layout.fillWidth: true
-        Layout.row: root.metricSectionRank("storage")
-    }
 
+        AdaptiveDashboardSection {
+            observation: storageObservation
+            localDetailed: false
+            title: qsTr("Storage")
+            subtitle: storageObservation.detailed
+                ? qsTr("Every mounted filesystem")
+                : (storageObservation.promoted
+                    ? storageObservation.promotionReason
+                    : qsTr("Current root filesystem usage"))
+            iconName: "drive-harddisk-symbolic"
+            iconColor: root.observationColor(storageObservation, Config.colors.peach)
+            titleColor: storageObservation.promoted ? iconColor : Config.styling.text0
+            subtitleColor: storageObservation.promoted ? iconColor : Config.styling.text2
+            subtitleBold: storageObservation.promoted
+            summary: Component {
+                HeaderMetric {
+                    label: "/"
+                    value: Services.Stats.rootDiskPercent
+                    metricColor: root.percentColor(Services.Stats.rootDiskPercent, Config.colors.peach, 75, 90)
+                }
+            }
+            overviewDelegate: null
+            promotedDelegate: Component {
+                StorageOverview { rows: storageObservation.exceptionalRows }
+            }
+            detailedDelegate: Component {
+                StorageOverview { rows: storageObservation.visibleRows }
+            }
+            Layout.fillWidth: true
+            Layout.row: root.metricSectionRank("storage")
+        }
     }
 
     DashboardSection {
@@ -318,6 +317,10 @@ DashboardPage {
 
     component MetricGrid: GridLayout {
         Layout.fillWidth: true
+        Layout.leftMargin: Config.spacing.xs
+        Layout.rightMargin: Config.spacing.xs
+        Layout.topMargin: Config.spacing.xs
+        Layout.bottomMargin: Config.spacing.xs
         columns: Math.max(1, Math.floor((width + columnSpacing) / (108 + columnSpacing)))
         columnSpacing: Config.spacing.xs
         rowSpacing: Config.spacing.xs
@@ -496,8 +499,8 @@ DashboardPage {
                         }
 
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 34
-                        implicitHeight: 34
+                        Layout.preferredHeight: 36
+                        implicitHeight: 36
                         contentHorizontalPadding: Config.spacing.xxs
                         graphView: cpuGraph
                         seriesName: `core${coreIndex}`
@@ -514,23 +517,23 @@ DashboardPage {
                         Item { Layout.fillWidth: true }
 
                         Item {
-                            Layout.preferredWidth: 24
-                            Layout.preferredHeight: 24
+                            Layout.preferredWidth: 26
+                            Layout.preferredHeight: 26
                             Layout.alignment: Qt.AlignVCenter
 
                             UsageArc {
                                 anchors.fill: parent
                                 percent: coreLegend.corePercent
-                                accentColor: Config.colors.base
-                                trackColor: Config.colorWithOpacity(Config.colors.base, 0.25)
-                                strokeWidth: 4
+                                accentColor: coreLegend.contentColor
+                                trackColor: Config.colorWithOpacity(coreLegend.contentColor, 0.28)
+                                strokeWidth: 5
                             }
 
                             Text {
                                 anchors.fill: parent
                                 text: `${Math.round(coreLegend.corePercent)}`
                                 color: coreLegend.contentColor
-                                font.pixelSize: 8
+                                font.pixelSize: 7
                                 font.bold: true
                                 font.family: "monospace"
                                 horizontalAlignment: Text.AlignHCenter
@@ -673,32 +676,32 @@ DashboardPage {
         property color metricColor: Config.styling.text0
 
         spacing: Config.spacing.xxs
-        Layout.minimumHeight: 36
+        Layout.minimumHeight: 38
 
         Text {
             text: headerMetric.label
             color: headerMetric.metricColor
-            font.pixelSize: 12
+            font.pixelSize: 11
             font.bold: true
         }
 
         Item {
-            Layout.preferredWidth: 36
-            Layout.preferredHeight: 36
+            Layout.preferredWidth: 38
+            Layout.preferredHeight: 38
 
             UsageArc {
                 anchors.fill: parent
                 percent: headerMetric.value
                 accentColor: headerMetric.metricColor
-                trackColor: Config.styling.bg4
-                strokeWidth: 3
+                trackColor: Config.colorWithOpacity(headerMetric.metricColor, 0.2)
+                strokeWidth: 5
             }
 
             Text {
                 anchors.fill: parent
                 text: `${Math.round(headerMetric.value)}%`
                 color: headerMetric.metricColor
-                font.pixelSize: 12
+                font.pixelSize: 9
                 font.bold: true
                 font.family: "monospace"
                 horizontalAlignment: Text.AlignHCenter
@@ -706,5 +709,4 @@ DashboardPage {
             }
         }
     }
-
 }
