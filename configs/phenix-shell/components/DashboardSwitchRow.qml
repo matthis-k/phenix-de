@@ -12,6 +12,7 @@ Item {
     property color iconColor: Config.styling.text0
     property bool checked: false
     property int switchSlotWidth: 58
+    property int trailingControlInset: Config.spacing.xs
     property bool navigationEnabled: false
     property string navigationLabel: qsTr("Open %1 details").arg(root.label)
 
@@ -69,7 +70,10 @@ Item {
     RowLayout {
         id: row
         anchors.fill: parent
-        anchors.margins: Config.spacing.xs
+        anchors.leftMargin: Config.spacing.xs
+        anchors.rightMargin: root.trailingControlInset
+        anchors.topMargin: Config.spacing.xs
+        anchors.bottomMargin: Config.spacing.xs
         spacing: Config.spacing.sm
 
         Icon {
@@ -109,11 +113,8 @@ Item {
             DashboardToggleSwitch {
                 checked: root.checked
                 enabled: root.enabled
-                anchors {
-                    right: parent.right
-                    rightMargin: 2
-                    verticalCenter: parent.verticalCenter
-                }
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
                 onToggled: root.toggled(checked)
             }
         }
