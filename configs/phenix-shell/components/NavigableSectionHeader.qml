@@ -17,6 +17,7 @@ Rectangle {
     property var screenState: null
     property string targetTab: ""
     property bool navigable: targetTab !== "" && screenState !== null
+    property bool compact: false
     property bool showDetailToggle: false
     property bool inheritedDetailed: false
     property bool localDetailed: false
@@ -58,7 +59,7 @@ Rectangle {
 
         anchors.fill: parent
         anchors.margins: root.sectionPadding
-        spacing: Config.spacing.xs
+        spacing: root.compact ? 0 : Config.spacing.xs
 
         RowLayout {
             Layout.fillWidth: true
@@ -108,15 +109,6 @@ Rectangle {
 
                         Animations.StateColorBehavior on color {}
                     }
-
-                    Icon {
-                        visible: root.navigable
-                        iconName: "go-next-symbolic"
-                        fallbackIconName: "go-next-symbolic"
-                        color: Config.styling.text1
-                        implicitSize: 16
-                        Layout.alignment: Qt.AlignVCenter
-                    }
                 }
             }
 
@@ -137,16 +129,36 @@ Rectangle {
                 subject: root.title
                 onToggleRequested: root.toggleLocalDetails()
             }
+
+            DashboardIconButton {
+                visible: root.navigable
+                Layout.preferredWidth: 28
+                Layout.minimumWidth: 28
+                Layout.maximumWidth: 28
+                Layout.preferredHeight: 28
+                Layout.alignment: Qt.AlignVCenter
+                iconName: "go-next-symbolic"
+                fallbackIconName: iconName
+                iconColor: hovered ? Config.styling.secondaryAccent : Config.styling.text1
+                backgroundColor: hovered ? Config.styling.bg3 : "transparent"
+                active: hovered
+                fillOnHover: true
+                indicatorOnHover: false
+                accessibleName: qsTr("Open %1").arg(root.title)
+                onClicked: root.navigate()
+            }
         }
 
         Rectangle {
+            visible: !root.compact
             Layout.fillWidth: true
-            implicitHeight: 1
+            implicitHeight: visible ? 1 : 0
             color: Config.styling.bg3
         }
 
         DashboardSectionContent {
             id: body
+            visible: !root.compact
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.alignment: Qt.AlignTop

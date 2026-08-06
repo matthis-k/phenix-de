@@ -221,31 +221,23 @@ DashboardPage {
     NavigableSectionHeader {
         Layout.fillWidth: true
         visible: PowerService.hasBattery
-        title: qsTr("Battery")
+        compact: true
+        title: qsTr("Battery %1%").arg(PowerService.batteryPercent)
         subtitle: PowerService.statusText
         iconName: PowerService.iconName
         iconColor: PowerService.iconColor
         titleColor: iconColor
         screenState: root.screenState
         targetTab: "energy"
-
-        Battery {
-            Layout.fillWidth: true
-            compact: true
-            showGraph: false
-            showPowerModes: false
-            navigationEnabled: false
-        }
     }
 
     NavigableSectionHeader {
-        id: notificationsSection
-
         Layout.fillWidth: true
-        title: qsTr("Notifications")
+        compact: true
+        title: qsTr("Notifications (%1)").arg(NotificationCenter.count)
         subtitle: NotificationCenter.doNotDisturbEnabled
             ? qsTr("Do Not Disturb enabled")
-            : qsTr("%1 current").arg(NotificationCenter.count)
+            : qsTr("Do Not Disturb disabled")
         iconName: NotificationCenter.doNotDisturbEnabled
             ? "notifications-disabled-symbolic"
             : "bell-symbolic"
@@ -255,32 +247,22 @@ DashboardPage {
         titleColor: iconColor
         screenState: root.screenState
         targetTab: "notifications"
+        accessory: Component {
+            RowLayout {
+                spacing: Config.spacing.xxs
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: Config.spacing.xs
+                Text {
+                    text: qsTr("DND")
+                    color: Config.styling.text1
+                    font.pixelSize: 12
+                    font.bold: true
+                }
 
-            InfoRow {
-                Layout.fillWidth: true
-                iconName: notificationsSection.iconName
-                iconColor: notificationsSection.iconColor
-                labelColor: notificationsSection.iconColor
-                label: qsTr("Current")
-                value: String(NotificationCenter.count)
-                valueColor: notificationsSection.iconColor
-            }
-
-            Text {
-                text: qsTr("Do Not Disturb")
-                color: Config.styling.text1
-                font.pixelSize: 12
-                font.bold: true
-            }
-
-            DashboardToggleSwitch {
-                Accessible.name: qsTr("Do Not Disturb")
-                checked: NotificationCenter.doNotDisturbEnabled
-                onToggled: NotificationCenter.setDoNotDisturb(checked)
+                DashboardToggleSwitch {
+                    Accessible.name: qsTr("Do Not Disturb")
+                    checked: NotificationCenter.doNotDisturbEnabled
+                    onToggled: NotificationCenter.setDoNotDisturb(checked)
+                }
             }
         }
     }
