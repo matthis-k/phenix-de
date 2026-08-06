@@ -136,7 +136,12 @@ QtObject {
         var control = target && target.control;
         if (!control || control.kind !== "slider")
             return outcome(false, false, "missing-slider-control");
-        var success = root.controlPort.adjust(control, Number(args.delta || 0));
+
+        var adjustment = root.controlPort.adjust(control, Number(args.delta || 0));
+        var success = adjustment === true || !!(adjustment && adjustment.success);
+        var value = adjustment && adjustment.value !== undefined ? adjustment.value : null;
+        if (success && value !== null && value !== undefined && isFinite(Number(value)))
+            root.runtime.refreshControlResult(target, Number(value));
         return outcome(success, false, success ? "" : "control-command-failed");
     }
 
