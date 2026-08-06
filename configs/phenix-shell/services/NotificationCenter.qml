@@ -100,13 +100,46 @@ Singleton {
         return Config.styling.text0;
     }
 
-    function imageSource(notification) {
-        const value = String(notification?.image || "").trim();
-        if (value === "")
+    function normalizeImageLocation(value) {
+        const text = String(value || "").trim();
+        if (text === "")
             return "";
-        if (/^[a-z][a-z0-9+.-]*:/i.test(value))
-            return value;
-        return value.startsWith("/") ? `file://${value}` : value;
+        if (/^[a-z][a-z0-9+.-]*:/i.test(text))
+            return text;
+        return text.startsWith("/") ? `file://${text}` : text;
+    }
+
+    function appIconCanBePreview(value) {
+        const text = String(value || "").trim();
+        if (text.startsWith("/"))
+            return true;
+        return /^(file|https?|data|qrc):/i.test(text);
+    }
+
+    function imageSource(notification) {
+        if (!notification)
+            return "";
+
+        const directImage = root.normalizeImageLocation(notification.image);
+        if (directImage !== "")
+            return directImage;
+
+        const hints = notification.hints || {};
+        const hintedImage = hints["image-path"]
+            || hints.image_path
+            || hints["image_path"]
+            || "";
+        const normalizedHint = root.normalizeImageLocation(hintedImage);
+        if (normalizedHint !== "")
+            return normalizedHint;
+
+        // Several screenshot tools put the captured file in the app-icon
+        // argument rather than the notification image hint. Only accept actual
+        // paths/URLs here so regular symbolic application icons stay icons.
+        if (root.appIconCanBePreview(notification.appIcon))
+            return root.normalizeImageLocation(notification.appIcon);
+
+        return "";
     }
 
     function renderBody(body) {
