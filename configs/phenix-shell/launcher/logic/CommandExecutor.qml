@@ -91,21 +91,23 @@ QtObject {
                 return outcome(intentResult !== false, !!intentResult, intentResult === false ? "legacy-intent-failed" : "");
             }
 
+            var result;
             var payload = action.payload || {};
             if (payload.service) {
                 var serviceSuccess = root.serviceCommands.execute(payload);
-                return outcome(serviceSuccess, false, serviceSuccess ? "" : "service-command-failed");
+                result = outcome(serviceSuccess, false, serviceSuccess ? "" : "service-command-failed");
+            } else {
+                var backend = root.runtime.backendFor(target.source || target.backendId);
+                if (!backend)
+                    return outcome(false, false, "backend-not-found");
+                if (!backend.activate(target, action))
+                    return outcome(false, false, "backend-activation-unsupported");
+                result = outcome(true, false, "");
             }
 
-            var backend = root.runtime.backendFor(target.source || target.backendId);
-            if (!backend)
-                return outcome(false, false, "backend-not-found");
-
-            if (!backend.activate(target, action))
-                return outcome(false, false, "backend-activation-unsupported");
-            if (target.switchActions)
+            if (result.success && target.switchActions)
                 root.runtime.refreshSwitchResult(target, action);
-            return outcome(true, false, "");
+            return result;
         } catch (error) {
             root.tracer.error("activationFailed", function() {
                 return {
