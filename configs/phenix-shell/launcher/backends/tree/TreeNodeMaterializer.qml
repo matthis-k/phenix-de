@@ -19,6 +19,8 @@ QtObject {
         tracer.trace("compositeNode", function() { return { nodeId: node?.id, pathLen: (path || []).length }; });
         const display = EntryData.displayFor(node);
         const match = EntryData.matchFor(node);
+        const semanticTerms = root._semanticTermsForNode(display, match);
+        const canonicalMatch = Object.assign({}, match, { semanticTerms: semanticTerms });
         const children = (node.children || []).map(function(child) {
             return root.compositeNode(child, path.concat([node]));
         });
@@ -26,7 +28,7 @@ QtObject {
         const rawSwitchActions = node.switchActions || (node.switchState === undefined ? null : (switchInferer ? switchInferer.switchActionMap(node, children) : null));
         const switchActions = switchInferer ? switchInferer.actionDtosForSwitchActions(rawSwitchActions) : null;
         const kind = switchActions && children.length === 0 ? "switch" : (children.length > 0 || node.template === "action-group" || node.template === "flat-action-group") ? "action-group" : "desktop-action";
-        const evaluationProfile = root._evaluationProfileForNode(node, match, !!rawSwitchActions, children.length > 0);
+        const evaluationProfile = root._evaluationProfileForNode(node, canonicalMatch, !!rawSwitchActions, children.length > 0);
         const actions = switchActions
             ? [switchActions.toggle, switchActions.on, switchActions.off].filter(Boolean)
             : action ? [root._actionDto(action.actionId || action.id || "run", action.title || qsTr("Run"), action)] : [];
@@ -44,14 +46,14 @@ QtObject {
             icon: display.icon || root.helpIcon || "system-search",
             iconColor: display.iconColor,
             display: display,
-            match: match,
-            aliases: match.aliases,
-            keywords: match.keywords,
-            tags: root._unique([root.backendId].concat(match.tags || []).filter(Boolean)),
-            fieldWeights: match.fieldWeights,
-            semanticBoostRequiresAny: match.semanticBoostRequiresAny,
-            command: match.command || "",
-            path: match.path || "",
+            match: canonicalMatch,
+            aliases: canonicalMatch.aliases,
+            keywords: canonicalMatch.keywords,
+            tags: root._unique([root.backendId].concat(canonicalMatch.tags || []).filter(Boolean)),
+            fieldWeights: canonicalMatch.fieldWeights,
+            semanticBoostRequiresAny: canonicalMatch.semanticBoostRequiresAny,
+            command: canonicalMatch.command || "",
+            path: canonicalMatch.path || "",
             actionList: actions,
             switchActions: switchActions,
             switchState: node.switchState === undefined ? null : node.switchState,
@@ -61,13 +63,13 @@ QtObject {
             risk: node.risk || null,
             children: children,
             showWhenQueryEmpty: path.length === 0,
-            usageCount: match.usageCount || 0,
-            lastUsedDaysAgo: match.lastUsedDaysAgo === undefined ? 9999 : match.lastUsedDaysAgo,
+            usageCount: canonicalMatch.usageCount || 0,
+            lastUsedDaysAgo: canonicalMatch.lastUsedDaysAgo === undefined ? 9999 : canonicalMatch.lastUsedDaysAgo,
             behavior: Object.assign({
-                tokenPolicy: match.tokenPolicy ? match.tokenPolicy : match.aliases && match.aliases.length ? { tokens: match.aliases, weight: 0.62 } : null,
+                tokenPolicy: canonicalMatch.tokenPolicy ? canonicalMatch.tokenPolicy : canonicalMatch.aliases && canonicalMatch.aliases.length ? { tokens: canonicalMatch.aliases, weight: 0.62 } : null,
                 displayPolicy: nodeBehavior.displayPolicy || null
             }, node.behavior || {}),
-            semanticTerms: root._semanticTermsForNode(display, match),
+            semanticTerms: semanticTerms,
             evaluationProfile: evaluationProfile,
             meta: {
                 action: action,
