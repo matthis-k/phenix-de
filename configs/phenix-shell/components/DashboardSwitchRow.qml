@@ -11,8 +11,6 @@ Item {
     property string iconName: ""
     property color iconColor: Config.styling.text0
     property bool checked: false
-    property int switchSlotWidth: 58
-    property int trailingControlInset: Config.spacing.xs
     property bool navigationEnabled: false
     property string navigationLabel: qsTr("Open %1 details").arg(root.label)
 
@@ -41,7 +39,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: rowMouse.containsMouse && root.enabled ? Config.styling.bg4 : Config.styling.bg3
+        color: labelMouse.containsMouse && root.enabled ? Config.styling.bg4 : Config.styling.bg3
         border.color: root.activeFocus ? Config.styling.primaryAccent : "transparent"
         border.width: root.activeFocus ? 1 : 0
         radius: Config.styling.radius
@@ -53,87 +51,100 @@ Item {
         }
     }
 
-    MouseArea {
-        id: rowMouse
-        anchors.fill: parent
-        anchors.rightMargin: root.navigationEnabled ? 36 : 0
-        z: 2
-        enabled: root.enabled
-        hoverEnabled: root.enabled
-        cursorShape: Qt.PointingHandCursor
-        onClicked: {
-            root.forceActiveFocus();
-            root.requestToggle();
-        }
-    }
-
     RowLayout {
         id: row
+
         anchors.fill: parent
-        anchors.leftMargin: Config.spacing.xs
-        anchors.rightMargin: root.trailingControlInset
-        anchors.topMargin: Config.spacing.xs
-        anchors.bottomMargin: Config.spacing.xs
+        anchors.margins: Config.spacing.xs
         spacing: Config.spacing.sm
 
-        Icon {
-            visible: root.iconName !== ""
-            iconName: root.iconName
-            color: root.iconColor
-            implicitSize: 18
-        }
-
-        ColumnLayout {
-            spacing: 2
-            Layout.fillWidth: true
-
-            Text {
-                text: root.label
-                color: Config.styling.text0
-                font.pixelSize: 14
-                font.bold: true
-            }
-
-            Text {
-                visible: text !== ""
-                text: root.subtitle
-                color: Config.styling.text2
-                font.pixelSize: 12
-                wrapMode: Text.WordWrap
-            }
-        }
-
         Item {
-            Layout.preferredWidth: root.switchSlotWidth
-            Layout.minimumWidth: root.switchSlotWidth
-            Layout.maximumWidth: root.switchSlotWidth
-            Layout.preferredHeight: 28
-            Layout.alignment: Qt.AlignVCenter
+            id: labelArea
+
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            implicitWidth: labelContent.implicitWidth
+            implicitHeight: labelContent.implicitHeight
+
+            RowLayout {
+                id: labelContent
+
+                anchors.fill: parent
+                spacing: Config.spacing.sm
+
+                Icon {
+                    visible: root.iconName !== ""
+                    iconName: root.iconName
+                    color: root.iconColor
+                    implicitSize: 18
+                    Layout.alignment: Qt.AlignVCenter
+                }
+
+                ColumnLayout {
+                    spacing: 2
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignVCenter
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: root.label
+                        color: Config.styling.text0
+                        font.pixelSize: 14
+                        font.bold: true
+                        elide: Text.ElideRight
+                    }
+
+                    Text {
+                        visible: text !== ""
+                        Layout.fillWidth: true
+                        text: root.subtitle
+                        color: Config.styling.text2
+                        font.pixelSize: 12
+                        wrapMode: Text.WordWrap
+                    }
+                }
+            }
+
+            MouseArea {
+                id: labelMouse
+
+                anchors.fill: parent
+                enabled: root.enabled
+                hoverEnabled: root.enabled
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    root.forceActiveFocus();
+                    root.requestToggle();
+                }
+            }
+        }
+
+        RowLayout {
+            id: trailingControls
+
+            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+            spacing: Config.spacing.xs
 
             DashboardToggleSwitch {
                 checked: root.checked
                 enabled: root.enabled
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
+                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                 onToggled: root.toggled(checked)
             }
-        }
 
-        DashboardIconButton {
-            visible: root.navigationEnabled
-            z: 3
-            Layout.preferredWidth: 28
-            Layout.preferredHeight: 28
-            Layout.alignment: Qt.AlignVCenter
-            iconName: "go-next-symbolic"
-            fallbackIconName: "go-next-symbolic"
-            iconColor: hovered ? Config.styling.secondaryAccent : Config.styling.text1
-            backgroundColor: hovered ? Config.styling.bg4 : "transparent"
-            active: hovered
-            fillOnHover: true
-            indicatorOnHover: false
-            accessibleName: root.navigationLabel
-            onClicked: root.navigationRequested()
+            DashboardIconButton {
+                visible: root.navigationEnabled
+                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                iconName: "go-next-symbolic"
+                fallbackIconName: "go-next-symbolic"
+                iconColor: hovered ? Config.styling.secondaryAccent : Config.styling.text1
+                backgroundColor: hovered ? Config.styling.bg4 : "transparent"
+                active: hovered
+                fillOnHover: true
+                indicatorOnHover: false
+                accessibleName: root.navigationLabel
+                onClicked: root.navigationRequested()
+            }
         }
     }
 }

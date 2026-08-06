@@ -23,7 +23,6 @@ Rectangle {
     property bool localDetailed: false
     property int sectionPadding: Config.spacing.xs
     property int contentSpacing: Config.spacing.xs
-    property int trailingControlInset: Config.spacing.xs
 
     readonly property bool globalDetailed: DashboardPresentation.detailed
     readonly property bool forcedDetailed: globalDetailed || inheritedDetailed
@@ -140,42 +139,32 @@ Rectangle {
                 }
             }
 
-            Item {
-                id: accessorySlot
+            RowLayout {
+                id: trailingControls
 
-                visible: root.accessory !== null
-                Layout.preferredWidth: accessoryLoader.item
-                    ? accessoryLoader.item.implicitWidth + root.trailingControlInset
-                    : 0
-                Layout.minimumWidth: Layout.preferredWidth
-                Layout.maximumWidth: Layout.preferredWidth
-                Layout.preferredHeight: accessoryLoader.item
-                    ? accessoryLoader.item.implicitHeight
-                    : 0
-                Layout.minimumHeight: Layout.preferredHeight
-                Layout.maximumHeight: Layout.preferredHeight
+                visible: root.accessory !== null || root.showDetailToggle
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                Layout.rightMargin: Config.spacing.xs
+                spacing: Config.spacing.xs
 
                 Loader {
-                    id: accessoryLoader
-
                     active: root.accessory !== null
+                    visible: active
                     sourceComponent: root.accessory
-                    width: item ? item.implicitWidth : 0
-                    height: item ? item.implicitHeight : 0
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
+                    Layout.preferredWidth: item ? item.implicitWidth : 0
+                    Layout.preferredHeight: item ? item.implicitHeight : 0
+                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                 }
-            }
 
-            DashboardDetailToggle {
-                visible: root.showDetailToggle
-                Layout.alignment: Qt.AlignVCenter
-                detailed: root.detailed
-                forcedDetailed: root.forcedDetailed
-                localDetailed: root.localDetailed
-                subject: root.title
-                onToggleRequested: root.toggleLocalDetails()
+                DashboardDetailToggle {
+                    visible: root.showDetailToggle
+                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                    detailed: root.detailed
+                    forcedDetailed: root.forcedDetailed
+                    localDetailed: root.localDetailed
+                    subject: root.title
+                    onToggleRequested: root.toggleLocalDetails()
+                }
             }
         }
 
