@@ -40,9 +40,22 @@ QtObject {
                 continue;
             var extra = {};
             if (action.state !== undefined) extra.state = action.state;
+            if (action.aliases !== undefined) extra.aliases = (action.aliases || []).slice();
+            if (action.presentation !== undefined) extra.presentation = copyPresentation(action.presentation);
             out[key] = root._makeActionDto(action.id || key, action.title || action.label || key, action.payload || action, extra);
         }
         return out;
+    }
+
+    function copyPresentation(presentation) {
+        if (!presentation || typeof presentation !== "object")
+            return null;
+        return {
+            title: presentation.title || "",
+            subtitle: presentation.subtitle === undefined ? undefined : presentation.subtitle,
+            icon: presentation.icon || null,
+            iconColor: presentation.iconColor || null
+        };
     }
 
     function _makeActionDto(id, label, payload, extraProps) {

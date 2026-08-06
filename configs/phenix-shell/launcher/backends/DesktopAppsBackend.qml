@@ -106,13 +106,26 @@ ModelTreeBackendBase {
             behavior: { filterChildren: true, depthPenalty: 0.35 }
         };
         if (actions.length > 0) {
-            base.children = actions.map(a => ({
-                id: a.id,
-                title: a.name || a.id,
-                subtitle: entry.name,
-                icon: a.icon || entry.icon || "application-x-executable",
-                action: { entryId: entry.id, actionId: a.id }
-            }));
+            base.behavior = Object.assign({}, base.behavior, {
+                intentProjection: {
+                    subjects: "children",
+                    requireParentMatch: true,
+                    minParentScore: 0.05,
+                    minSubjectScore: 0.18,
+                    minResidualCoverage: 1,
+                    unusedTokenPenalty: 0.1
+                }
+            });
+            base.children = actions.map(function(action) {
+                return {
+                    id: action.id,
+                    aliases: [action.id, action.name].filter(Boolean),
+                    title: action.name || action.id,
+                    subtitle: entry.name,
+                    icon: action.icon || entry.icon || "application-x-executable",
+                    action: { entryId: entry.id, actionId: action.id }
+                };
+            });
         }
         return base;
     }

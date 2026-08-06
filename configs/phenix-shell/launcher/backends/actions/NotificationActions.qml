@@ -29,13 +29,41 @@ QtObject {
                         icon: "bell-disabled-symbolic",
                         iconColor: NotificationCenter.doNotDisturbEnabled ? Config.styling.warning : Config.styling.text1
                     },
-                    match: { aliases: ["dnd"] },
+                    match: { aliases: ["dnd", "do not disturb"] },
                     template: "switch",
                     switchState: NotificationCenter.doNotDisturbEnabled,
                     switchActions: {
-                        toggle: { id: "toggle", title: qsTr("Toggle"), state: null, payload: { service: "notifications", op: "toggleDnd" } },
-                        on: { id: "on", title: qsTr("On"), state: true, payload: { service: "notifications", op: "setDnd", enabled: true } },
-                        off: { id: "off", title: qsTr("Off"), state: false, payload: { service: "notifications", op: "setDnd", enabled: false } }
+                        toggle: {
+                            id: "toggle",
+                            title: qsTr("Toggle"),
+                            state: null,
+                            aliases: ["toggle", "switch"],
+                            payload: { service: "notifications", op: "toggleDnd" }
+                        },
+                        on: {
+                            id: "on",
+                            title: qsTr("Enable"),
+                            state: true,
+                            aliases: ["on", "enable", "silence"],
+                            presentation: {
+                                title: qsTr("Enable Do Not Disturb"),
+                                subtitle: qsTr("Silence non-critical notifications"),
+                                icon: "bell-disabled-symbolic"
+                            },
+                            payload: { service: "notifications", op: "setDnd", enabled: true }
+                        },
+                        off: {
+                            id: "off",
+                            title: qsTr("Disable"),
+                            state: false,
+                            aliases: ["off", "disable", "resume"],
+                            presentation: {
+                                title: qsTr("Disable Do Not Disturb"),
+                                subtitle: qsTr("Resume normal notifications"),
+                                icon: "bell-symbolic"
+                            },
+                            payload: { service: "notifications", op: "setDnd", enabled: false }
+                        }
                     }
                 },
                 {

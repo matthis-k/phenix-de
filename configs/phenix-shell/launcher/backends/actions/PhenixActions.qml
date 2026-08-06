@@ -66,9 +66,37 @@ QtObject {
                     template: "switch",
                     switchState: isDevMode(),
                     switchActions: {
-                        toggle: { id: "toggle", title: qsTr("Toggle"), state: null, payload: { service: "desktop", op: "devmode" } },
-                        on: { id: "on", title: qsTr("On"), state: true, payload: { service: "desktop", op: "devmode", enabled: true } },
-                        off: { id: "off", title: qsTr("Off"), state: false, payload: { service: "desktop", op: "devmode", enabled: false } }
+                        toggle: {
+                            id: "toggle",
+                            title: qsTr("Toggle"),
+                            state: null,
+                            aliases: ["toggle", "switch"],
+                            payload: { service: "desktop", op: "devmode" }
+                        },
+                        on: {
+                            id: "on",
+                            title: qsTr("Enable"),
+                            state: true,
+                            aliases: ["on", "enable", "start"],
+                            presentation: {
+                                title: qsTr("Enable Dev Mode"),
+                                subtitle: qsTr("Switch to the development specialization"),
+                                icon: "applications-development-symbolic"
+                            },
+                            payload: { service: "desktop", op: "devmode", enabled: true }
+                        },
+                        off: {
+                            id: "off",
+                            title: qsTr("Disable"),
+                            state: false,
+                            aliases: ["off", "disable", "stop"],
+                            presentation: {
+                                title: qsTr("Disable Dev Mode"),
+                                subtitle: qsTr("Return to the default specialization"),
+                                icon: "applications-development-symbolic"
+                            },
+                            payload: { service: "desktop", op: "devmode", enabled: false }
+                        }
                     }
                 }
             ]

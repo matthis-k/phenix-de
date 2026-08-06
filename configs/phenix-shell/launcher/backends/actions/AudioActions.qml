@@ -42,7 +42,7 @@ QtObject {
                     behavior: { filterChildren: true },
                     switchState: entry.muted,
                     control: entry.control,
-                    switchActions: entry.switchActions,
+                    switchActions: muteActions(entry.switchActions, entry.id, entry.name),
                     children: streamChildren(entry.id)
                 };
             })
@@ -81,10 +81,49 @@ QtObject {
                     },
                     switchState: stream.muted,
                     control: stream.control,
-                    switchActions: stream.switchActions
+                    switchActions: muteActions(stream.switchActions, stream.id, stream.name)
                 };
             })
         }] : [];
+    }
+
+    function muteActions(source, nodeId, name) {
+        var actions = source || {};
+        return {
+            toggle: decorateAction(actions.toggle || {
+                id: "toggle",
+                title: qsTr("Toggle mute"),
+                state: null,
+                payload: { service: "audio", op: "toggleMute", nodeId: nodeId }
+            }, ["toggle", "mute toggle"], null),
+            on: decorateAction(actions.on || {
+                id: "on",
+                title: qsTr("Mute"),
+                state: true,
+                payload: { service: "audio", op: "setMuted", nodeId: nodeId, muted: true }
+            }, ["mute", "silence"], {
+                title: qsTr("Mute %1").arg(name),
+                subtitle: qsTr("Silence this audio source"),
+                icon: "audio-volume-muted-symbolic"
+            }),
+            off: decorateAction(actions.off || {
+                id: "off",
+                title: qsTr("Unmute"),
+                state: false,
+                payload: { service: "audio", op: "setMuted", nodeId: nodeId, muted: false }
+            }, ["unmute", "audible", "sound on"], {
+                title: qsTr("Unmute %1").arg(name),
+                subtitle: qsTr("Restore audio from this source"),
+                icon: "audio-volume-high-symbolic"
+            })
+        };
+    }
+
+    function decorateAction(action, aliases, presentation) {
+        return Object.assign({}, action || {}, {
+            aliases: aliases || [],
+            presentation: presentation || null
+        });
     }
 
     function brightnessTree() {
