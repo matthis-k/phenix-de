@@ -11,8 +11,6 @@ Item {
     property string iconName: ""
     property color iconColor: Config.styling.text0
     property bool checked: false
-    property int switchSlotWidth: 58
-    property int trailingControlInset: Config.spacing.xs
     property bool navigationEnabled: false
     property string navigationLabel: qsTr("Open %1 details").arg(root.label)
 
@@ -56,7 +54,6 @@ Item {
     MouseArea {
         id: rowMouse
         anchors.fill: parent
-        anchors.rightMargin: root.navigationEnabled ? 36 : 0
         z: 2
         enabled: root.enabled
         hoverEnabled: root.enabled
@@ -70,10 +67,7 @@ Item {
     RowLayout {
         id: row
         anchors.fill: parent
-        anchors.leftMargin: Config.spacing.xs
-        anchors.rightMargin: root.trailingControlInset
-        anchors.topMargin: Config.spacing.xs
-        anchors.bottomMargin: Config.spacing.xs
+        anchors.margins: Config.spacing.xs
         spacing: Config.spacing.sm
 
         Icon {
@@ -81,6 +75,7 @@ Item {
             iconName: root.iconName
             color: root.iconColor
             implicitSize: 18
+            Layout.alignment: Qt.AlignVCenter
         }
 
         ColumnLayout {
@@ -88,14 +83,17 @@ Item {
             Layout.fillWidth: true
 
             Text {
+                Layout.fillWidth: true
                 text: root.label
                 color: Config.styling.text0
                 font.pixelSize: 14
                 font.bold: true
+                elide: Text.ElideRight
             }
 
             Text {
                 visible: text !== ""
+                Layout.fillWidth: true
                 text: root.subtitle
                 color: Config.styling.text2
                 font.pixelSize: 12
@@ -103,37 +101,36 @@ Item {
             }
         }
 
-        Item {
-            Layout.preferredWidth: root.switchSlotWidth
-            Layout.minimumWidth: root.switchSlotWidth
-            Layout.maximumWidth: root.switchSlotWidth
-            Layout.preferredHeight: 28
-            Layout.alignment: Qt.AlignVCenter
+        RowLayout {
+            id: trailingControls
+
+            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+            spacing: Config.spacing.xs
 
             DashboardToggleSwitch {
+                id: toggleSwitch
+
+                z: 3
                 checked: root.checked
                 enabled: root.enabled
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
+                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                 onToggled: root.toggled(checked)
             }
-        }
 
-        DashboardIconButton {
-            visible: root.navigationEnabled
-            z: 3
-            Layout.preferredWidth: 28
-            Layout.preferredHeight: 28
-            Layout.alignment: Qt.AlignVCenter
-            iconName: "go-next-symbolic"
-            fallbackIconName: "go-next-symbolic"
-            iconColor: hovered ? Config.styling.secondaryAccent : Config.styling.text1
-            backgroundColor: hovered ? Config.styling.bg4 : "transparent"
-            active: hovered
-            fillOnHover: true
-            indicatorOnHover: false
-            accessibleName: root.navigationLabel
-            onClicked: root.navigationRequested()
+            DashboardIconButton {
+                visible: root.navigationEnabled
+                z: 3
+                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                iconName: "go-next-symbolic"
+                fallbackIconName: "go-next-symbolic"
+                iconColor: hovered ? Config.styling.secondaryAccent : Config.styling.text1
+                backgroundColor: hovered ? Config.styling.bg4 : "transparent"
+                active: hovered
+                fillOnHover: true
+                indicatorOnHover: false
+                accessibleName: root.navigationLabel
+                onClicked: root.navigationRequested()
+            }
         }
     }
 }
