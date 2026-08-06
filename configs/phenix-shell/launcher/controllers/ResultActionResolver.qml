@@ -9,6 +9,7 @@ QtObject {
 
     property var controller: null
     property var actionController: null
+    // Compatibility injection only. Switch state projection is owned by CommandExecutor.
     property var controlHandler: null
     required property var commandExecutor
 
@@ -45,13 +46,9 @@ QtObject {
                 { kind: "activate", args: { action: actionId } }
             ], result).success;
         };
-        var success = root.actionController
+        return root.actionController
             ? root.actionController.activateWithConfirmation(confirmationTarget, execute)
             : execute();
-
-        if (success && result.switchActions && root.controlHandler)
-            root.controlHandler.refreshSwitchResult(result, action);
-        return success;
     }
 
     readonly property var activateResultAction: prof.fn("activateResultAction", _activateResultAction)
