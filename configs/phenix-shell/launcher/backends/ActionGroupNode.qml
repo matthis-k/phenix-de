@@ -15,8 +15,9 @@ Node {
     function toTreeObject() {
         tracer.trace("toTreeObject", function() { return {}; });
         var base = Node.prototype.toTreeObject.call(this);
-        if (!base.evaluationProfile && !this.evaluationProfile)
-            base.evaluationProfile = defaultGroupProfile();
+        base.match = base.match || {};
+        if (!base.match.evaluationProfile)
+            base.match.evaluationProfile = defaultGroupProfile();
         return base;
     }
 }
