@@ -113,11 +113,17 @@ Rectangle {
             }
 
             Loader {
+                id: accessoryLoader
+
                 active: root.accessory !== null
                 sourceComponent: root.accessory
                 Layout.preferredWidth: item ? item.implicitWidth : 0
+                Layout.minimumWidth: Layout.preferredWidth
+                Layout.maximumWidth: Layout.preferredWidth
                 Layout.preferredHeight: item ? item.implicitHeight : 0
-                Layout.alignment: Qt.AlignVCenter
+                Layout.minimumHeight: Layout.preferredHeight
+                Layout.maximumHeight: Layout.preferredHeight
+                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
             }
 
             DashboardDetailToggle {
