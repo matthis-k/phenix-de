@@ -14,6 +14,7 @@
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
     phenix-pins.url = "github:matthis-k/phenix-pins";
+    phenix-flake-ci.url = "github:matthis-k/phenix-flake-ci";
     nixpkgs.follows = "phenix-pins/nixpkgs";
     home-manager.follows = "phenix-pins/home-manager";
 
