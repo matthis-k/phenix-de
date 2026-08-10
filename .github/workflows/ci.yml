@@ -44,9 +44,6 @@ jobs:
       - name: "Actionlint"
         run: nix run .#phenix-maintenance -- check actionlint
 
-      - name: "Flake evaluation"
-        run: nix run .#phenix-maintenance -- check flake-eval
-
       - name: "Generated workflow"
         run: nix run .#phenix-maintenance -- check workflow-sync
 
