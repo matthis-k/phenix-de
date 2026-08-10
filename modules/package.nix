@@ -171,13 +171,11 @@
               touch "$out"
             '';
 
-        hypr-keymap =
-          pkgs.runCommand "phenix-hypr-keymap-check" { nativeBuildInputs = [ pkgs.lua ]; }
-            ''
-              cd ${../.}
-              lua configs/hypr/keymap/tests.lua
-              touch "$out"
-            '';
+        hypr-keymap = pkgs.runCommand "phenix-hypr-keymap-check" { nativeBuildInputs = [ pkgs.lua ]; } ''
+          cd ${../.}
+          lua configs/hypr/keymap/tests.lua
+          touch "$out"
+        '';
       };
     };
 }
