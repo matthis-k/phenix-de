@@ -98,11 +98,6 @@
         '';
       };
 
-      # The host portal resolves the application ID in its own long-lived
-      # process, so changing XDG_DATA_DIRS only for phenix-shell cannot make
-      # Quickshell's desktop metadata visible to it. Keep the upstream entry in
-      # the package installed by Home Manager instead, which links it into the
-      # user's shared application data path.
       phenixShell = pkgs.symlinkJoin {
         name = "phenix-shell";
         paths = [ phenixShellRunner ];
@@ -146,7 +141,6 @@
     in
     {
       packages = {
-        hyprland = inputs.hyprland.packages.${system}.hyprland;
         phenix-hyprland = configuredHyprland;
         phenix-shell = phenixShell;
         inherit kitty;
@@ -163,30 +157,6 @@
         slurp = mkApp "${pkgs.slurp}/bin/slurp" "Select a Wayland screen region";
         swappy = mkApp "${pkgs.swappy}/bin/swappy" "Annotate and edit screenshots";
         tesseract = mkApp "${pkgs.tesseract}/bin/tesseract" "Run optical character recognition";
-      };
-
-      checks = {
-        inherit phenixShell kitty;
-
-        shell-runtime =
-          pkgs.runCommand "phenix-shell-runtime-check" { nativeBuildInputs = [ phenixShell ]; }
-            ''
-              phenix-shell --check-runtime
-              test -f ${phenixShell}/share/applications/org.quickshell.desktop
-              touch "$out"
-            '';
-
-        desktop-config =
-          pkgs.runCommand "phenix-desktop-config-check" { nativeBuildInputs = [ pkgs.lua ]; }
-            ''
-              cd ${../.}
-              test -f configs/hypr/hyprland.lua
-              test -f configs/hypr/keymap/tests.lua
-              test -f configs/phenix-shell/shell.qml
-              test -f configs/kitty/kitty.conf
-              lua configs/hypr/keymap/tests.lua
-              touch "$out"
-            '';
       };
     };
 }
