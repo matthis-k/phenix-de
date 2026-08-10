@@ -141,7 +141,6 @@
     in
     {
       packages = {
-        hyprland = inputs.hyprland.packages.${system}.hyprland;
         phenix-hyprland = configuredHyprland;
         phenix-shell = phenixShell;
         inherit kitty;
