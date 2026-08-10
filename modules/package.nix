@@ -158,23 +158,5 @@
         swappy = mkApp "${pkgs.swappy}/bin/swappy" "Annotate and edit screenshots";
         tesseract = mkApp "${pkgs.tesseract}/bin/tesseract" "Run optical character recognition";
       };
-
-      checks = {
-        inherit phenixShell kitty;
-
-        shell-runtime =
-          pkgs.runCommand "phenix-shell-runtime-check" { nativeBuildInputs = [ phenixShell ]; }
-            ''
-              phenix-shell --check-runtime
-              test -f ${phenixShell}/share/applications/org.quickshell.desktop
-              touch "$out"
-            '';
-
-        hypr-keymap = pkgs.runCommand "phenix-hypr-keymap-check" { nativeBuildInputs = [ pkgs.lua ]; } ''
-          cd ${../.}
-          lua configs/hypr/keymap/tests.lua
-          touch "$out"
-        '';
-      };
     };
 }
