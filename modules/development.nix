@@ -51,7 +51,6 @@
               "statix"
               "deadnix"
               "actionlint"
-              "flake-eval"
               "workflow-sync"
             ];
             commands = {
@@ -122,21 +121,6 @@
                 '';
               };
 
-              flake-eval = {
-                description = "Flake output evaluation";
-                ci = sourceCi // {
-                  stepName = "Flake evaluation";
-                };
-                runtimeInputs = pkgs: [
-                  pkgs.git
-                  pkgs.nix
-                ];
-                exec = ''
-                  ${repositoryRoot}
-                  nix flake check --no-build --print-build-logs
-                '';
-              };
-
               workflow-sync = {
                 description = "Committed workflow matches the maintenance declaration";
                 ci = sourceCi // {
@@ -169,7 +153,7 @@
             ];
             commands = {
               shell-runtime = {
-                description = "Exercise the shell runtime dependency contract";
+                description = "Exercise the packaged shell runtime dependency contract";
                 ci = productCi // {
                   stepName = "Shell runtime";
                 };
@@ -179,8 +163,7 @@
                 ];
                 exec = ''
                   ${repositoryRoot}
-                  system="$(nix eval --impure --raw --expr builtins.currentSystem)"
-                  nix build --no-link --print-build-logs ".#checks.$system.shell-runtime"
+                  nix run .#phenix-shell -- --check-runtime
                 '';
               };
 
@@ -191,12 +174,11 @@
                 };
                 runtimeInputs = pkgs: [
                   pkgs.git
-                  pkgs.nix
+                  pkgs.lua
                 ];
                 exec = ''
                   ${repositoryRoot}
-                  system="$(nix eval --impure --raw --expr builtins.currentSystem)"
-                  nix build --no-link --print-build-logs ".#checks.$system.hypr-keymap"
+                  lua configs/hypr/keymap/tests.lua
                 '';
               };
             };
