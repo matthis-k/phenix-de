@@ -17,10 +17,10 @@ ActionButton {
     property color statusColor: Config.styling.text1
     property Component accessory: null
     property int iconSlotWidth: 28
-    property int iconSize: 22
-    property int titleSize: 16
-    property int subtitleSize: 12
-    property int statusSize: 12
+    property int iconSize: Config.iconSizes.page
+    property int titleSize: Config.typography.heading
+    property int subtitleSize: Config.typography.secondary
+    property int statusSize: Config.typography.secondary
     property int contentSpacing: Config.spacing.sm
     property int textSpacing: 0
     property int minimumRowHeight: 36
@@ -88,6 +88,7 @@ ActionButton {
                     color: root.titleColor
                     font.bold: true
                     font.pixelSize: root.titleSize
+                    font.family: Config.typography.mono
                     elide: Text.ElideRight
 
                     Animations.StateColorBehavior on color {
@@ -113,6 +114,7 @@ ActionButton {
                 text: root.status
                 color: root.statusColor
                 font.pixelSize: root.statusSize
+                font.family: Config.typography.mono
                 font.bold: true
 
                 Animations.StateColorBehavior on color {

@@ -12,7 +12,7 @@ Rectangle {
 
     visible: text !== ""
     color: badgeColor
-    radius: height / 2
+    radius: Config.shape.badge
     implicitWidth: Math.max(height, label.implicitWidth + horizontalPadding * 2)
     implicitHeight: label.implicitHeight + verticalPadding * 2
 
@@ -21,7 +21,8 @@ Rectangle {
         anchors.centerIn: parent
         text: root.text
         color: root.textColor
-        font.pixelSize: 10
+        font.pixelSize: Config.typography.tiny
+        font.family: Config.typography.mono
         font.bold: true
     }
 }

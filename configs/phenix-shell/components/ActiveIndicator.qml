@@ -35,7 +35,7 @@ Item {
     readonly property bool animateNormalAxis: (animationMode & ActiveIndicator.AnimationMode.GrowAlong) !== 0
     readonly property bool animateLengthAxis: (animationMode & ActiveIndicator.AnimationMode.GrowAcross) !== 0
 
-    property real thickness: (horizontal ? height : width) * 0.1
+    property real thickness: Config.spacing.xxs
 
     anchors.fill: parent
     clip: true

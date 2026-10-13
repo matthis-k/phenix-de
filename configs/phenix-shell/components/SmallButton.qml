@@ -18,7 +18,8 @@ ActionButton {
             anchors.centerIn: parent
             text: root.text
             color: Config.styling.text0
-            font.pixelSize: 13
+            font.pixelSize: Config.typography.label
+            font.family: Config.typography.mono
             font.bold: true
         }
     }

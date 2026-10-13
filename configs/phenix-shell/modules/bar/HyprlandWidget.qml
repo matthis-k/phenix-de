@@ -62,8 +62,8 @@ Item {
             scaleText: true
             textScaleTarget: wsLabel
             hoveredScale: 1.0
-            unhoveredScale: 0.92
-            baseScale: HyprlandService.focusedWorkspace?.id === workspace?.id ? 1.0 : 0.92
+            unhoveredScale: 0.96
+            baseScale: HyprlandService.focusedWorkspace?.id === workspace?.id ? 1.0 : 0.96
 
             onClicked: {
                 if (workspace && HyprlandService.focusedWorkspace?.id !== workspace?.id)
@@ -120,7 +120,7 @@ Item {
         scaleIcon: true
         iconScaleTarget: tlIcon
         hoveredScale: 1.0
-        unhoveredScale: active ? 1.0 : 0.92
+        unhoveredScale: active ? 1.0 : 0.96
 
         Animations.LayoutBehavior on implicitWidth {
         }

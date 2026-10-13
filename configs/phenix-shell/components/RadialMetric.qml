@@ -20,7 +20,7 @@ Rectangle {
         ? 88
         : (root.detail !== "" ? 140 : 122)
     color: Config.styling.bg2
-    radius: Config.styling.radius
+    radius: Config.shape.square
     border.width: emphasized ? 2 : 1
     border.color: emphasized ? accentColor : Config.styling.bg3
 

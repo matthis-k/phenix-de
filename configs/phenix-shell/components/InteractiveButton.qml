@@ -95,7 +95,7 @@ Button {
         color: Config.styling.bg2
         border.width: 1
         border.color: Config.styling.bg3
-        radius: Config.styling.radius
+        radius: Config.shape.small
 
         x: {
             if (!parent)
@@ -124,7 +124,8 @@ Button {
             anchors.margins: Config.spacing.xs
             text: root.toolTipText
             color: Config.styling.text0
-            font.pixelSize: 11
+            font.pixelSize: Config.typography.caption
+            font.family: Config.typography.mono
             font.bold: true
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter

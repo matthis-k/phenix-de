@@ -18,9 +18,7 @@ InteractiveButton {
 
     property int highlightSide: ActiveIndicator.Side.Top
     property int highlightAnimationMode: ActiveIndicator.AnimationMode.GrowAll
-    property real highlightThickness: (highlightSide === ActiveIndicator.Side.Top || highlightSide === ActiveIndicator.Side.Bottom)
-        ? height * 0.1
-        : width * 0.1
+    property real highlightThickness: Config.spacing.xxs
     property real fillOpacity: Config.behaviour.hoverBgOpacity
 
     padding: 0
@@ -36,7 +34,7 @@ InteractiveButton {
         color: control.down ? control.pressedBackgroundColor : control.backgroundColor
         border.width: control.visualFocus ? Math.max(2, control.borderWidth) : control.borderWidth
         border.color: control.visualFocus ? control.focusBorderColor : control.borderColor
-        radius: Config.styling.radius
+        radius: Config.shape.square
 
         Animations.StateColorBehavior on color {
             duration: Config.motion.micro

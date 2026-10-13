@@ -12,7 +12,7 @@ Slider {
     property color inactiveHandleColor: Config.styling.bg3
     property color inactiveHandleBorderColor: Config.styling.bg5
     property real grooveHeight: 4
-    property real grooveRadius: grooveHeight / 2
+    property real grooveRadius: Config.shape.square
     property real handleSize: 16
 
     implicitHeight: 28
