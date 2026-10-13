@@ -27,23 +27,25 @@ and short animations.
 
 ## Icons
 
-- All Lucide SVGs are installed from the integrity-pinned lucide-static 1.55.0
-  archive at Nix build time. The runtime needs no network.
-- Shell actions resolve legacy icon names through `utils/UiIcons.js`.
-  Any Lucide name also works directly as `iconName: "lucide:flame"` or via
-  `iconSet: "lucide"; iconName: "flame"`.
-- Set `iconSet: "system"` to force the configured desktop icon theme.
-- Desktop application icons retain their full-color source from their desktop
-  entry. `Icon.source` always takes priority over the UI glyph mapping.
-- Unknown names use `Quickshell.iconPath` and the desktop icon theme.
-  Missing Lucide glyphs also fall back rather than showing a broken image.
-  Papirus-Dark remains the configured theme for applications and fallbacks.
-- Add a legacy alias only when needed. New QML components should use
-  explicit Lucide names. Keep icon names meaningful.
+- Use Material Symbols **Sharp, weight 400** for shell controls and navigation.
+  Nix installs every Sharp SVG in filled and unfilled states from a pinned
+  `@material-symbols/svg-400` 0.48.0 release. Runtime use is offline.
+- Choose `iconName: "material:local_fire_department"`, or set
+  `iconSet: "material"` and pass a native Material name such as `"settings"`.
+- Use `filled: true` on a Material icon when it should show its filled
+  variant, such as an active tab or selected item.
+- Existing Freedesktop symbolic names map to Material via `utils/UiIcons.js`.
+  Unmapped names continue to use `Quickshell.iconPath`.
+- Lucide remains fully installed and opt-in through `iconName: "lucide:flame"`
+  or `iconSet: "lucide"`. Set `iconSet: "system"` for theme-only resolution.
+- Desktop application icons retain their full-color source from the desktop
+  entry. `Icon.source` takes priority over all icon set choices.
+- A missing SVG falls back to the Freedesktop theme; Papirus-Dark remains the
+  configured theme for application icons and fallback device glyphs.
 - Use `Config.iconSizes`. Typical sizes are 16px inline, 18px for sections,
   20px for controls, and 22px for page icons.
-- The Nix package installs Lucide's license beside the complete SVG set.
-  It includes the upstream Feather-derived MIT notice.
+- Material Symbols are Apache-2.0 licensed. Lucide uses ISC and includes the
+  Feather-derived MIT notice. Nix keeps both licenses beside the SVG assets.
 
 ## Motion
 

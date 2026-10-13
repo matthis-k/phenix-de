@@ -15,47 +15,63 @@ Item {
     property real implicitSize: -1
     property var source: undefined
 
-    // auto: map legacy shell names to Lucide; system: desktop theme only;
-    // lucide: use the full Lucide set. "lucide:flame" also opts in directly.
-    property string iconSet: "auto"
+    // Auto uses Material Symbols Sharp for shell controls. Explicit sources
+    // (including desktop application icons) always take priority.
+    // Both Material and Lucide remain accessible by prefix or iconSet.
+    property string iconSet: "auto"  // auto, material, lucide, system
     property bool preferUiGlyph: true
-    property bool lucideLoadFailed: false
+    property bool filled: false
+    property bool iconLoadFailed: false
 
     readonly property bool hasImplicitSize: implicitSize >= 0
     readonly property bool hasIconName: iconName !== "" || fallbackIconName !== ""
+    readonly property bool prefixedMaterial: iconName.startsWith("material:")
     readonly property bool prefixedLucide: iconName.startsWith("lucide:")
+    readonly property string requestedMaterial: prefixedMaterial
+        ? iconName.slice(9)
+        : iconSet === "material" ? iconName
+        : iconSet === "auto" && preferUiGlyph && !prefixedLucide
+            ? UiIcons.lookup(iconName)
+            : ""
     readonly property string requestedLucide: prefixedLucide
         ? iconName.slice(7)
         : iconSet === "lucide" ? iconName
-        : iconSet === "auto" && preferUiGlyph ? UiIcons.lookup(iconName)
         : ""
-    // Prevent file path injection when a name comes from a launcher backend.
+    // Restrict filenames to a single known icon. Never allow path segments.
+    readonly property string materialName: /^[a-z0-9_]+$/.test(requestedMaterial)
+        ? requestedMaterial : ""
     readonly property string lucideName: /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(requestedLucide)
-        ? requestedLucide
-        : ""
+        ? requestedLucide : ""
+    readonly property string materialDir: String(Quickshell.env("PHENIX_MATERIAL_ICON_DIR") || "")
     readonly property string lucideDir: String(Quickshell.env("PHENIX_LUCIDE_ICON_DIR") || "")
-    readonly property bool usingLucide: root.source === undefined
-        && root.iconSet !== "system"
-        && root.lucideName !== ""
-        && root.lucideDir !== ""
-        && !root.lucideLoadFailed
-    readonly property string themeIconName: prefixedLucide ? fallbackIconName : iconName
+    readonly property string selectedGlyphSet: root.source !== undefined
+        || root.iconSet === "system" || root.iconLoadFailed
+        ? ""
+        : root.materialName !== "" && root.materialDir !== ""
+            ? "material"
+            : root.lucideName !== "" && root.lucideDir !== ""
+                ? "lucide" : ""
+    readonly property string glyphPath: root.selectedGlyphSet === "material"
+        ? "file://" + root.materialDir + "/" + root.materialName
+            + (root.filled ? "-fill" : "") + ".svg"
+        : root.selectedGlyphSet === "lucide"
+            ? "file://" + root.lucideDir + "/" + root.lucideName + ".svg"
+            : ""
+    readonly property string themeIconName: root.prefixedMaterial || root.prefixedLucide
+        ? root.fallbackIconName : root.iconName
     readonly property var iconPath: hasIconName
         ? Quickshell.iconPath(themeIconName, fallbackIconName)
         : undefined
-    // Explicit sources, including application DesktopEntry icons, win.
     readonly property var resolvedSource: root.source !== undefined
         ? root.source
-        : root.usingLucide
-            ? "file://" + root.lucideDir + "/" + root.lucideName + ".svg"
-            : root.iconPath
+        : root.glyphPath !== "" ? root.glyphPath : root.iconPath
     readonly property bool hasResolvedSource: root.resolvedSource !== undefined
-        && root.resolvedSource !== null
-        && root.resolvedSource !== ""
+        && root.resolvedSource !== null && root.resolvedSource !== ""
 
-    onIconNameChanged: lucideLoadFailed = false
-    onIconSetChanged: lucideLoadFailed = false
-    onPreferUiGlyphChanged: lucideLoadFailed = false
+    onIconNameChanged: iconLoadFailed = false
+    onIconSetChanged: iconLoadFailed = false
+    onPreferUiGlyphChanged: iconLoadFailed = false
+    onFilledChanged: iconLoadFailed = false
 
     property alias smooth: icon.smooth
     property alias mipmap: icon.mipmap
@@ -69,8 +85,8 @@ Item {
         visible: root.hasResolvedSource
         source: root.hasResolvedSource ? root.resolvedSource : ""
         onStatusChanged: {
-            if (status === Image.Error && root.usingLucide)
-                root.lucideLoadFailed = true;
+            if (status === Image.Error && root.selectedGlyphSet !== "")
+                root.iconLoadFailed = true;
         }
         scale: root.hasImplicitSize ? root.implicitSize / Math.max(parent.width, parent.height, 1) : 1.0
     }
