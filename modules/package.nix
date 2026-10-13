@@ -30,14 +30,7 @@
         hash = "sha512-h18lunTFsIJWnY0FMRPjXeO9KcAtNi7fDqtqgWHOFbssfgUWsctn/pA7bpiyrd4g1DuBOJ24CsRnPfkYblwm/A==";
       };
 
-      lucideIcons = pkgs.runCommand "phenix-lucide-icons-1.55.0" {
-        nativeBuildInputs = with pkgs; [
-          findutils
-          gnused
-          gnutar
-          gzip
-        ];
-      } ''
+      lucideIcons = pkgs.runCommand "phenix-lucide-icons-1.55.0" { } ''
         dest="$out/share/phenix-shell/lucide"
         mkdir -p "$dest"
         tar -xzf "${lucideArchive}" -C "$dest" --strip-components=1 package/icons package/LICENSE
