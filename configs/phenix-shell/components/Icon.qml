@@ -15,10 +15,10 @@ Item {
     property real implicitSize: -1
     property var source: undefined
 
-    // Auto uses Material Symbols Sharp for shell controls. Explicit sources
-    // (including desktop application icons) always take priority.
-    // Both Material and Lucide remain accessible by prefix or iconSet.
+    // Auto resolves known shell glyphs to Material Outlined. Full-color
+    // desktop-entry icons still win when the caller sets source explicitly.
     property string iconSet: "auto"  // auto, material, lucide, system
+    property string materialStyle: "outlined" // outlined or sharp
     property bool preferUiGlyph: true
     property bool filled: false
     property bool iconLoadFailed: false
@@ -43,6 +43,7 @@ Item {
     readonly property string lucideName: /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(requestedLucide)
         ? requestedLucide : ""
     readonly property string materialDir: String(Quickshell.env("PHENIX_MATERIAL_ICON_DIR") || "")
+    readonly property string resolvedMaterialStyle: root.materialStyle === "sharp" ? "sharp" : "outlined"
     readonly property string lucideDir: String(Quickshell.env("PHENIX_LUCIDE_ICON_DIR") || "")
     readonly property string selectedGlyphSet: root.source !== undefined
         || root.iconSet === "system" || root.iconLoadFailed
@@ -52,7 +53,7 @@ Item {
             : root.lucideName !== "" && root.lucideDir !== ""
                 ? "lucide" : ""
     readonly property string glyphPath: root.selectedGlyphSet === "material"
-        ? "file://" + root.materialDir + "/" + root.materialName
+        ? "file://" + root.materialDir + "/" + root.resolvedMaterialStyle + "/" + root.materialName
             + (root.filled ? "-fill" : "") + ".svg"
         : root.selectedGlyphSet === "lucide"
             ? "file://" + root.lucideDir + "/" + root.lucideName + ".svg"
@@ -72,6 +73,7 @@ Item {
     onIconSetChanged: iconLoadFailed = false
     onPreferUiGlyphChanged: iconLoadFailed = false
     onFilledChanged: iconLoadFailed = false
+    onMaterialStyleChanged: iconLoadFailed = false
 
     property alias smooth: icon.smooth
     property alias mipmap: icon.mipmap

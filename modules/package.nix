@@ -44,27 +44,29 @@
         test -f "$dest/LICENSE"
       '';
 
-      # Material Symbols Sharp, complete weight-400 icon set with both fill states.
-      # Pin npm's archive integrity; fetch once during Nix builds.
+      # Material Symbols Outlined and Sharp, weight 400, both fill states.
+      # Download the integrity-pinned archive only at build time.
       materialSymbolsArchive = pkgs.fetchurl {
         url = "https://registry.npmjs.org/@material-symbols/svg-400/-/svg-400-0.48.0.tgz";
         hash = "sha512-W20MjbiDbLJQ5yi4CPz2y6lCZ9bk3pJ1d5Ra+uErvtj/guVrCNfcYyMZn3KqHpDyyKVfBGkuGHVcdi5h+5+EqA==";
       };
 
-      materialSymbolsIcons = pkgs.runCommand "phenix-material-symbols-sharp-0.48.0" { } ''
+      materialSymbolsIcons = pkgs.runCommand "phenix-material-symbols-0.48.0" { } ''
         dest="$out/share/phenix-shell/material"
-        mkdir -p "$dest/sharp"
-        tar -xzf "${materialSymbolsArchive}" -C "$dest/sharp" --strip-components=2 package/sharp
+        mkdir -p "$dest"
+        tar -xzf "${materialSymbolsArchive}" -C "$dest" --strip-components=1 package/outlined package/sharp
         tar -xOzf "${materialSymbolsArchive}" package/LICENSE > "$dest/LICENSE"
         # QtSvg may not support CSS currentColor. Supply a visible default
-        # while explicit control tints still use QML ColorOverlay.
-        find "$dest/sharp" -type f -name '*.svg' -exec sed -i 's/<svg /<svg fill="#cdd6f4" /; s/currentColor/#cdd6f4/g' {} +
-        count="$(find "$dest/sharp" -type f -name '*.svg' | wc -l)"
-        test "$count" -ge 4000
-        for icon in wifi wifi_off bluetooth bluetooth_disabled volume_up volume_down volume_mute volume_off notifications notifications_off monitoring hard_drive desktop_windows power_settings_new restart_alt bedtime logout refresh arrow_upward arrow_downward chevron_right add remove lan swap_vert dns warning info close battery_full light_mode vpn_lock local_fire_department; do
-          test -f "$dest/sharp/$icon.svg"
+        # while explicit control tints still use the existing ColorOverlay.
+        find "$dest/outlined" "$dest/sharp" -type f -name '*.svg' -exec sed -i 's/<svg /<svg fill="#cdd6f4" /; s/currentColor/#cdd6f4/g' {} +
+        for style in outlined sharp; do
+          count="$(find "$dest/$style" -type f -name '*.svg' | wc -l)"
+          test "$count" -ge 4000
+          for icon in wifi wifi_off bluetooth bluetooth_disabled volume_up volume_down volume_mute volume_off notifications notifications_off monitoring hard_drive desktop_windows power_settings_new restart_alt bedtime logout refresh arrow_upward arrow_downward chevron_right add remove lan swap_vert dns warning info close battery_full light_mode vpn_lock local_fire_department; do
+            test -f "$dest/$style/$icon.svg"
+          done
+          test -f "$dest/$style/settings-fill.svg"
         done
-        test -f "$dest/sharp/settings-fill.svg"
         test -f "$dest/LICENSE"
       '';
 
@@ -131,7 +133,7 @@
             exit "$missing"
           fi
 
-          export PHENIX_MATERIAL_ICON_DIR=${materialSymbolsIcons}/share/phenix-shell/material/sharp
+          export PHENIX_MATERIAL_ICON_DIR=${materialSymbolsIcons}/share/phenix-shell/material
           export PHENIX_LUCIDE_ICON_DIR=${lucideIcons}/share/phenix-shell/lucide/icons
           config_dir=${shellConfig}
           quickshell_args=()

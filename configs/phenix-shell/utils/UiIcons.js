@@ -1,6 +1,6 @@
 pragma library
 
-// Legacy Freedesktop symbolic names to Material Symbols Sharp.
+// Legacy Freedesktop symbolic names to Material Symbols (Outlined by default).
 // New controls should use material:<name> directly.
 const names = {
     "network-wireless-symbolic": "wifi",

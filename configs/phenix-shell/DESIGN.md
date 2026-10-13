@@ -27,13 +27,15 @@ and short animations.
 
 ## Icons
 
-- Use Material Symbols **Sharp, weight 400** for shell controls and navigation.
-  Nix installs every Sharp SVG in filled and unfilled states from a pinned
-  `@material-symbols/svg-400` 0.48.0 release. Runtime use is offline.
+- Use Material Symbols **Outlined, weight 400** for shell controls and navigation.
+  Nix installs the complete Outlined and Sharp SVG sets, including filled
+  and unfilled variants, from the pinned `@material-symbols/svg-400`
+  0.48.0 release. Runtime use is offline.
 - Choose `iconName: "material:local_fire_department"`, or set
   `iconSet: "material"` and pass a native Material name such as `"settings"`.
-- Use `filled: true` on a Material icon when it should show its filled
-  variant, such as an active tab or selected item.
+- Use `filled: true` to select the filled variant, such as an active tab.
+  `materialStyle: "sharp"` is an explicit per-icon alternative to the
+  default `materialStyle: "outlined"`. Style and fill are independent.
 - Existing Freedesktop symbolic names map to Material via `utils/UiIcons.js`.
   Unmapped names continue to use `Quickshell.iconPath`.
 - Lucide remains fully installed and opt-in through `iconName: "lucide:flame"`
