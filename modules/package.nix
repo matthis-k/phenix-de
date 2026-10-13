@@ -23,6 +23,34 @@
 
       waylandTools = import ./lib/wayland-tools.nix { inherit pkgs; };
 
+      # Complete Lucide static SVG release. The tarball is integrity pinned,
+      # extracted during the Nix build, and never downloaded at shell runtime.
+      lucideArchive = pkgs.fetchurl {
+        url = "https://registry.npmjs.org/lucide-static/-/lucide-static-1.55.0.tgz";
+        hash = "sha512-h18lunTFsIJWnY0FMRPjXeO9KcAtNi7fDqtqgWHOFbssfgUWsctn/pA7bpiyrd4g1DuBOJ24CsRnPfkYblwm/A==";
+      };
+
+      lucideIcons = pkgs.runCommand "phenix-lucide-icons-1.55.0" {
+        nativeBuildInputs = with pkgs; [
+          findutils
+          gnused
+          gnutar
+          gzip
+        ];
+      } ''
+        dest="$out/share/phenix-shell/lucide"
+        mkdir -p "$dest"
+        tar -xzf "${lucideArchive}" -C "$dest" --strip-components=1 package/icons package/LICENSE
+        # QtSvg does not reliably interpret CSS currentColor in external SVGs.
+        # Explicit control tinting still uses the existing QML ColorOverlay.
+        find "$dest/icons" -type f -name '*.svg' -exec sed -i 's/currentColor/#cdd6f4/g' {} +
+        count="$(find "$dest/icons" -type f -name '*.svg' | wc -l)"
+        test "$count" -ge 1800
+        test -f "$dest/icons/flame.svg"
+        test -f "$dest/icons/wifi.svg"
+        test -f "$dest/LICENSE"
+      '';
+
       shellRuntimeInputs =
         (with pkgs; [
           bash
@@ -86,6 +114,7 @@
             exit "$missing"
           fi
 
+          export PHENIX_LUCIDE_ICON_DIR=${lucideIcons}/share/phenix-shell/lucide/icons
           config_dir=${shellConfig}
           quickshell_args=()
 

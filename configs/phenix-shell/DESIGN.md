@@ -27,15 +27,23 @@ and short animations.
 
 ## Icons
 
-- Known shell action and navigation icons use selected Lucide SVG glyphs.
+- All Lucide SVGs are installed from the integrity-pinned lucide-static 1.55.0
+  archive at Nix build time. The runtime needs no network.
+- Shell actions resolve legacy icon names through `utils/UiIcons.js`.
+  Any Lucide name also works directly as `iconName: "lucide:flame"` or via
+  `iconSet: "lucide"; iconName: "flame"`.
+- Set `iconSet: "system"` to force the configured desktop icon theme.
 - Desktop application icons retain their full-color source from their desktop
   entry. `Icon.source` always takes priority over the UI glyph mapping.
-- Unknown icon names resolve through `Quickshell.iconPath` and the configured
-  Freedesktop icon theme. Papirus-Dark remains a fallback and app icon source.
-- Add new shell names to `utils/UiIcons.js`. Keep icon names meaningful.
+- Unknown names use `Quickshell.iconPath` and the desktop icon theme.
+  Missing Lucide glyphs also fall back rather than showing a broken image.
+  Papirus-Dark remains the configured theme for applications and fallbacks.
+- Add a legacy alias only when needed. New QML components should use
+  explicit Lucide names. Keep icon names meaningful.
 - Use `Config.iconSizes`. Typical sizes are 16px inline, 18px for sections,
   20px for controls, and 22px for page icons.
-- Lucide artwork is ISC-licensed. Keep its license beside the SVG assets.
+- The Nix package installs Lucide's license beside the complete SVG set.
+  It includes the upstream Feather-derived MIT notice.
 
 ## Motion
 

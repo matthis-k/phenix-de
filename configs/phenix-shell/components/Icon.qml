@@ -1,6 +1,6 @@
 import QtQuick
-import "../utils/UiIcons.js" as UiIcons
 import Qt5Compat.GraphicalEffects
+import "../utils/UiIcons.js" as UiIcons
 import Quickshell
 import Quickshell.Widgets
 
@@ -15,23 +15,47 @@ Item {
     property real implicitSize: -1
     property var source: undefined
 
+    // auto: map legacy shell names to Lucide; system: desktop theme only;
+    // lucide: use the full Lucide set. "lucide:flame" also opts in directly.
+    property string iconSet: "auto"
+    property bool preferUiGlyph: true
+    property bool lucideLoadFailed: false
+
     readonly property bool hasImplicitSize: implicitSize >= 0
     readonly property bool hasIconName: iconName !== "" || fallbackIconName !== ""
-    readonly property var iconPath: hasIconName ? Quickshell.iconPath(iconName, fallbackIconName) : undefined
-    // Desktop-entry icons pass an explicit source and always retain their
-    // full-color image. Only known shell glyph names use the curated UI set.
-    property bool preferUiGlyph: true
-    readonly property string uiGlyph: root.preferUiGlyph && root.source === undefined
-        ? UiIcons.lookup(root.iconName)
+    readonly property bool prefixedLucide: iconName.startsWith("lucide:")
+    readonly property string requestedLucide: prefixedLucide
+        ? iconName.slice(7)
+        : iconSet === "lucide" ? iconName
+        : iconSet === "auto" && preferUiGlyph ? UiIcons.lookup(iconName)
         : ""
+    // Prevent file path injection when a name comes from a launcher backend.
+    readonly property string lucideName: /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(requestedLucide)
+        ? requestedLucide
+        : ""
+    readonly property string lucideDir: String(Quickshell.env("PHENIX_LUCIDE_ICON_DIR") || "")
+    readonly property bool usingLucide: root.source === undefined
+        && root.iconSet !== "system"
+        && root.lucideName !== ""
+        && root.lucideDir !== ""
+        && !root.lucideLoadFailed
+    readonly property string themeIconName: prefixedLucide ? fallbackIconName : iconName
+    readonly property var iconPath: hasIconName
+        ? Quickshell.iconPath(themeIconName, fallbackIconName)
+        : undefined
+    // Explicit sources, including application DesktopEntry icons, win.
     readonly property var resolvedSource: root.source !== undefined
         ? root.source
-        : (root.uiGlyph !== ""
-            ? Qt.resolvedUrl("../assets/icons/ui/" + root.uiGlyph + ".svg")
-            : root.iconPath)
+        : root.usingLucide
+            ? "file://" + root.lucideDir + "/" + root.lucideName + ".svg"
+            : root.iconPath
     readonly property bool hasResolvedSource: root.resolvedSource !== undefined
         && root.resolvedSource !== null
         && root.resolvedSource !== ""
+
+    onIconNameChanged: lucideLoadFailed = false
+    onIconSetChanged: lucideLoadFailed = false
+    onPreferUiGlyphChanged: lucideLoadFailed = false
 
     property alias smooth: icon.smooth
     property alias mipmap: icon.mipmap
@@ -44,6 +68,10 @@ Item {
         anchors.fill: parent
         visible: root.hasResolvedSource
         source: root.hasResolvedSource ? root.resolvedSource : ""
+        onStatusChanged: {
+            if (status === Image.Error && root.usingLucide)
+                root.lucideLoadFailed = true;
+        }
         scale: root.hasImplicitSize ? root.implicitSize / Math.max(parent.width, parent.height, 1) : 1.0
     }
 
