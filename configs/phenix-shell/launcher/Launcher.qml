@@ -883,7 +883,7 @@ PanelWindow {
         color: Config.styling.bg1
         border.color: Config.styling.bg4
         border.width: 1
-        radius: Config.styling.radius
+        radius: Config.shape.square
         clip: true
 
         Animations.PanelBehavior on opacity {
@@ -921,7 +921,7 @@ PanelWindow {
                     color: Config.styling.bg2
                     border.color: input.activeFocus ? Config.styling.primaryAccent : Config.styling.bg4
                     border.width: 1
-                    radius: Config.styling.radius
+                    radius: Config.shape.square
                 }
 
                 onTextEdited: controller.updateQuery(text)

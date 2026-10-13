@@ -329,7 +329,7 @@ PanelWindow {
             Rectangle {
                 anchors.fill: parent
                 color: Config.styling.bg0
-                radius: Config.styling.radius
+                radius: Config.shape.square
             }
 
             SwipeView {

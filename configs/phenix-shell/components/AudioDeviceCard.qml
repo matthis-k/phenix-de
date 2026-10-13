@@ -25,7 +25,7 @@ Rectangle {
 
     Layout.fillWidth: true
     color: Config.styling.bg3
-    radius: Config.styling.radius
+    radius: Config.shape.square
     implicitHeight: content.implicitHeight + Config.spacing.xs * 2
 
     Animations.StateColorBehavior on color {

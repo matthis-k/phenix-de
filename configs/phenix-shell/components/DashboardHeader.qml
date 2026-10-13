@@ -16,7 +16,7 @@ ColumnLayout {
     property bool titleBold: true
     property bool subtitleBold: false
 
-    readonly property int titlePixelSize: level === 1 ? 22 : 16
+    readonly property int titlePixelSize: level === 1 ? Config.typography.page : Config.typography.heading
 
     spacing: 0
     Accessible.description: root.subtitle
@@ -31,7 +31,7 @@ ColumnLayout {
             iconName: root.iconName
             fallbackIconName: root.iconName
             color: root.iconColor
-            implicitSize: root.level === 1 ? 22 : 18
+            implicitSize: root.level === 1 ? Config.iconSizes.page : Config.iconSizes.section
             Layout.alignment: Qt.AlignVCenter
         }
 
@@ -41,6 +41,7 @@ ColumnLayout {
             text: root.title
             color: root.titleColor
             font.pixelSize: root.titlePixelSize
+            font.family: Config.typography.mono
             font.bold: root.titleBold
             elide: Text.ElideRight
         }

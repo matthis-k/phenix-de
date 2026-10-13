@@ -51,7 +51,7 @@ Rectangle {
     }
 
     color: Config.styling.bg1
-    radius: Config.styling.radius
+    radius: Config.shape.square
     clip: true
     Layout.fillWidth: true
     implicitWidth: Math.max(header.implicitWidth, body.implicitWidth) + sectionPadding * 2

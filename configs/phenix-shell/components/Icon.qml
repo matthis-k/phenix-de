@@ -1,4 +1,5 @@
 import QtQuick
+import "../utils/UiIcons.js" as UiIcons
 import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Widgets
@@ -17,7 +18,17 @@ Item {
     readonly property bool hasImplicitSize: implicitSize >= 0
     readonly property bool hasIconName: iconName !== "" || fallbackIconName !== ""
     readonly property var iconPath: hasIconName ? Quickshell.iconPath(iconName, fallbackIconName) : undefined
-    readonly property var resolvedSource: root.source !== undefined ? root.source : root.iconPath
+    // Desktop-entry icons pass an explicit source and always retain their
+    // full-color image. Only known shell glyph names use the curated UI set.
+    property bool preferUiGlyph: true
+    readonly property string uiGlyph: root.preferUiGlyph && root.source === undefined
+        ? UiIcons.lookup(root.iconName)
+        : ""
+    readonly property var resolvedSource: root.source !== undefined
+        ? root.source
+        : (root.uiGlyph !== ""
+            ? Qt.resolvedUrl("../assets/icons/ui/" + root.uiGlyph + ".svg")
+            : root.iconPath)
     readonly property bool hasResolvedSource: root.resolvedSource !== undefined
         && root.resolvedSource !== null
         && root.resolvedSource !== ""

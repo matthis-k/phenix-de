@@ -105,6 +105,34 @@ Singleton {
         };
     }
 
+    // Shared visual roles. Containers remain square. Compact controls may use
+    // small corner radii; round gauges and slider handles keep their geometry.
+    readonly property QtObject shape: QtObject {
+        readonly property int square: 0
+        readonly property int small: 3
+        readonly property int badge: 2
+    }
+
+    readonly property QtObject typography: QtObject {
+        readonly property string mono: "monospace"
+        readonly property int tiny: 10
+        readonly property int caption: 11
+        readonly property int secondary: 12
+        readonly property int label: 13
+        readonly property int body: 14
+        readonly property int heading: 16
+        readonly property int page: 22
+    }
+
+    readonly property QtObject iconSizes: QtObject {
+        readonly property int tiny: 14
+        readonly property int inline: 16
+        readonly property int section: 18
+        readonly property int control: 20
+        readonly property int page: 22
+        readonly property int prominent: 32
+    }
+
     readonly property QtObject spacing: QtObject {
         readonly property int unit: 4
         readonly property int xxs: unit        // 4px - tight inline

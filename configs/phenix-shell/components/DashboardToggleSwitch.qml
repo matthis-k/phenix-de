@@ -11,8 +11,8 @@ Switch {
     property color knobColor: Config.styling.textOnAccent
     property real switchProgress: checked ? 1 : 0
 
-    implicitWidth: 58
-    implicitHeight: 28
+    implicitWidth: 44
+    implicitHeight: 24
     hoverEnabled: true
     spacing: 0
     padding: 0
@@ -38,7 +38,7 @@ Switch {
         Rectangle {
             anchors.fill: parent
             anchors.margins: -2
-            radius: height / 2
+            radius: Config.shape.square
             color: Config.colorWithOpacity(root.accentColor, 0.18)
             opacity: root.hovered && root.enabled ? 1 : 0
 
@@ -49,7 +49,7 @@ Switch {
 
         Rectangle {
             anchors.fill: parent
-            radius: height / 2
+            radius: Config.shape.square
             color: !root.enabled
                 ? Config.styling.bg4
                 : root.checked
@@ -61,11 +61,11 @@ Switch {
         }
 
         Rectangle {
-            width: parent.height - 4
-            height: parent.height - 4
-            x: 2 + root.switchProgress * (parent.width - width - 4)
-            y: 2
-            radius: width / 2
+            width: parent.height - 6
+            height: parent.height - 6
+            x: 3 + root.switchProgress * (parent.width - width - 6)
+            y: 3
+            radius: Config.shape.small
             color: root.knobColor
         }
     }

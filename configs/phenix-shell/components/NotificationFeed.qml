@@ -99,7 +99,7 @@ Item {
 
                             Layout.fillWidth: true
                             color: hovered ? Config.styling.bg3 : Config.styling.bg2
-                            radius: Config.styling.radius
+                            radius: Config.shape.square
                             implicitWidth: feedColumn.width
                             implicitHeight: body.implicitHeight + Config.spacing.xs * 2
 
@@ -251,7 +251,7 @@ Item {
                                         && notificationCard.imageSource !== ""
                                         && notificationImage.status !== Image.Error
                                     color: Config.styling.bg0
-                                    radius: Config.styling.radius
+                                    radius: Config.shape.square
                                     border.width: 1
                                     border.color: Config.styling.bg4
                                     clip: true

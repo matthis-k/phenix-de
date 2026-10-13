@@ -27,7 +27,8 @@ ColumnLayout {
                 visible: root.title !== ""
                 text: root.title
                 color: Config.styling.text0
-                font.pixelSize: 22
+                font.pixelSize: Config.typography.page
+                font.family: Config.typography.mono
                 font.bold: true
                 elide: Text.ElideRight
             }
@@ -37,7 +38,7 @@ ColumnLayout {
                 visible: root.subtitle !== ""
                 text: root.subtitle
                 color: Config.styling.text2
-                font.pixelSize: 12
+                font.pixelSize: Config.typography.secondary
                 wrapMode: Text.WordWrap
                 maximumLineCount: 2
                 elide: Text.ElideRight
