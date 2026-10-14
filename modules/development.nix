@@ -161,6 +161,7 @@
                   pkgs.coreutils
                   pkgs.git
                   pkgs.kdePackages.qtdeclarative
+                  pkgs.kdePackages.qtquickcontrols2
                   pkgs.nix
                 ];
                 exec = ''
@@ -172,9 +173,14 @@
                   export QT_QPA_PLATFORM=offscreen
                   export QT_QUICK_CONTROLS_STYLE=Phenix
                   export QT_QUICK_CONTROLS_STYLE_PATH="$PWD/configs/phenix-shell/styles"
+                  # The qml launcher is in qtdeclarative, but QtQuick.Controls
+                  # is a separate Qt package on NixOS; include both import roots.
                   export QML_IMPORT_TRACE=1
-                  export QML_IMPORT_PATH="${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml"
-                  timeout 25s qml --verbose -I "${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml" "$PWD/configs/phenix-shell/tests/StyleSmoke.qml"
+                  export QML_IMPORT_PATH="${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml:${pkgs.kdePackages.qtquickcontrols2}/lib/qt-6/qml"
+                  export QML2_IMPORT_PATH="$QML_IMPORT_PATH"
+                  export QT_PLUGIN_PATH="${pkgs.kdePackages.qtbase}/lib/qt-6/plugins:${pkgs.kdePackages.qtdeclarative}/lib/qt-6/plugins:${pkgs.kdePackages.qtquickcontrols2}/lib/qt-6/plugins"
+                  timeout 25s qml --verbose -I "${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml" -I "${pkgs.kdePackages.qtquickcontrols2}/lib/qt-6/qml" "$PWD/configs/phenix-shell/tests/BasicSmoke.qml"
+                  timeout 25s qml --verbose -I "${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml" -I "${pkgs.kdePackages.qtquickcontrols2}/lib/qt-6/qml" "$PWD/configs/phenix-shell/tests/StyleSmoke.qml"
                 '';
               };
 
