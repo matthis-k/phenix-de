@@ -1,6 +1,10 @@
 module Phenix
 import QtQuick.Controls.Basic auto
 singleton Theme 1.0 Theme.qml
+ApplicationWindow 2.0 ApplicationWindow.qml
+Pane 2.0 Pane.qml
+Frame 2.0 Frame.qml
+ToolBar 2.0 ToolBar.qml
 Button 2.0 Button.qml
 TextField 2.0 TextField.qml
 TextArea 2.0 TextArea.qml

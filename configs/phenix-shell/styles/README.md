@@ -17,7 +17,8 @@ The `phenix-shell` executable sets these values for its own process only,
 not for unrelated programs. Callers may override the style with
 `QT_QUICK_CONTROLS_STYLE` before launching Phenix.
 
-Custom templates: `Button`, `TabButton`, `TextField`, `TextArea`,
+Custom templates: `ApplicationWindow`, `Pane`, `Frame`, `ToolBar`,
+`Button`, `TabButton`, `TextField`, `TextArea`,
 `CheckBox`, `RadioButton`, `Switch`, `Slider`. All other controls
 inherit Qt's mature Basic implementations. Do not fork complex Qt controls
 merely to paint them differently.

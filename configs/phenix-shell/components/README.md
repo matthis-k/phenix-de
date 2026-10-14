@@ -23,7 +23,8 @@ All new content uses `Config.spacing`, `Config.typography`, `Config.styling`, `C
 
 Inside a Quickshell session launched through `phenix-shell`, ordinary
 `import QtQuick.Controls` uses the `Phenix` style. Its selected controls
-(`Button`, `TabButton`, `CheckBox`, `RadioButton`, `Switch`, `Slider`,
+(`ApplicationWindow`, `Pane`, `Frame`, `ToolBar`, `Button`, `TabButton`,
+`CheckBox`, `RadioButton`, `Switch`, `Slider`,
 `TextField`, `TextArea`) use Qt's **real control templates**. Standard
 controls that the style does not implement fall back to Qt's Basic style.
 
@@ -66,7 +67,7 @@ ColumnLayout {
         UI.LabeledField {
             label: "Endpoint"
             description: "Connection URL"
-            required: true
+            mandatory: true
 
             TextField {
                 Layout.fillWidth: true

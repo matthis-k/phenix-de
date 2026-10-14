@@ -10,7 +10,7 @@ ColumnLayout {
     property string label: ""
     property string description: ""
     property string error: ""
-    property bool required: false
+    property bool mandatory: false
     property int fieldSpacing: Config.spacing.xxs
     default property alias content: fieldSlot.data
 
@@ -30,7 +30,7 @@ ColumnLayout {
         }
 
         Text {
-            visible: root.required
+            visible: root.mandatory
             text: "*"
             color: Config.styling.critical
             font.bold: true

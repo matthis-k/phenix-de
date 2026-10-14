@@ -35,6 +35,21 @@ ApplicationWindow {
             SpinBox { from: 0; to: 12; value: 3 }
         }
 
+        Pane {
+            Layout.fillWidth: true
+            Label { text: "Standard pane" }
+        }
+
+        Frame {
+            Layout.fillWidth: true
+            Label { text: "Standard frame" }
+        }
+
+        ToolBar {
+            Layout.fillWidth: true
+            Label { text: "Toolbar" }
+        }
+
         ScrollView {
             Layout.fillWidth: true
             Layout.fillHeight: true

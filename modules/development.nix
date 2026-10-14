@@ -172,7 +172,9 @@
                   export QT_QPA_PLATFORM=offscreen
                   export QT_QUICK_CONTROLS_STYLE=Phenix
                   export QT_QUICK_CONTROLS_STYLE_PATH="$PWD/configs/phenix-shell/styles"
-                  timeout 25s qml "$PWD/configs/phenix-shell/tests/StyleSmoke.qml"
+                  export QML_IMPORT_TRACE=1
+                  export QML_IMPORT_PATH="${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml"
+                  timeout 25s qml -v -I "${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml" "$PWD/configs/phenix-shell/tests/StyleSmoke.qml"
                 '';
               };
 
