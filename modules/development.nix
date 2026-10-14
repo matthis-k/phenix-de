@@ -161,26 +161,29 @@
                   pkgs.coreutils
                   pkgs.git
                   pkgs.kdePackages.qtdeclarative
-                  pkgs.kdePackages.qtquickcontrols2
                   pkgs.nix
                 ];
                 exec = ''
                   ${repositoryRoot}
                   nix run .#phenix-shell -- --check-runtime
 
-                  # Load every Phenix-styled template and a few Basic fallback
-                  # controls through the native Qt Quick Controls runtime.
+                  # Qt 6 merged Qt Quick Controls into qtdeclarative; its
+                  # QML modules must be exposed to the standalone runner.
                   export QT_QPA_PLATFORM=offscreen
-                  export QT_QUICK_CONTROLS_STYLE=Phenix
+                  export QT_QUICK_BACKEND=software
                   export QT_QUICK_CONTROLS_STYLE_PATH="$PWD/configs/phenix-shell/styles"
-                  # The qml launcher is in qtdeclarative, but QtQuick.Controls
-                  # is a separate Qt package on NixOS; include both import roots.
+                  export QML_IMPORT_PATH="${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml"
                   export QML_IMPORT_TRACE=1
-                  export QML_IMPORT_PATH="${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml:${pkgs.kdePackages.qtquickcontrols2}/lib/qt-6/qml"
-                  export QML2_IMPORT_PATH="$QML_IMPORT_PATH"
-                  export QT_PLUGIN_PATH="${pkgs.kdePackages.qtbase}/lib/qt-6/plugins:${pkgs.kdePackages.qtdeclarative}/lib/qt-6/plugins:${pkgs.kdePackages.qtquickcontrols2}/lib/qt-6/plugins"
-                  timeout 25s qml --verbose -I "${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml" -I "${pkgs.kdePackages.qtquickcontrols2}/lib/qt-6/qml" "$PWD/configs/phenix-shell/tests/BasicSmoke.qml"
-                  timeout 25s qml --verbose -I "${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml" -I "${pkgs.kdePackages.qtquickcontrols2}/lib/qt-6/qml" "$PWD/configs/phenix-shell/tests/StyleSmoke.qml"
+                  export QT_PLUGIN_PATH="${pkgs.kdePackages.qtbase}/lib/qt-6/plugins:${pkgs.kdePackages.qtdeclarative}/lib/qt-6/plugins"
+
+                  # First ensure native Basic controls load without the custom
+                  # Phenix style, to distinguish infrastructure from style bugs.
+                  export QT_QUICK_CONTROLS_STYLE=Basic
+                  timeout 25s qmlscene --verbose -I "$QML_IMPORT_PATH" "$PWD/configs/phenix-shell/tests/BasicSmoke.qml"
+
+                  # Then instantiate styled controls plus Qt Basic fallbacks.
+                  export QT_QUICK_CONTROLS_STYLE=Phenix
+                  timeout 25s qmlscene --verbose -I "$QML_IMPORT_PATH" "$PWD/configs/phenix-shell/tests/StyleSmoke.qml"
                 '';
               };
 
