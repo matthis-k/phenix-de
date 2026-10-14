@@ -174,7 +174,7 @@
                   export QT_QUICK_CONTROLS_STYLE_PATH="$PWD/configs/phenix-shell/styles"
                   export QML_IMPORT_TRACE=1
                   export QML_IMPORT_PATH="${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml"
-                  timeout 25s qml -v -I "${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml" "$PWD/configs/phenix-shell/tests/StyleSmoke.qml"
+                  timeout 25s qml --verbose -I "${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml" "$PWD/configs/phenix-shell/tests/StyleSmoke.qml"
                 '';
               };
 
