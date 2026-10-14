@@ -158,12 +158,21 @@
                   stepName = "Shell runtime";
                 };
                 runtimeInputs = pkgs: [
+                  pkgs.coreutils
                   pkgs.git
+                  pkgs.kdePackages.qtdeclarative
                   pkgs.nix
                 ];
                 exec = ''
                   ${repositoryRoot}
                   nix run .#phenix-shell -- --check-runtime
+
+                  # Load every Phenix-styled template and a few Basic fallback
+                  # controls through the native Qt Quick Controls runtime.
+                  export QT_QPA_PLATFORM=offscreen
+                  export QT_QUICK_CONTROLS_STYLE=Phenix
+                  export QT_QUICK_CONTROLS_STYLE_PATH="$PWD/configs/phenix-shell/styles"
+                  timeout 25s qml "$PWD/configs/phenix-shell/tests/StyleSmoke.qml"
                 '';
               };
 

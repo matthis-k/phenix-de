@@ -49,6 +49,24 @@ and short animations.
 - Material Symbols are Apache-2.0 licensed. Lucide uses ISC and includes the
   Feather-derived MIT notice. Nix keeps both licenses beside the SVG assets.
 
+## Reusable UI and Qt Quick Controls
+
+- Prefer the existing `components/` controls for shell-specific composition.
+  New reusable primitives include `Breadcrumbs`, `DisclosureSection`,
+  `LabeledField`, and `InlineNotice`. See `components/README.md`.
+- Use standard `import QtQuick.Controls` for native controls in new app pages.
+  The `Phenix` style provides square-first appearance for basic form controls;
+  unimplemented templates fall back to Qt's Basic style.
+- Do not reimplement complex Qt controls. Prefer their existing models,
+  selection, keyboard handling, scroll behavior, drag handles, accessibility,
+  and editable delegates. Use `TreeView`, `TableView`, `SplitView`,
+  `StackView`, `ComboBox`, and `Menu` directly.
+- Existing `QtQuick.Controls.Basic` imports remain unchanged and opt out
+  of the new style. The style is process-scoped and can also be reused by
+  standalone Qt Quick apps via standard environment variables.
+- Keep standalone style tokens portable. Quickshell-specific live tokens
+  remain owned by `Config.qml`.
+
 ## Motion
 
 - Use the existing `Config.motion` timings of 100, 160, 220, and 320ms.

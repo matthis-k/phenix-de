@@ -1,0 +1,11 @@
+module Phenix
+import QtQuick.Controls.Basic auto
+singleton Theme 1.0 Theme.qml
+Button 2.0 Button.qml
+TextField 2.0 TextField.qml
+TextArea 2.0 TextArea.qml
+CheckBox 2.0 CheckBox.qml
+RadioButton 2.0 RadioButton.qml
+Switch 2.0 Switch.qml
+Slider 2.0 Slider.qml
+TabButton 2.0 TabButton.qml

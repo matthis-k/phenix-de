@@ -143,6 +143,11 @@
             quickshell_args+=(--verbose)
           fi
 
+          # Native Qt Quick Controls will use Phenix's portable theme, while
+          # existing explicit QtQuick.Controls.Basic imports keep their style.
+          export QT_QUICK_CONTROLS_STYLE="''${QT_QUICK_CONTROLS_STYLE:-Phenix}"
+          export QT_QUICK_CONTROLS_STYLE_PATH="$config_dir/styles''${QT_QUICK_CONTROLS_STYLE_PATH:+:$QT_QUICK_CONTROLS_STYLE_PATH}"
+
           exec quickshell -p "$config_dir" "''${quickshell_args[@]}" "$@"
         '';
       };
