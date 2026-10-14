@@ -171,19 +171,20 @@
                   # QML modules must be exposed to the standalone runner.
                   export QT_QPA_PLATFORM=offscreen
                   export QT_QUICK_BACKEND=software
-                  export QT_QUICK_CONTROLS_STYLE_PATH="$PWD/configs/phenix-shell/styles"
-                  export QML_IMPORT_PATH="${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml"
+                  # Qt 6 requires QML_IMPORT_PATH (STYLE_PATH was removed).
+                  export QML_IMPORT_PATH="$PWD/configs/phenix-shell/styles:${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml"
                   export QML_IMPORT_TRACE=1
                   export QT_PLUGIN_PATH="${pkgs.kdePackages.qtbase}/lib/qt-6/plugins:${pkgs.kdePackages.qtdeclarative}/lib/qt-6/plugins"
 
                   # First ensure native Basic controls load without the custom
                   # Phenix style, to distinguish infrastructure from style bugs.
                   export QT_QUICK_CONTROLS_STYLE=Basic
-                  timeout 25s qmlscene --verbose -I "$QML_IMPORT_PATH" "$PWD/configs/phenix-shell/tests/BasicSmoke.qml"
+                  timeout 25s qmlscene --verbose -I "$PWD/configs/phenix-shell/styles" -I "${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml" "$PWD/configs/phenix-shell/tests/BasicSmoke.qml"
 
                   # Then instantiate styled controls plus Qt Basic fallbacks.
                   export QT_QUICK_CONTROLS_STYLE=Phenix
-                  timeout 25s qmlscene --verbose -I "$QML_IMPORT_PATH" "$PWD/configs/phenix-shell/tests/StyleSmoke.qml"
+                  timeout 25s qmlscene --verbose -I "$PWD/configs/phenix-shell/styles" -I "${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml" "$PWD/configs/phenix-shell/tests/StyleSmoke.qml"
+                  timeout 25s qmlscene --verbose -I "$PWD/configs/phenix-shell/styles" -I "${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml" "$PWD/configs/phenix-shell/tests/LayoutSmoke.qml"
                 '';
               };
 

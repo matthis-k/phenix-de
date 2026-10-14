@@ -64,6 +64,11 @@ and short animations.
 - Existing `QtQuick.Controls.Basic` imports remain unchanged and opt out
   of the new style. The style is process-scoped and can also be reused by
   standalone Qt Quick apps via standard environment variables.
+- Complex app layout presets in `layouts/` compose native `TabBar`, 
+  `TabButton`, `StackLayout`, `SplitView`, and `ColumnLayout` without
+  replacing their behavior. See `layouts/README.md`.
+- Qt 6 discovers the Phenix style through `QML_IMPORT_PATH`, not the
+  removed `QT_QUICK_CONTROLS_STYLE_PATH`.
 - Keep standalone style tokens portable. Quickshell-specific live tokens
   remain owned by `Config.qml`.
 

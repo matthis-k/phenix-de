@@ -9,9 +9,12 @@ To use it with a Qt Quick application:
 
 ```sh
 export QT_QUICK_CONTROLS_STYLE=Phenix
-export QT_QUICK_CONTROLS_STYLE_PATH=/absolute/path/to/configs/phenix-shell/styles
+export QML_IMPORT_PATH=/absolute/path/to/configs/phenix-shell/styles
 qml main.qml
 ```
+
+Qt 6 removed the legacy `QT_QUICK_CONTROLS_STYLE_PATH` setting;
+the style is discovered as an ordinary QML module through `QML_IMPORT_PATH`.
 
 The `phenix-shell` executable sets these values for its own process only,
 not for unrelated programs. Callers may override the style with
@@ -32,4 +35,4 @@ See Qt's [custom style documentation](https://doc.qt.io/qt-6/qtquickcontrols-cus
 
 ## Nix package
 
-The flake exposes `phenix-qtquick-style`, placing the `Phenix` theme beneath `share/phenix/qtquick-styles/Phenix`. Set `QT_QUICK_CONTROLS_STYLE=Phenix` and add the package's `share/phenix/qtquick-styles` directory to `QT_QUICK_CONTROLS_STYLE_PATH` before the QML engine starts. The package contains no Quickshell imports, making it suitable for standalone Qt Quick applications.
+The flake exposes `phenix-qtquick-style`, placing the `Phenix` theme beneath `share/phenix/qtquick-styles/Phenix`. Set `QT_QUICK_CONTROLS_STYLE=Phenix` and add the package's `share/phenix/qtquick-styles` directory to `QML_IMPORT_PATH` before the QML engine starts. The package contains no Quickshell imports, making it suitable for standalone Qt Quick applications.

@@ -16,6 +16,7 @@ Import the local component directory as `import qs.components as UI`.
 | Native search editor | `SearchField` | Extends the real TextField with search and clear actions |
 | Form organization | `FormSection` | App settings grouping with title and optional header accessory |
 | Inline feedback | `InlineNotice` | Info/success/warning/error; optional `action` component |
+| Reusable app layouts | `qs.layouts` (`TabbedPane`, `SplitPane`, `SidebarPane`, `PageScaffold`) | Native Qt compositions; see `../layouts/README.md` |
 | App/system status | `Badge`, `InfoRow`, `EmptyState` | Use semantic color roles |
 | Dashboard layout | `DashboardPage`, `DashboardSection`, `DashboardListRow` | Keep dashboard-specific presentation separate |
 
@@ -95,7 +96,7 @@ only arranges those elements.
 
 The style is self-contained and can be reused independently of Quickshell.
 Set `QT_QUICK_CONTROLS_STYLE=Phenix` and
-`QT_QUICK_CONTROLS_STYLE_PATH=<path-to-configs/phenix-shell/styles>` **before**
+`QML_IMPORT_PATH=<path-to-configs/phenix-shell/styles>` **before**
 the QML engine loads. Existing `QtQuick.Controls.Basic` imports opt out.
 The style's portable palette is in `styles/Phenix/Theme.qml`; shell-specific
 live palette logic remains in `services/Config.qml`.

@@ -157,7 +157,9 @@
           # Native Qt Quick Controls will use Phenix's portable theme, while
           # existing explicit QtQuick.Controls.Basic imports keep their style.
           export QT_QUICK_CONTROLS_STYLE="''${QT_QUICK_CONTROLS_STYLE:-Phenix}"
-          export QT_QUICK_CONTROLS_STYLE_PATH="$config_dir/styles''${QT_QUICK_CONTROLS_STYLE_PATH:+:$QT_QUICK_CONTROLS_STYLE_PATH}"
+          # Qt 6 custom styles are QML modules. The removed STYLE_PATH
+          # environment variable has no effect in Qt 6.
+          export QML_IMPORT_PATH="$config_dir/styles''${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}"
 
           exec quickshell -p "$config_dir" "''${quickshell_args[@]}" "$@"
         '';
