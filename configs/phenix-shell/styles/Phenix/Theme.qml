@@ -1,5 +1,6 @@
 pragma Singleton
 import QtQml
+import QtQuick
 
 // Portable Qt Quick Controls palette. No Quickshell imports: the style can
 // also be used by standalone Qt Quick applications. Keep visual roles aligned
