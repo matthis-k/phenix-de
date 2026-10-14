@@ -29,3 +29,7 @@ that module exists only in Quickshell. For shell-specific, live palette
 binding, use existing `Config.styling` tokens on component instances.
 
 See Qt's [custom style documentation](https://doc.qt.io/qt-6/qtquickcontrols-customize.html).
+
+## Nix package
+
+The flake exposes `phenix-qtquick-style`, placing the `Phenix` theme beneath `share/phenix/qtquick-styles/Phenix`. Set `QT_QUICK_CONTROLS_STYLE=Phenix` and add the package's `share/phenix/qtquick-styles` directory to `QT_QUICK_CONTROLS_STYLE_PATH` before the QML engine starts. The package contains no Quickshell imports, making it suitable for standalone Qt Quick applications.

@@ -14,6 +14,17 @@
         filter = path: type: !(type == "regular" && builtins.baseNameOf path == ".qmlls.ini");
       };
 
+      # Standalone Qt Quick Controls style; no Quickshell service dependency.
+      qtStyleSource = builtins.path {
+        name = "phenix-qtquick-style-source";
+        path = ../configs/phenix-shell/styles/Phenix;
+      };
+
+      phenixQtQuickStyle = pkgs.runCommand "phenix-qtquick-style" { } ''
+        mkdir -p "$out/share/phenix/qtquick-styles"
+        ln -s "${qtStyleSource}" "$out/share/phenix/qtquick-styles/Phenix"
+      '';
+
       configuredHyprland = inputs.self.lib.phenixHyprlandWrapper.wrap {
         pkgs = inputs.nixpkgs.legacyPackages.${system};
         configDirectory = hyprlandConfig;
@@ -197,6 +208,7 @@
       packages = {
         phenix-hyprland = configuredHyprland;
         phenix-shell = phenixShell;
+        phenix-qtquick-style = phenixQtQuickStyle;
         inherit kitty;
         wayland-utils = waylandUtils;
         inherit (pkgs) fish starship;

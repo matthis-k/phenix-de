@@ -12,7 +12,9 @@ Import the local component directory as `import qs.components as UI`.
 | Expand/collapse only | `Expander` | Animated content height and clipping; used by dashboard sections |
 | Labeled disclosure | `DisclosureSection` | Composes `ActionButton` and `Expander`; use `expanded` to drive state |
 | Location navigation | `Breadcrumbs` | Array of strings or objects; `activated(index, item)` for ancestors |
-| Native editor layout | `LabeledField` | Label, description, required marker, validation text; accepts any control |
+| Native editor layout | `LabeledField` | Label, description, mandatory marker, validation text; accepts any control |
+| Native search editor | `SearchField` | Extends the real TextField with search and clear actions |
+| Form organization | `FormSection` | App settings grouping with title and optional header accessory |
 | Inline feedback | `InlineNotice` | Info/success/warning/error; optional `action` component |
 | App/system status | `Badge`, `InfoRow`, `EmptyState` | Use semantic color roles |
 | Dashboard layout | `DashboardPage`, `DashboardSection`, `DashboardListRow` | Keep dashboard-specific presentation separate |
@@ -100,3 +102,7 @@ live palette logic remains in `services/Config.qml`.
 
 Use `tests/StyleSmoke.qml` for an offscreen style smoke check with Qt's QML
 runtime. It covers native selection and fallback imports, not compositor visuals.
+
+## Portability
+
+The standalone `Phenix` Qt Quick Controls style is available as a Nix package (`phenix-qtquick-style`) and works without Quickshell. Compositional elements in this directory currently import `qs.services` and are intended for Quickshell-hosted panels and app surfaces. Keep these boundaries explicit; extract a standalone QML library only when an independent application requires it.
