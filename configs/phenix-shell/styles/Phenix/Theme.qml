@@ -15,7 +15,7 @@ QtObject {
     readonly property color secondary: "#a6adc8"
     readonly property color placeholder: "#7f849c"
     readonly property color accent: "#89b4fa"
-    readonly property color onAccent: "#1e1e2e"
+    readonly property color textOnAccent: "#1e1e2e"
     readonly property color disabled: "#6c7086"
     readonly property string mono: "monospace"
     readonly property int fontSize: 13

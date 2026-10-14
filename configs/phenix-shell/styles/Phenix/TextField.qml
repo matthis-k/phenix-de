@@ -12,7 +12,7 @@ T.TextField {
     color: enabled ? Ph.Theme.text : Ph.Theme.disabled
     placeholderTextColor: Ph.Theme.placeholder
     selectionColor: Ph.Theme.accent
-    selectedTextColor: Ph.Theme.onAccent
+    selectedTextColor: Ph.Theme.textOnAccent
     font.family: Ph.Theme.mono
     font.pixelSize: Ph.Theme.fontSize
     verticalAlignment: TextInput.AlignVCenter

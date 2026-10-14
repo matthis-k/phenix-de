@@ -30,7 +30,7 @@ T.Switch {
             radius: 3
             y: 3
             x: 3 + (parent.width - width - 6) * control.visualPosition
-            color: control.enabled ? Ph.Theme.onAccent : Ph.Theme.disabled
+            color: control.enabled ? Ph.Theme.textOnAccent : Ph.Theme.disabled
         }
     }
 

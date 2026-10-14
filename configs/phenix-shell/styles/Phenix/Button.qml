@@ -17,7 +17,7 @@ T.Button {
         text: control.text
         font: control.font
         color: !control.enabled ? Ph.Theme.disabled
-            : control.highlighted ? Ph.Theme.onAccent : Ph.Theme.text
+            : control.highlighted ? Ph.Theme.textOnAccent : Ph.Theme.text
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight
